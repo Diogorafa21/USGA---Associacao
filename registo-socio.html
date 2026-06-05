@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registo de Sócio - USGA</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="home-page">
+
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">USGA</a>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Página Inicial</a></li>
+                    <li><a href="eventos.html" class="nav-link">Eventos</a></li>
+                    <li><a href="suporte.html" class="nav-link">Suporte</a></li>
+                </ul>
+            </nav>
+            <a href="login.html" class="btn btn-primary">Login</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg-slideshow">
+            <div class="slideshow-container">
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+            </div>
+            
+            <div class="hero-overlay-dark"></div>
+
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="subtitle">JUNTE-SE A NÓS</span>
+                    <h1>Tornar-se Sócio</h1>
+                    <p>Faça parte desta família e ajude a nossa comunidade a crescer. Beneficie de descontos exclusivos e vantagens nos nossos parceiros.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="contact-section">
+            <div class="container" style="max-width: 800px;">
+                <div class="contact-form">
+                    <h2 style="margin-bottom: 10px; text-align: center;">Ficha de Inscrição</h2>
+                    <p style="margin-bottom: 30px; text-align: center; color: #666;">Preencha os seus dados para se tornar sócio da Unidos por São Gens Ativo.</p>
+                    
+                    <form action="pagamento-quota.html">
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nome">Nome Próprio</label>
+                                <input type="text" id="nome" name="nome" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="apelido">Apelido</label>
+                                <input type="text" id="apelido" name="apelido" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="nascimento">Data de Nascimento</label>
+                                <input type="date" id="nascimento" name="nascimento" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="cidade">Cidade</label>
+                                <input type="text" id="cidade" name="cidade" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="cc">Nº Cartão de Cidadão</label>
+                                <input type="text" id="cc" name="cc" placeholder="00000000 0 ZZ0" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="nif">NIF</label>
+                                <input type="number" id="nif" name="nif" placeholder="000 000 000" required>
+                            </div>
+                        </div>
+
+                        <div class="form-grid">
+                            <div class="form-group">
+                                <label for="telefone">Telefone / Telemóvel</label>
+                                <input type="tel" id="telefone" name="telefone" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="email">Email</label>
+                                <input type="email" id="email" name="email" required>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Tornar-me Sócio</button>
+                    </form>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-col">
+                <a href="index.html" class="logo">USGA</a>
+                <p>Unidos por uma comunidade mais forte.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Menu</h4>
+                <a href="index.html">Página Inicial</a>
+                <a href="eventos.html">Eventos</a>
+                <a href="suporte.html">Suporte</a>
+            </div>
+            <div class="footer-col">
+                <h4>Social</h4>
+                <a href="#">Facebook</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+        <div class="container copyright">
+            <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+    <script src="js/main.js"></script>
+</body>
+</html>

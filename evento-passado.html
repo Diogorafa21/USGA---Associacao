@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhe Histórico - USGA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="home-page">
+
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">USGA</a>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Página Inicial</a></li>
+                    <li><a href="eventos.html" class="nav-link active">Eventos</a></li>
+                    <li><a href="suporte.html" class="nav-link">Suporte</a></li>
+                </ul>
+            </nav>
+            <a href="login.html" class="btn btn-primary">Login</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg-slideshow">
+            <div class="slideshow-container">
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+            </div>
+            
+            <div class="hero-overlay-dark"></div>
+
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="subtitle">TRADIÇÃO • NOV 2025</span>
+                    <h1 style="font-size: 42px; margin-bottom: 10px;">Magusto Comunitário</h1>
+                    <p style="font-size: 18px; color: #fff;">Um dia de celebração das nossas tradições que reuniu a freguesia.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="event-content" style="padding-top: 60px;">
+            <div class="container">
+                
+                <a href="eventos.html" style="display: inline-flex; align-items: center; gap: 5px; margin-bottom: 30px; font-weight: 500; color: #666;">
+                    &larr; Voltar aos eventos
+                </a>
+                
+                <div class="event-details-grid">
+                    <div class="content-col">
+                        <div class="hero-image" style="margin-bottom: 30px;">
+                            <div class="image-placeholder" style="height: 300px;"></div>
+                        </div>
+                        <h3>Como foi o evento</h3>
+                        <p style="margin-bottom: 20px; color: var(--text-color);">A edição deste ano do Magusto foi um sucesso absoluto. Contámos com mais de 500kg de castanhas assadas e a animação do grupo de concertinas local.</p>
+                        <p style="margin-bottom: 20px; color: var(--text-color);">Obrigado a todos os voluntários que ajudaram a montar a estrutura e a limpar o recinto no final.</p>
+                    </div>
+
+                    <div class="sidebar-col">
+                        <div class="event-sidebar">
+                            <div class="sidebar-item">
+                                <span class="sidebar-label">Data Realização</span>
+                                <span class="sidebar-value">11 de Novembro, 2025</span>
+                            </div>
+                            <div class="sidebar-item">
+                                <span class="sidebar-label">Local</span>
+                                <span class="sidebar-value">Sede USGA</span>
+                            </div>
+                            
+                            <div style="margin-top: 20px; padding: 15px; background: #eee; border-radius: 4px; text-align: center; font-size: 14px; font-weight: bold; color: #666;">
+                                Evento Realizado
+                            </div>
+
+                            <a href="#" class="btn-outline">
+                                Ver Galeria de Fotos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="participants-section">
+                    <h2 style="margin-bottom: 20px;">Classificação Final</h2>
+
+                    <div class="stats-container" style="grid-template-columns: repeat(4, 1fr);">
+                        <div class="stat-box">
+                            <span class="stat-number">120</span>
+                            <span class="stat-label">Atletas</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-number" style="color: #2e7d32;">00:45:20.450</span>
+                            <span class="stat-label">Melhor Tempo</span>
+                        </div>
+                         <div class="stat-box">
+                            <span class="stat-number" style="color: #1565c0;">00:58:12.890</span>
+                            <span class="stat-label">Tempo Médio</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-number">10km</span>
+                            <span class="stat-label">Distância</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-search-wrapper" style="margin-top: 0; margin-bottom: 30px; max-width: 100%;">
+                        <input type="text" id="tableSearch" class="hero-search-input" placeholder="Pesquisar atleta..." style="background-color: #fff; border: 1px solid #e5e5e5; box-shadow: none;">
+                    </div>
+
+                    <div class="participants-table-wrapper">
+                        <table class="participants-table" id="participantsTable">
+                            <thead>
+                                <tr>
+                                    <th style="width: 60px;">Pos.</th>
+                                    <th style="width: 60px;">Nac.</th>
+                                    <th>Dorsal</th>
+                                    <th>Nome</th>
+                                    <th>Equipa</th>
+                                    <th>Tempo</th>
+                                    <th>Diferença</th>
+                                </tr>
+                            </thead>
+                            <tbody style="font-family: 'Courier New', Courier, monospace; font-size: 13px;"> 
+                                <tr>
+                                    <td style="font-family: var(--font-main);"><strong>1º</strong></td>
+                                    <td style="font-weight:bold; color: #666; font-family: var(--font-main);">PT</td>
+                                    <td style="font-family: var(--font-main);">105</td>
+                                    <td style="font-family: var(--font-main);"><strong>Rui Silva</strong></td>
+                                    <td style="font-family: var(--font-main);">USGA Trail Team</td>
+                                    <td style="font-weight: 700;">00:45:20.450</td>
+                                    <td style="color: #999;">-:--:--.---</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family: var(--font-main);"><strong>2º</strong></td>
+                                    <td style="font-weight:bold; color: #666; font-family: var(--font-main);">PT</td>
+                                    <td style="font-family: var(--font-main);">098</td>
+                                    <td style="font-family: var(--font-main);">Carlos Santos</td>
+                                    <td style="font-family: var(--font-main);">Individual</td>
+                                    <td>00:46:10.200</td>
+                                    <td style="color: var(--accent-color);">+00:00:49.750</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family: var(--font-main);"><strong>3º</strong></td>
+                                    <td style="font-weight:bold; color: #666; font-family: var(--font-main);">ES</td>
+                                    <td style="font-family: var(--font-main);">112</td>
+                                    <td style="font-family: var(--font-main);">Miguel Lopez</td>
+                                    <td style="font-family: var(--font-main);">Madrid Run</td>
+                                    <td>00:47:05.100</td>
+                                    <td style="color: var(--accent-color);">+00:01:44.650</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family: var(--font-main);">4º</td>
+                                    <td style="font-weight:bold; color: #666; font-family: var(--font-main);">PT</td>
+                                    <td style="font-family: var(--font-main);">045</td>
+                                    <td style="font-family: var(--font-main);">António Costa</td>
+                                    <td style="font-family: var(--font-main);">São Gens Ativo</td>
+                                    <td>00:48:30.555</td>
+                                    <td style="color: var(--accent-color);">+00:03:10.105</td>
+                                </tr>
+                                <tr>
+                                    <td style="font-family: var(--font-main);">5º</td>
+                                    <td style="font-weight:bold; color: #666; font-family: var(--font-main);">PT</td>
+                                    <td style="font-family: var(--font-main);">022</td>
+                                    <td style="font-family: var(--font-main);">Maria Ferreira</td>
+                                    <td style="font-family: var(--font-main);">Individual</td>
+                                    <td>00:50:15.900</td>
+                                    <td style="color: var(--accent-color);">+00:04:55.450</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container copyright">
+            <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('tableSearch').addEventListener('keyup', function() {
+            let input = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#participantsTable tbody tr');
+            
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? '' : 'none';
+            });
+        });
+    </script>
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Meu Perfil - USGA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        /* Pequeno estilo extra para o hover nos cartões de evento do perfil */
+        .event-card-link:hover > div {
+            background-color: #f9f9f9;
+            border-color: #ccc !important;
+        }
+    </style>
+</head>
+<body class="home-page">
+
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">USGA</a>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Página Inicial</a></li>
+                    <li><a href="eventos.html" class="nav-link">Eventos</a></li>
+                    <li><a href="suporte.html" class="nav-link">Suporte</a></li>
+                </ul>
+            </nav>
+            <a href="perfil.html" class="btn btn-primary">O Meu Perfil</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg-slideshow" style="height: 40vh; min-height: 300px;">
+            <div class="slideshow-container">
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+            </div>
+            <div class="hero-overlay-dark"></div>
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="subtitle">ÁREA PESSOAL</span>
+                    <h1>Olá, João</h1>
+                    <p>Faça a gestão da sua conta, quotas e eventos.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="dashboard-section">
+            <div class="container dashboard-grid">
+                
+                <aside class="profile-card">
+                    <div class="profile-photo-wrapper">
+                        <img src="images/default-avatar.jpg" alt="Foto de Perfil" class="profile-img" id="profileImg" onerror="this.src='https://via.placeholder.com/150'">
+                        
+                        <label for="photoInput" class="photo-upload-btn">
+                            <i class="fas fa-camera"></i>
+                        </label>
+                        <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                    </div>
+
+                    <h2 class="profile-name">João Exemplo</h2>
+                    <span class="profile-type">Sócio Efetivo nº 1024</span>
+                    
+                    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                    
+                    <a href="#" id="logoutBtn" class="btn-outline" style="border-color: #d32f2f; color: #d32f2f;">Terminar Sessão</a>
+                </aside>
+
+                <div class="dashboard-content">
+                    
+                    <div class="content-box">
+                        <div class="box-header">
+                            <h3>Os Meus Dados</h3>
+                            <button class="btn btn-small btn-primary">Editar</button>
+                        </div>
+                        <form>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Nome Completo</label>
+                                    <input type="text" value="João Manuel Exemplo" disabled style="background: #f9f9f9;">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" value="joao.exemplo@email.com" disabled style="background: #f9f9f9;">
+                                </div>
+                            </div>
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Telemóvel</label>
+                                    <input type="text" value="+351 910 000 000" disabled style="background: #f9f9f9;">
+                                </div>
+                                <div class="form-group">
+                                    <label>NIF</label>
+                                    <input type="text" value="200 300 400" disabled style="background: #f9f9f9;">
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+
+                    <div class="content-box">
+                        <div class="box-header">
+                            <h3>Estado das Quotas</h3>
+                            <span class="badge badge-socio">Sócio Ativo</span>
+                        </div>
+                        
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead>
+                                    <tr>
+                                        <th>Ano</th>
+                                        <th>Valor</th>
+                                        <th>Data Pagamento</th>
+                                        <th>Estado</th>
+                                        <th>Fatura</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><strong>2026</strong></td>
+                                        <td>12,00 €</td>
+                                        <td>-</td>
+                                        <td><span class="badge badge-pendente">Por Pagar</span></td>
+                                        <td>-</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>2025</strong></td>
+                                        <td>12,00 €</td>
+                                        <td>12 Jan 2025</td>
+                                        <td><span class="badge badge-pago">Pago</span></td>
+                                        <td><a href="#" style="color: var(--accent-color);">Download</a></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="content-box">
+                        <div class="box-header">
+                            <h3>Eventos Inscritos</h3>
+                        </div>
+
+                        <div style="display: flex; flex-direction: column; gap: 20px;">
+                            
+                            <a href="evento-futuro.html" class="event-card-link" style="text-decoration: none; color: inherit; display: block;">
+                                <div style="display: flex; gap: 20px; align-items: center; border: 1px solid #eee; padding: 15px; border-radius: 8px; transition: all 0.2s ease;">
+                                    <div style="width: 80px; height: 80px; background: #ddd; border-radius: 4px; flex-shrink: 0;"></div> 
+                                    <div style="flex-grow: 1;">
+                                        <span style="font-size: 12px; font-weight: 700; color: var(--accent-color);">15 MAR 2026</span>
+                                        <h4 style="margin: 5px 0;">Caminhada da Primavera</h4>
+                                        <p style="font-size: 14px; color: #666;">Dorsal: <strong>A aguardar</strong></p>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-pago">Confirmado</span>
+                                    </div>
+                                </div>
+                            </a>
+
+                             <a href="evento-passado.html" class="event-card-link" style="text-decoration: none; color: inherit; display: block;">
+                                <div style="display: flex; gap: 20px; align-items: center; border: 1px solid #eee; padding: 15px; border-radius: 8px; transition: all 0.2s ease;">
+                                    <div style="width: 80px; height: 80px; background: #ddd; border-radius: 4px; flex-shrink: 0;"></div> 
+                                    <div style="flex-grow: 1;">
+                                        <span style="font-size: 12px; font-weight: 700; color: var(--accent-color);">NOV 2025</span>
+                                        <h4 style="margin: 5px 0;">Magusto Comunitário</h4>
+                                        <p style="font-size: 14px; color: #666;">Participação Registada</p>
+                                    </div>
+                                    <div>
+                                        <span class="badge badge-nao-socio">Realizado</span>
+                                    </div>
+                                </div>
+                            </a>
+
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-col">
+                <a href="index.html" class="logo">USGA</a>
+                <p>Unidos por uma comunidade mais forte.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Menu</h4>
+                <a href="index.html">Página Inicial</a>
+                <a href="eventos.html">Eventos</a>
+                <a href="suporte.html">Suporte</a>
+            </div>
+            <div class="footer-col">
+                <h4>Social</h4>
+                <a href="#">Facebook</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+        <div class="container copyright">
+            <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

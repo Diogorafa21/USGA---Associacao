@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - USGA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="home-page">
+
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">USGA</a>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Página Inicial</a></li>
+                    <li><a href="eventos.html" class="nav-link">Eventos</a></li>
+                    <li><a href="suporte.html" class="nav-link">Suporte</a></li>
+                </ul>
+            </nav>
+            <a href="registar.html" class="btn btn-primary">Criar Conta</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg-slideshow">
+            <div class="slideshow-container">
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+            </div>
+            
+            <div class="hero-overlay-dark"></div>
+
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="subtitle">ÁREA RESERVADA</span>
+                    <h1>Bem-vindo de volta</h1>
+                    <p>Aceda à sua área pessoal para gerir quotas, inscrições e dados de sócio.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="contact-section">
+            <div class="container" style="max-width: 500px;">
+                <div class="contact-form">
+                    <h2 style="text-align: center; margin-bottom: 30px;">Iniciar Sessão</h2>
+                    
+                    <form id="loginForm">
+                        <div class="form-group">
+                            <label for="email">Email ou Nº de Sócio</label>
+                            <input type="text" id="email" name="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="password">Password</label>
+                            <input type="password" id="password" name="password" required>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px;">
+                            <label style="display: flex; align-items: center; gap: 5px; font-weight: 400;">
+                                <input type="checkbox" style="width: auto;"> Lembrar-me
+                            </label>
+                            <a href="#" style="color: var(--accent-color);">Esqueceu-se da password?</a>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary" style="width: 100%;">Entrar</button>
+                    </form>
+                    
+                    <p style="text-align: center; margin-top: 20px; font-size: 14px;">
+                        Ainda não tem conta? <a href="registar.html" style="color: var(--accent-color); font-weight: 700;">Registe-se aqui</a>.
+                    </p>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-col">
+                <a href="index.html" class="logo">USGA</a>
+                <p>Unidos por uma comunidade mais forte.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Menu</h4>
+                <a href="index.html">Página Inicial</a>
+                <a href="eventos.html">Eventos</a>
+                <a href="suporte.html">Suporte</a>
+            </div>
+            <div class="footer-col">
+                <h4>Social</h4>
+                <a href="#">Facebook</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+        <div class="container copyright">
+            <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

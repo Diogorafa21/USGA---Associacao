@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalhe do Evento - USGA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="home-page">
+
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">USGA</a>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Página Inicial</a></li>
+                    <li><a href="eventos.html" class="nav-link active">Eventos</a></li>
+                    <li><a href="suporte.html" class="nav-link">Suporte</a></li>
+                </ul>
+            </nav>
+            <a href="login.html" class="btn btn-primary">Login</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg-slideshow">
+            <div class="slideshow-container">
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+            </div>
+            
+            <div class="hero-overlay-dark"></div>
+
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="subtitle">NATUREZA • 15 MAR 2026</span>
+                    <h1 style="font-size: 42px; margin-bottom: 10px;">Caminhada da Primavera</h1>
+                    <p style="font-size: 18px; color: #fff;">Junte-se a nós num percurso pelos trilhos mais bonitos de São Gens.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="event-content" style="padding-top: 60px;">
+            <div class="container">
+                
+                <a href="eventos.html" style="display: inline-flex; align-items: center; gap: 5px; margin-bottom: 30px; font-weight: 500; color: #666;">
+                    &larr; Voltar aos eventos
+                </a>
+
+                <div class="event-details-grid">
+                    <div class="content-col">
+                        <div class="hero-image" style="margin-bottom: 30px;">
+                            <div class="image-placeholder" style="height: 300px;"></div>
+                        </div>
+                        <h3>Sobre o evento</h3>
+                        <p style="margin-bottom: 20px; color: var(--text-color);">Esta caminhada tem como objetivo promover a atividade física e o contacto com a natureza. O percurso terá cerca de 10km com dificuldade média.</p>
+                        
+                        <h3>Recomendações</h3>
+                        <ul style="list-style: disc; padding-left: 20px; color: var(--text-color);">
+                            <li>Levar calçado confortável.</li>
+                            <li>Garrafa de água individual.</li>
+                            <li>Roupa adequada à meteorologia.</li>
+                        </ul>
+                    </div>
+
+                    <div class="sidebar-col">
+                        <div class="event-sidebar">
+                            <div class="sidebar-item">
+                                <span class="sidebar-label">Data</span>
+                                <span class="sidebar-value">15 de Março, 2026</span>
+                            </div>
+                            <div class="sidebar-item">
+                                <span class="sidebar-label">Local</span>
+                                <span class="sidebar-value">Sede da USGA</span>
+                            </div>
+                            <div class="sidebar-item">
+                                <span class="sidebar-label">Preço Não Sócio</span>
+                                <span class="sidebar-value">5,00 €</span>
+                            </div>
+                            
+                            <a href="inscricao-evento.html" class="btn btn-primary" style="width: 100%; text-align: center; margin-top: 20px;">Inscrever-me Agora</a>
+                            
+                            <a href="#" class="btn-outline">
+                                Ler Regulamento
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="participants-section">
+                    <h2 style="margin-bottom: 20px;">Lista de Inscritos</h2>
+
+                    <div class="stats-container">
+                        <div class="stat-box">
+                            <span class="stat-number">4</span>
+                            <span class="stat-label">Total Inscritos</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-number" style="color: #2e7d32;">3</span>
+                            <span class="stat-label">Confirmados</span>
+                        </div>
+                        <div class="stat-box">
+                            <span class="stat-number" style="color: #ef6c00;">1</span>
+                            <span class="stat-label">Por Confirmar</span>
+                        </div>
+                    </div>
+
+                    <div class="hero-search-wrapper" style="margin-top: 0; margin-bottom: 30px; max-width: 100%;">
+                        <input type="text" id="tableSearch" class="hero-search-input" placeholder="Pesquisar participante por nome..." style="background-color: #fff; border: 1px solid #e5e5e5; box-shadow: none;">
+                    </div>
+
+                    <div class="participants-table-wrapper">
+                        <table class="participants-table" id="participantsTable">
+                            <thead>
+                                <tr>
+                                    <th>Nac.</th>
+                                    <th>Nome do Participante</th>
+                                    <th>Dorsal</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="font-weight:bold; color: #666;">PT</td>
+                                    <td>Maria Silva</td>
+                                    <td><strong>001</strong></td>
+                                    <td><span class="badge badge-pago">Pago</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:bold; color: #666;">PT</td>
+                                    <td>João Santos</td>
+                                    <td><strong>002</strong></td>
+                                    <td><span class="badge badge-pago">Pago</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:bold; color: #666;">ES</td>
+                                    <td>Ana Costa</td>
+                                    <td><strong>003</strong></td>
+                                    <td><span class="badge badge-pago">Pago</span></td>
+                                </tr>
+                                <tr>
+                                    <td style="font-weight:bold; color: #666;">PT</td>
+                                    <td>Pedro Oliveira</td>
+                                    <td style="color: #ccc;">-</td>
+                                    <td><span class="badge badge-pendente">Por Pagar</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container copyright">
+            <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('tableSearch').addEventListener('keyup', function() {
+            let input = this.value.toLowerCase();
+            let rows = document.querySelectorAll('#participantsTable tbody tr');
+            
+            rows.forEach(row => {
+                let text = row.innerText.toLowerCase();
+                row.style.display = text.includes(input) ? '' : 'none';
+            });
+        });
+    </script>
+    <script src="js/main.js"></script>
+</body>
+</html>

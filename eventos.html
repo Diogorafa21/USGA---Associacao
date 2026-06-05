@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="pt-pt">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Eventos - USGA</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="home-page">
+
+    <header class="header">
+        <div class="container header-container">
+            <a href="index.html" class="logo">USGA</a>
+            <nav class="nav">
+                <ul class="nav-list">
+                    <li><a href="index.html" class="nav-link">Página Inicial</a></li>
+                    <li><a href="eventos.html" class="nav-link active">Eventos</a></li>
+                    <li><a href="suporte.html" class="nav-link">Suporte</a></li>
+                </ul>
+            </nav>
+            <a href="login.html" class="btn btn-primary">Login</a>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero-bg-slideshow">
+            <div class="slideshow-container">
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+                <div class="slideshow-image"></div>
+            </div>
+            
+            <div class="hero-overlay-dark"></div>
+
+            <div class="container hero-container">
+                <div class="hero-content">
+                    <span class="subtitle">AGENDA E ATIVIDADES</span>
+                    <h1>Eventos em São Gens.</h1>
+                    <p>Fique a par do que vai acontecer e recorde os melhores momentos das nossas iniciativas passadas.</p>
+                    
+                    <div class="hero-search-wrapper">
+                        <input type="text" id="eventSearch" class="hero-search-input" placeholder="Pesquisar eventos (ex: Caminhada, Futsal)...">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="projects-section" style="padding-top: 60px;">
+            <div class="container">
+                
+                <div class="section-header-flex" style="border-left: 4px solid var(--accent-color);">
+                    <div>
+                        <h2 style="font-size: 28px;">Próximos Eventos</h2>
+                        <p style="color: #666;">Participe nas nossas próximas atividades.</p>
+                    </div>
+                    <a href="todos-eventos-futuros.html" class="btn btn-primary btn-small">Ver Todos</a>
+                </div>
+
+                <div class="horizontal-scroll" id="futureEventsList">
+                    <a href="evento-futuro.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Natureza • 15 Mar 2026</span>
+                            <h3>Caminhada da Primavera</h3>
+                            <p>Um percurso de 10km pelos trilhos da nossa terra.</p>
+                        </div>
+                    </a>
+
+                    <a href="evento-futuro.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Desporto • 02 Abr 2026</span>
+                            <h3>Torneio de Futsal</h3>
+                            <p>Competição amigável no pavilhão gimnodesportivo.</p>
+                        </div>
+                    </a>
+
+                     <a href="evento-futuro.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Formação • 20 Mai 2026</span>
+                            <h3>Workshop de Artesanato</h3>
+                            <p>Aprenda a trabalhar o barro com artesãos locais.</p>
+                        </div>
+                    </a>
+                </div>
+                <p id="noFutureResults" style="display:none; color: #999; font-style: italic;">Nenhum evento futuro encontrado.</p>
+            </div>
+        </section>
+
+        <section class="projects-section" style="background-color: var(--bg-light); padding-top: 80px;">
+            <div class="container">
+                
+                <div class="section-header-flex" style="border-left: 4px solid #999;">
+                    <div>
+                        <h2 style="font-size: 28px; color: var(--primary-color);">Eventos Realizados</h2>
+                        <p style="color: #666;">Recorde os momentos que vivemos juntos.</p>
+                    </div>
+                    <a href="todos-eventos-passados.html" class="btn btn-primary btn-small" style="background-color: #999;">Ver Arquivo</a>
+                </div>
+
+                <div class="horizontal-scroll" id="pastEventsList">
+                    <a href="evento-passado.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Tradição • Nov 2025</span>
+                            <h3>Magusto Comunitário</h3>
+                            <p>Castanhas, jeropiga e música popular na nossa sede.</p>
+                        </div>
+                    </a>
+
+                    <a href="evento-passado.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Solidariedade • Dez 2025</span>
+                            <h3>Recolha de Natal</h3>
+                            <p>Entregámos 50 cabazes a famílias da freguesia.</p>
+                        </div>
+                    </a>
+
+                     <a href="evento-passado.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Cultura • Out 2025</span>
+                            <h3>Noite de Fados</h3>
+                            <p>Um jantar memorável com artistas locais.</p>
+                        </div>
+                    </a>
+
+                    <a href="evento-passado.html" class="project-card">
+                        <div class="project-image"><div class="image-placeholder"></div></div>
+                        <div class="project-info">
+                            <span class="project-category">Desporto • Set 2025</span>
+                            <h3>Corrida Noturna</h3>
+                            <p>Mais de 200 participantes iluminaram as ruas.</p>
+                        </div>
+                    </a>
+                </div>
+                <p id="noPastResults" style="display:none; color: #999; font-style: italic;">Nenhum evento passado encontrado.</p>
+            </div>
+        </section>
+
+        <section class="cta-section">
+            <div class="container cta-container">
+                <h2>Tem uma ideia para um evento?</h2>
+                <p>Gostaríamos de ouvir as suas sugestões para animar a nossa terra.</p>
+                <a href="suporte.html" class="btn btn-primary">Sugerir Evento</a>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <div class="container footer-container">
+            <div class="footer-col">
+                <a href="index.html" class="logo">USGA</a>
+                <p>Unidos por uma comunidade mais forte.</p>
+            </div>
+            <div class="footer-col">
+                <h4>Menu</h4>
+                <a href="index.html">Página Inicial</a>
+                <a href="eventos.html">Eventos</a>
+                <a href="suporte.html">Suporte</a>
+            </div>
+            <div class="footer-col">
+                <h4>Social</h4>
+                <a href="#">Facebook</a>
+                <a href="#">Instagram</a>
+            </div>
+        </div>
+        <div class="container copyright">
+            <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.getElementById('eventSearch').addEventListener('keyup', function() {
+            let filter = this.value.toLowerCase();
+            let allCards = document.querySelectorAll('.project-card');
+            
+            let hasFuture = false;
+            let hasPast = false;
+
+            allCards.forEach(card => {
+                let text = card.textContent.toLowerCase();
+                let parentSection = card.closest('.horizontal-scroll');
+
+                if (text.includes(filter)) {
+                    card.style.display = ""; 
+                    if(parentSection.id === 'futureEventsList') hasFuture = true;
+                    if(parentSection.id === 'pastEventsList') hasPast = true;
+                } else {
+                    card.style.display = "none";
+                }
+            });
+
+            document.getElementById('noFutureResults').style.display = hasFuture ? 'none' : 'block';
+            document.getElementById('noPastResults').style.display = hasPast ? 'none' : 'block';
+            
+            if (filter === '') {
+                document.getElementById('noFutureResults').style.display = 'none';
+                document.getElementById('noPastResults').style.display = 'none';
+            }
+        });
+    </script>
+    <script src="js/main.js"></script>
+</body>
+</html>
