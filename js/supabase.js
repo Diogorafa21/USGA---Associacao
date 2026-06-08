@@ -55,6 +55,7 @@ export async function getPerfil(userId) {
 }
 
 export async function atualizarPerfil(userId, dados) {
+<<<<<<< Updated upstream
   const { data, error } = await supabase.rpc('atualizar_meu_perfil', {
     p_nome: dados.nome ?? null,
     p_apelido: dados.apelido ?? null,
@@ -64,6 +65,14 @@ export async function atualizarPerfil(userId, dados) {
     p_pais: dados.pais ?? null,
     p_foto_url: dados.foto_url ?? null
   })
+=======
+  const { data, error } = await supabase
+    .from('utilizadores')
+    .update(dados)
+    .eq('id', userId)
+    .select()
+    .single()
+>>>>>>> Stashed changes
 
   return { data, error }
 }
@@ -184,6 +193,7 @@ export async function getInscritosConfirmados(eventoId) {
 }
 
 export async function getEstadoInscricao(publicToken) {
+<<<<<<< Updated upstream
   const { data, error } = await supabase
     .rpc('get_estado_inscricao', { token: publicToken })
     .maybeSingle()
@@ -276,15 +286,55 @@ export async function getAdminQuotas() {
     .from('quotas')
     .select('*, utilizadores(nome, apelido, email, numero_socio)')
     .order('ano', { ascending: false })
+=======
+  const { data, error } = await supabase
+    .rpc('get_estado_inscricao', { token: publicToken })
+    .maybeSingle()
+>>>>>>> Stashed changes
 
   return { data, error }
 }
 
+<<<<<<< Updated upstream
 export async function atualizarQuota(id, dados) {
   const { data, error } = await supabase
     .from('quotas')
     .update(dados)
     .eq('id', id)
+=======
+// Pagamentos -----------------------------------------------------------------
+
+export async function criarPagamento(dados) {
+  const sessao = await getSessao()
+
+  const payload = {
+    ...dados,
+    utilizador_id: dados.utilizador_id ?? sessao?.user?.id ?? null
+  }
+
+  const { data, error } = await supabase
+    .from('pagamentos')
+    .insert(payload)
+    .select()
+    .single()
+
+  return { data, error }
+}
+
+// Suporte --------------------------------------------------------------------
+
+export async function criarMensagemSuporte(dados) {
+  const sessao = await getSessao()
+
+  const payload = {
+    ...dados,
+    utilizador_id: sessao?.user?.id ?? null
+  }
+
+  const { data, error } = await supabase
+    .from('mensagens_suporte')
+    .insert(payload)
+>>>>>>> Stashed changes
     .select()
     .single()
 
@@ -338,4 +388,8 @@ export function formatarMoeda(valor) {
 
 function pareceUuid(valor) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor)
+<<<<<<< Updated upstream
 }
+=======
+}
+>>>>>>> Stashed changes
