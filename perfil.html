@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="css/style.css">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
     <style>
-        /* Pequeno estilo extra para o hover nos cartões de evento do perfil */
         .event-card-link:hover > div {
             background-color: #f9f9f9;
             border-color: #ccc !important;
@@ -41,7 +40,7 @@
             <div class="container hero-container">
                 <div class="hero-content">
                     <span class="subtitle">ÁREA PESSOAL</span>
-                    <h1>Olá, João</h1>
+                    <h1 id="heroNome">Olá...</h1>
                     <p>Faça a gestão da sua conta, quotas e eventos.</p>
                 </div>
             </div>
@@ -53,15 +52,14 @@
                 <aside class="profile-card">
                     <div class="profile-photo-wrapper">
                         <img src="images/default-avatar.jpg" alt="Foto de Perfil" class="profile-img" id="profileImg" onerror="this.src='https://via.placeholder.com/150'">
-                        
                         <label for="photoInput" class="photo-upload-btn">
                             <i class="fas fa-camera"></i>
                         </label>
                         <input type="file" id="photoInput" accept="image/*" style="display: none;">
                     </div>
 
-                    <h2 class="profile-name">João Exemplo</h2>
-                    <span class="profile-type">Sócio Efetivo nº 1024</span>
+                    <h2 class="profile-name" id="profileName">-</h2>
+                    <span class="profile-type" id="profileNumero">Sócio</span>
                     
                     <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
                     
@@ -73,28 +71,32 @@
                     <div class="content-box">
                         <div class="box-header">
                             <h3>Os Meus Dados</h3>
-                            <button class="btn btn-small btn-primary">Editar</button>
+                            <button class="btn btn-small btn-primary" id="btnEditar">Editar</button>
                         </div>
-                        <form>
+                        <form id="formDados">
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Nome Completo</label>
-                                    <input type="text" value="João Manuel Exemplo" disabled style="background: #f9f9f9;">
+                                    <input type="text" id="inputNome" disabled style="background: #f9f9f9;">
                                 </div>
                                 <div class="form-group">
                                     <label>Email</label>
-                                    <input type="email" value="joao.exemplo@email.com" disabled style="background: #f9f9f9;">
+                                    <input type="email" id="inputEmail" disabled style="background: #f9f9f9;">
                                 </div>
                             </div>
                             <div class="form-grid">
                                 <div class="form-group">
                                     <label>Telemóvel</label>
-                                    <input type="text" value="+351 910 000 000" disabled style="background: #f9f9f9;">
+                                    <input type="text" id="inputTelefone" disabled style="background: #f9f9f9;">
                                 </div>
                                 <div class="form-group">
                                     <label>NIF</label>
-                                    <input type="text" value="200 300 400" disabled style="background: #f9f9f9;">
+                                    <input type="text" id="inputNif" disabled style="background: #f9f9f9;">
                                 </div>
+                            </div>
+                            <div id="botoesEdicao" style="display:none; gap: 10px; margin-top: 10px;">
+                                <button type="submit" class="btn btn-small btn-primary">Guardar</button>
+                                <button type="button" class="btn btn-small" id="btnCancelar" style="background:#eee; color:#333;">Cancelar</button>
                             </div>
                         </form>
                     </div>
@@ -102,9 +104,8 @@
                     <div class="content-box">
                         <div class="box-header">
                             <h3>Estado das Quotas</h3>
-                            <span class="badge badge-socio">Sócio Ativo</span>
+                            <span class="badge badge-socio" id="badgeSocio">Sócio Ativo</span>
                         </div>
-                        
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
                                 <thead>
@@ -116,21 +117,8 @@
                                         <th>Fatura</th>
                                     </tr>
                                 </thead>
-                                <tbody>
-                                    <tr>
-                                        <td><strong>2026</strong></td>
-                                        <td>12,00 €</td>
-                                        <td>-</td>
-                                        <td><span class="badge badge-pendente">Por Pagar</span></td>
-                                        <td>-</td>
-                                    </tr>
-                                    <tr>
-                                        <td><strong>2025</strong></td>
-                                        <td>12,00 €</td>
-                                        <td>12 Jan 2025</td>
-                                        <td><span class="badge badge-pago">Pago</span></td>
-                                        <td><a href="#" style="color: var(--accent-color);">Download</a></td>
-                                    </tr>
+                                <tbody id="tabelaQuotas">
+                                    <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -140,37 +128,8 @@
                         <div class="box-header">
                             <h3>Eventos Inscritos</h3>
                         </div>
-
-                        <div style="display: flex; flex-direction: column; gap: 20px;">
-                            
-                            <a href="evento-futuro.html" class="event-card-link" style="text-decoration: none; color: inherit; display: block;">
-                                <div style="display: flex; gap: 20px; align-items: center; border: 1px solid #eee; padding: 15px; border-radius: 8px; transition: all 0.2s ease;">
-                                    <div style="width: 80px; height: 80px; background: #ddd; border-radius: 4px; flex-shrink: 0;"></div> 
-                                    <div style="flex-grow: 1;">
-                                        <span style="font-size: 12px; font-weight: 700; color: var(--accent-color);">15 MAR 2026</span>
-                                        <h4 style="margin: 5px 0;">Caminhada da Primavera</h4>
-                                        <p style="font-size: 14px; color: #666;">Dorsal: <strong>A aguardar</strong></p>
-                                    </div>
-                                    <div>
-                                        <span class="badge badge-pago">Confirmado</span>
-                                    </div>
-                                </div>
-                            </a>
-
-                             <a href="evento-passado.html" class="event-card-link" style="text-decoration: none; color: inherit; display: block;">
-                                <div style="display: flex; gap: 20px; align-items: center; border: 1px solid #eee; padding: 15px; border-radius: 8px; transition: all 0.2s ease;">
-                                    <div style="width: 80px; height: 80px; background: #ddd; border-radius: 4px; flex-shrink: 0;"></div> 
-                                    <div style="flex-grow: 1;">
-                                        <span style="font-size: 12px; font-weight: 700; color: var(--accent-color);">NOV 2025</span>
-                                        <h4 style="margin: 5px 0;">Magusto Comunitário</h4>
-                                        <p style="font-size: 14px; color: #666;">Participação Registada</p>
-                                    </div>
-                                    <div>
-                                        <span class="badge badge-nao-socio">Realizado</span>
-                                    </div>
-                                </div>
-                            </a>
-
+                        <div id="listaEventos" style="display: flex; flex-direction: column; gap: 20px;">
+                            <p style="color:#999; text-align:center;">A carregar...</p>
                         </div>
                     </div>
 
@@ -203,5 +162,129 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script type="module">
+        import {
+            requireLogin, logout, getPerfil, atualizarPerfil,
+            getMinhasQuotas, getMinhasInscricoes, formatarData, formatarMoeda
+        } from './js/supabase.js'
+
+        // Redireciona para login se não tiver sessão
+        const sessao = await requireLogin()
+        if (!sessao) throw new Error('sem sessao')
+
+        const userId = sessao.user.id
+
+        // ── Carregar perfil ──────────────────────────────────────────────
+        const { data: perfil } = await getPerfil(userId)
+
+        if (perfil) {
+            const nomeCompleto = [perfil.nome, perfil.apelido].filter(Boolean).join(' ')
+            document.getElementById('heroNome').textContent     = `Olá, ${perfil.nome}`
+            document.getElementById('profileName').textContent  = nomeCompleto
+            document.getElementById('profileNumero').textContent = perfil.numero_socio
+                ? `Sócio Efetivo nº ${perfil.numero_socio}`
+                : 'Sócio'
+            document.getElementById('inputNome').value     = nomeCompleto
+            document.getElementById('inputEmail').value    = perfil.email
+            document.getElementById('inputTelefone').value = perfil.telefone || ''
+            document.getElementById('inputNif').value      = perfil.nif || ''
+            if (perfil.foto_url) document.getElementById('profileImg').src = perfil.foto_url
+        }
+
+        // ── Logout ───────────────────────────────────────────────────────
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault()
+            await logout('index.html')
+        })
+
+        // ── Editar dados ─────────────────────────────────────────────────
+        const btnEditar   = document.getElementById('btnEditar')
+        const btnCancelar = document.getElementById('btnCancelar')
+        const botoesEdicao = document.getElementById('botoesEdicao')
+        const inputs = ['inputNome', 'inputTelefone', 'inputNif'].map(id => document.getElementById(id))
+
+        btnEditar.addEventListener('click', () => {
+            inputs.forEach(i => { i.disabled = false; i.style.background = '' })
+            botoesEdicao.style.display = 'flex'
+            btnEditar.style.display = 'none'
+        })
+
+        btnCancelar.addEventListener('click', () => {
+            inputs.forEach(i => { i.disabled = true; i.style.background = '#f9f9f9' })
+            botoesEdicao.style.display = 'none'
+            btnEditar.style.display = ''
+        })
+
+        document.getElementById('formDados').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            const partes = document.getElementById('inputNome').value.trim().split(' ')
+            const { error } = await atualizarPerfil(userId, {
+                nome:      partes[0] || '',
+                apelido:   partes.slice(1).join(' ') || '',
+                telefone:  document.getElementById('inputTelefone').value.trim(),
+                nif:       document.getElementById('inputNif').value.trim()
+            })
+            if (!error) btnCancelar.click()
+        })
+
+        // ── Quotas ───────────────────────────────────────────────────────
+        const { data: quotas } = await getMinhasQuotas(userId)
+        const tbQuotas = document.getElementById('tabelaQuotas')
+
+        if (!quotas || quotas.length === 0) {
+            tbQuotas.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem quotas registadas.</td></tr>'
+        } else {
+            const badgeQuota = {
+                por_pagar:           '<span class="badge badge-pendente">Por Pagar</span>',
+                pendente_validacao:  '<span class="badge badge-pendente">Em Validação</span>',
+                pago:                '<span class="badge badge-pago">Pago</span>',
+                isento:              '<span class="badge badge-pago">Isento</span>',
+                cancelado:           '<span class="badge badge-nao-socio">Cancelado</span>'
+            }
+            tbQuotas.innerHTML = quotas.map(q => `
+                <tr>
+                    <td><strong>${q.ano}</strong></td>
+                    <td>${formatarMoeda(q.valor)}</td>
+                    <td>${q.data_pagamento ? formatarData(q.data_pagamento) : '-'}</td>
+                    <td>${badgeQuota[q.estado] || q.estado}</td>
+                    <td>${q.fatura_url ? `<a href="${q.fatura_url}" target="_blank" style="color:var(--accent-color);">Download</a>` : '-'}</td>
+                </tr>`).join('')
+        }
+
+        // ── Inscrições ───────────────────────────────────────────────────
+        const { data: inscricoes } = await getMinhasInscricoes(userId)
+        const listaEventos = document.getElementById('listaEventos')
+
+        if (!inscricoes || inscricoes.length === 0) {
+            listaEventos.innerHTML = '<p style="color:#999; text-align:center;">Ainda não tem inscrições em eventos.</p>'
+        } else {
+            const badgeInscricao = {
+                confirmada:          '<span class="badge badge-pago">Confirmado</span>',
+                aguardando_pagamento:'<span class="badge badge-pendente">Aguarda Pagamento</span>',
+                rejeitada:           '<span class="badge badge-nao-socio">Rejeitado</span>',
+                cancelada:           '<span class="badge badge-nao-socio">Cancelado</span>'
+            }
+            listaEventos.innerHTML = inscricoes.map(i => {
+                const ev = i.eventos
+                const dataStr = ev?.data_evento
+                    ? new Date(ev.data_evento).toLocaleDateString('pt-PT', { day:'2-digit', month:'short', year:'numeric' }).toUpperCase()
+                    : '-'
+                return `
+                <a href="evento-futuro.html?id=${ev?.id || ''}" class="event-card-link" style="text-decoration:none; color:inherit; display:block;">
+                    <div style="display:flex; gap:20px; align-items:center; border:1px solid #eee; padding:15px; border-radius:8px; transition:all 0.2s ease;">
+                        <div style="width:80px; height:80px; background:#ddd; border-radius:4px; flex-shrink:0;
+                            ${ev?.imagem_url ? `background-image:url(${ev.imagem_url}); background-size:cover; background-position:center;` : ''}">
+                        </div>
+                        <div style="flex-grow:1;">
+                            <span style="font-size:12px; font-weight:700; color:var(--accent-color);">${dataStr}</span>
+                            <h4 style="margin:5px 0;">${ev?.titulo || 'Evento'}</h4>
+                            <p style="font-size:14px; color:#666;">Dorsal: <strong>${i.dorsal || 'A aguardar'}</strong></p>
+                        </div>
+                        <div>${badgeInscricao[i.estado] || i.estado}</div>
+                    </div>
+                </a>`
+            }).join('')
+        }
+    </script>
 </body>
 </html>

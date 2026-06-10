@@ -63,7 +63,7 @@
                                 </tr>
                             </thead>
                             <tbody id="adminPedidosSocio">
-                                <tr><td colspan="5">A carregar...</td></tr>
+                                <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -87,7 +87,7 @@
                                 </tr>
                             </thead>
                             <tbody id="adminInscricoesEvento">
-                                <tr><td colspan="5">A carregar...</td></tr>
+                                <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -111,7 +111,7 @@
                                 </tr>
                             </thead>
                             <tbody id="adminQuotas">
-                                <tr><td colspan="5">A carregar...</td></tr>
+                                <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -128,5 +128,207 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script type="module">
+        import {
+            requireAdmin,
+            getAdminPedidosSocio, atualizarPedidoSocio,
+            getAdminInscricoesEvento, atualizarInscricaoEvento,
+            getAdminQuotas, atualizarQuota,
+            formatarData, formatarMoeda
+        } from './js/supabase.js'
+
+        // Só admins acedem — redireciona se não for admin
+        const auth = await requireAdmin()
+        if (!auth) throw new Error('sem permissao')
+
+        // ── Utilitário de botões ─────────────────────────────────────────
+        function btnAprovar(onClick) {
+            const b = document.createElement('button')
+            b.textContent = 'Aprovar'
+            b.className = 'btn btn-small btn-primary'
+            b.style.marginRight = '6px'
+            b.addEventListener('click', onClick)
+            return b
+        }
+
+        function btnRejeitar(onClick) {
+            const b = document.createElement('button')
+            b.textContent = 'Rejeitar'
+            b.className = 'btn btn-small'
+            b.style.background = '#fee2e2'
+            b.style.color = '#991b1b'
+            b.addEventListener('click', onClick)
+            return b
+        }
+
+        // ── Pedidos de Sócio ─────────────────────────────────────────────
+        async function carregarPedidos() {
+            const { data } = await getAdminPedidosSocio()
+            const tbody = document.getElementById('adminPedidosSocio')
+            const pendentes = data?.filter(p => p.estado === 'pendente') || []
+
+            document.getElementById('adminPedidosCount').textContent = pendentes.length
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem pedidos.</td></tr>'
+                return
+            }
+
+            tbody.innerHTML = ''
+            data.forEach(p => {
+                const tr = document.createElement('tr')
+                const estadoBadge = p.estado === 'pendente'
+                    ? '<span class="badge badge-pendente">Pendente</span>'
+                    : p.estado === 'aprovado'
+                        ? '<span class="badge badge-pago">Aprovado</span>'
+                        : '<span class="badge badge-nao-socio">Rejeitado</span>'
+
+                tr.innerHTML = `
+                    <td>${p.nome} ${p.apelido}</td>
+                    <td>${p.email}</td>
+                    <td>${p.nif || '-'}</td>
+                    <td>${estadoBadge}</td>
+                    <td></td>`
+
+                if (p.estado === 'pendente') {
+                    const tdAcao = tr.querySelector('td:last-child')
+                    tdAcao.appendChild(btnAprovar(async () => {
+                        await atualizarPedidoSocio(p.id, { estado: 'aprovado' })
+                        carregarPedidos()
+                    }))
+                    tdAcao.appendChild(btnRejeitar(async () => {
+                        await atualizarPedidoSocio(p.id, { estado: 'rejeitado' })
+                        carregarPedidos()
+                    }))
+                }
+
+                tbody.appendChild(tr)
+            })
+        }
+
+        // ── Inscrições em Eventos ────────────────────────────────────────
+        async function carregarInscricoes() {
+            const { data } = await getAdminInscricoesEvento()
+            const tbody = document.getElementById('adminInscricoesEvento')
+            const pendentes = data?.filter(i => i.pagamento_estado === 'em_validacao') || []
+
+            document.getElementById('adminInscricoesCount').textContent = pendentes.length
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem inscricoes.</td></tr>'
+                return
+            }
+
+            const pagBadge = {
+                pendente:     '<span class="badge badge-pendente">Pendente</span>',
+                em_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validacao</span>',
+                validado:     '<span class="badge badge-pago">Validado</span>',
+                rejeitado:    '<span class="badge badge-nao-socio">Rejeitado</span>'
+            }
+
+            tbody.innerHTML = ''
+            data.forEach(i => {
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                    <td>${i.eventos?.titulo || '-'}</td>
+                    <td>${i.nome}<br><small style="color:#999;">${i.email}</small></td>
+                    <td>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
+                    <td>
+                        <input type="text" value="${i.dorsal || ''}"
+                            id="dorsal_${i.id}"
+                            style="width:60px; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
+                    </td>
+                    <td></td>`
+
+                const tdAcao = tr.querySelector('td:last-child')
+
+                if (i.pagamento_estado !== 'validado') {
+                    tdAcao.appendChild(btnAprovar(async () => {
+                        const dorsal = document.getElementById(`dorsal_${i.id}`).value.trim() || null
+                        await atualizarInscricaoEvento(i.id, {
+                            pagamento_estado: 'validado',
+                            estado: 'confirmada',
+                            dorsal,
+                            data_confirmacao: new Date().toISOString()
+                        })
+                        carregarInscricoes()
+                    }))
+                }
+
+                if (i.estado !== 'rejeitada' && i.estado !== 'cancelada') {
+                    tdAcao.appendChild(btnRejeitar(async () => {
+                        await atualizarInscricaoEvento(i.id, {
+                            pagamento_estado: 'rejeitado',
+                            estado: 'rejeitada'
+                        })
+                        carregarInscricoes()
+                    }))
+                }
+
+                tbody.appendChild(tr)
+            })
+        }
+
+        // ── Quotas ───────────────────────────────────────────────────────
+        async function carregarQuotas() {
+            const { data } = await getAdminQuotas()
+            const tbody = document.getElementById('adminQuotas')
+            const pendentes = data?.filter(q =>
+                q.estado === 'por_pagar' || q.estado === 'pendente_validacao'
+            ) || []
+
+            document.getElementById('adminQuotasCount').textContent = pendentes.length
+
+            if (!data || data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem quotas.</td></tr>'
+                return
+            }
+
+            const quotaBadge = {
+                por_pagar:          '<span class="badge badge-pendente">Por Pagar</span>',
+                pendente_validacao:  '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validacao</span>',
+                pago:               '<span class="badge badge-pago">Pago</span>',
+                isento:             '<span class="badge badge-pago">Isento</span>',
+                cancelado:          '<span class="badge badge-nao-socio">Cancelado</span>'
+            }
+
+            tbody.innerHTML = ''
+            data.forEach(q => {
+                const socio = q.utilizadores
+                const nomeSocio = socio
+                    ? `${socio.nome || ''} ${socio.apelido || ''}`.trim()
+                    : '-'
+
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                    <td>${nomeSocio}<br><small style="color:#999;">${socio?.email || ''}</small></td>
+                    <td>${q.ano}</td>
+                    <td>${formatarMoeda(q.valor)}</td>
+                    <td>${quotaBadge[q.estado] || q.estado}</td>
+                    <td></td>`
+
+                const tdAcao = tr.querySelector('td:last-child')
+
+                if (q.estado !== 'pago' && q.estado !== 'isento') {
+                    tdAcao.appendChild(btnAprovar(async () => {
+                        await atualizarQuota(q.id, {
+                            estado: 'pago',
+                            data_pagamento: new Date().toISOString().split('T')[0]
+                        })
+                        carregarQuotas()
+                    }))
+                    tdAcao.appendChild(btnRejeitar(async () => {
+                        await atualizarQuota(q.id, { estado: 'cancelado' })
+                        carregarQuotas()
+                    }))
+                }
+
+                tbody.appendChild(tr)
+            })
+        }
+
+        // Carregar tudo
+        await Promise.all([carregarPedidos(), carregarInscricoes(), carregarQuotas()])
+    </script>
 </body>
 </html>

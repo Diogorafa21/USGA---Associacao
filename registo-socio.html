@@ -46,8 +46,11 @@
                 <div class="contact-form">
                     <h2 style="margin-bottom: 10px; text-align: center;">Ficha de Inscrição</h2>
                     <p style="margin-bottom: 30px; text-align: center; color: #666;">Preencha os seus dados para se tornar sócio da Unidos por São Gens Ativo.</p>
+
+                    <!-- Mensagem de feedback -->
+                    <div id="mensagem" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
                     
-                    <form action="pagamento-quota.html">
+                    <form id="registoSocioForm">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="nome">Nome Próprio</label>
@@ -92,7 +95,7 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Tornar-me Sócio</button>
+                        <button type="submit" id="btnSocio" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Tornar-me Sócio</button>
                     </form>
                 </div>
             </div>
@@ -121,6 +124,69 @@
             <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
         </div>
     </footer>
+
     <script src="js/main.js"></script>
+    <script type="module">
+        import { criarPedidoSocio, getSessao, getPerfil } from './js/supabase.js'
+
+        const form   = document.getElementById('registoSocioForm')
+        const btn    = document.getElementById('btnSocio')
+        const msgBox = document.getElementById('mensagem')
+
+        function mostrarMensagem(texto, tipo) {
+            msgBox.textContent = texto
+            msgBox.style.display = 'block'
+            msgBox.style.backgroundColor = tipo === 'erro' ? '#fee2e2' : '#dcfce7'
+            msgBox.style.color           = tipo === 'erro' ? '#991b1b' : '#166534'
+            msgBox.style.border          = tipo === 'erro' ? '1px solid #fca5a5' : '1px solid #86efac'
+            msgBox.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+
+        // Pré-preencher dados se autenticado
+        const sessao = await getSessao()
+        if (sessao) {
+            const { data: perfil } = await getPerfil(sessao.user.id)
+            if (perfil) {
+                document.getElementById('nome').value     = perfil.nome || ''
+                document.getElementById('apelido').value  = perfil.apelido || ''
+                document.getElementById('email').value    = perfil.email || ''
+                document.getElementById('telefone').value = perfil.telefone || ''
+                document.getElementById('nif').value      = perfil.nif || ''
+                document.getElementById('cc').value       = perfil.cc || ''
+                document.getElementById('cidade').value   = perfil.cidade || ''
+                if (perfil.data_nascimento) {
+                    document.getElementById('nascimento').value = perfil.data_nascimento
+                }
+            }
+        }
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault()
+            msgBox.style.display = 'none'
+            btn.textContent = 'A processar...'
+            btn.disabled = true
+
+            const { error } = await criarPedidoSocio({
+                nome:            document.getElementById('nome').value.trim(),
+                apelido:         document.getElementById('apelido').value.trim(),
+                email:           document.getElementById('email').value.trim(),
+                telefone:        document.getElementById('telefone').value.trim(),
+                nif:             document.getElementById('nif').value.trim(),
+                cc:              document.getElementById('cc').value.trim(),
+                cidade:          document.getElementById('cidade').value.trim(),
+                data_nascimento: document.getElementById('nascimento').value || null
+            })
+
+            if (error) {
+                mostrarMensagem('Erro ao submeter pedido. Tente novamente.', 'erro')
+                btn.textContent = 'Tornar-me Sócio'
+                btn.disabled = false
+                return
+            }
+
+            // Redireciona para pagamento
+            window.location.href = 'pagamento-quota.html'
+        })
+    </script>
 </body>
 </html>

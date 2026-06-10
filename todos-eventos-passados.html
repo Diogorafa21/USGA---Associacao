@@ -54,47 +54,11 @@
                     &larr; Voltar à página principal de eventos
                 </a>
 
-                <div class="projects-grid">
-                    
-                    <a href="evento-passado.html" class="project-card">
-                        <div class="project-image"><div class="image-placeholder"></div></div>
-                        <div class="project-info">
-                            <span class="project-category">Tradição • Nov 2025</span>
-                            <h3>Magusto Comunitário</h3>
-                            <p>Castanhas, jeropiga e música popular na nossa sede.</p>
-                        </div>
-                    </a>
-
-                    <a href="evento-passado.html" class="project-card">
-                        <div class="project-image"><div class="image-placeholder"></div></div>
-                        <div class="project-info">
-                            <span class="project-category">Solidariedade • Dez 2025</span>
-                            <h3>Recolha de Natal</h3>
-                            <p>Entregámos 50 cabazes a famílias da freguesia.</p>
-                        </div>
-                    </a>
-
-                    <a href="evento-passado.html" class="project-card">
-                        <div class="project-image"><div class="image-placeholder"></div></div>
-                        <div class="project-info">
-                            <span class="project-category">Cultura • Out 2025</span>
-                            <h3>Noite de Fados</h3>
-                            <p>Um jantar memorável com artistas locais.</p>
-                        </div>
-                    </a>
-
-                    <a href="evento-passado.html" class="project-card">
-                        <div class="project-image"><div class="image-placeholder"></div></div>
-                        <div class="project-info">
-                            <span class="project-category">Desporto • Set 2025</span>
-                            <h3>Corrida Noturna</h3>
-                            <p>Mais de 200 participantes iluminaram as ruas.</p>
-                        </div>
-                    </a>
+                <div class="projects-grid" id="eventosGrid">
+                    <p style="color:#999;">A carregar eventos...</p>
                 </div>
 
                 <p id="noResults" style="display:none; color: #999; font-style: italic; margin-top: 20px;">Nenhum evento encontrado no histórico.</p>
-
             </div>
         </section>
     </main>
@@ -114,10 +78,10 @@
             cards.forEach(card => {
                 let text = card.textContent.toLowerCase();
                 if (text.includes(filter)) {
-                    card.style.display = ""; 
+                    card.style.display = '';
                     hasResults = true;
                 } else {
-                    card.style.display = "none"; 
+                    card.style.display = 'none';
                 }
             });
 
@@ -125,5 +89,36 @@
         });
     </script>
     <script src="js/main.js"></script>
+    <script type="module">
+        import { getEventosPassados } from './js/supabase.js'
+
+        const grid = document.getElementById('eventosGrid')
+
+        const { data: eventos, error } = await getEventosPassados()
+
+        if (error || !eventos || eventos.length === 0) {
+            grid.innerHTML = '<p style="color:#999; font-style:italic;">Ainda não há eventos no arquivo.</p>'
+        } else {
+            grid.innerHTML = eventos.map(ev => {
+                const data = new Date(ev.data_evento).toLocaleDateString('pt-PT', {
+                    month: 'short', year: 'numeric'
+                })
+                const categoria = [ev.categoria, data].filter(Boolean).join(' • ')
+                const imagem = ev.imagem_url
+                    ? `<img src="${ev.imagem_url}" alt="${ev.titulo}" style="width:100%; height:100%; object-fit:cover;">`
+                    : '<div class="image-placeholder"></div>'
+
+                return `
+                    <a href="evento-passado.html?id=${ev.id}" class="project-card">
+                        <div class="project-image">${imagem}</div>
+                        <div class="project-info">
+                            <span class="project-category">${categoria}</span>
+                            <h3>${ev.titulo}</h3>
+                            <p>${ev.descricao_curta || ''}</p>
+                        </div>
+                    </a>`
+            }).join('')
+        }
+    </script>
 </body>
 </html>

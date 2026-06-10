@@ -51,14 +51,29 @@
                     <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
                     <div style="display: flex; justify-content: space-between;">
                         <span>Valor a Pagar:</span>
-                        <span style="font-weight: 700;">Consultar regulamento do evento</span>
+                        <span id="valorPagar" style="font-weight: 700;">A carregar...</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <span>Evento:</span>
+                        <span id="nomeEvento" style="font-weight: 700;">A carregar...</span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <span>Inscrito:</span>
+                        <span id="nomeInscrito" style="font-weight: 700;">A carregar...</span>
                     </div>
                 </div>
 
                 <div class="instructions" style="background: var(--bg-light); padding: 20px; border-radius: 8px; font-size: 14px; text-align: left;">
                     <p><strong>Importante:</strong></p>
                     <p>Envie o comprovativo para <a href="mailto:eventos@usga.pt" style="color: var(--accent-color); font-weight: 700;">eventos@usga.pt</a>.</p>
-                    <p style="margin-top: 10px;">Na descrição da transferência indique: <strong>Nome do Participante + Evento</strong>.</p>
+                    <p style="margin-top: 10px;">Na descrição da transferência indique: <strong id="referencia">Nome + Evento</strong>.</p>
+                    <p style="margin-top: 10px;">A sua inscrição só fica confirmada após validação do pagamento pela equipa USGA.</p>
+                </div>
+
+                <!-- Link para verificar estado da inscrição -->
+                <div id="linkEstado" style="margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: 14px;">
+                    <p style="margin-bottom: 8px;">Pode verificar o estado da sua inscrição a qualquer momento:</p>
+                    <a id="btnEstado" href="#" style="color: var(--accent-color); font-weight: 700;">Ver estado da minha inscrição →</a>
                 </div>
 
                 <a href="eventos.html" class="btn btn-primary" style="margin-top: 40px;">Voltar aos Eventos</a>
@@ -71,6 +86,60 @@
             <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
         </div>
     </footer>
+
     <script src="js/main.js"></script>
+    <script type="module">
+        import { getEvento, getSessao, supabase, formatarMoeda } from './js/supabase.js'
+
+        const params      = new URLSearchParams(window.location.search)
+        const inscricaoId = params.get('inscricao')
+        const eventoId    = params.get('evento')
+
+        // Carregar dados do evento
+        if (eventoId) {
+            const { data: evento } = await getEvento(eventoId)
+            if (evento) {
+                document.getElementById('nomeEvento').textContent = evento.titulo
+                document.title = `Pagamento - ${evento.titulo} | USGA`
+
+                // Determinar valor (sócio ou não sócio)
+                const sessao = await getSessao()
+                let valor = evento.preco_nao_socio
+
+                if (sessao) {
+                    const { data: perfil } = await supabase
+                        .from('utilizadores')
+                        .select('role, estado')
+                        .eq('id', sessao.user.id)
+                        .single()
+                    if (perfil && perfil.estado === 'ativo') valor = evento.preco_socio
+                }
+
+                document.getElementById('valorPagar').textContent = valor > 0
+                    ? formatarMoeda(valor)
+                    : 'Consultar regulamento do evento'
+            }
+        }
+
+        // Carregar dados da inscrição
+        if (inscricaoId) {
+            const { data: inscricao } = await supabase
+                .from('inscricoes_evento')
+                .select('nome, public_token')
+                .eq('id', inscricaoId)
+                .single()
+
+            if (inscricao) {
+                document.getElementById('nomeInscrito').textContent = inscricao.nome
+                document.getElementById('referencia').textContent   = `${inscricao.nome} + ${document.getElementById('nomeEvento').textContent}`
+
+                // Link para verificar estado
+                if (inscricao.public_token) {
+                    document.getElementById('btnEstado').href =
+                        `estado-inscricao.html?token=${inscricao.public_token}`
+                }
+            }
+        }
+    </script>
 </body>
 </html>

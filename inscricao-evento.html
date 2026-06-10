@@ -10,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
 </head>
 <body class="home-page">
-
+ 
     <header class="header">
         <div class="container header-container">
             <a href="index.html" class="logo">USGA</a>
@@ -24,7 +24,7 @@
             <a href="login.html" class="btn btn-primary">Login</a>
         </div>
     </header>
-
+ 
     <main>
         <section class="hero-bg-slideshow">
             <div class="slideshow-container">
@@ -34,7 +34,7 @@
             </div>
             
             <div class="hero-overlay-dark"></div>
-
+ 
             <div class="container hero-container">
                 <div class="hero-content">
                     <span class="subtitle">PARTICIPE</span>
@@ -43,20 +43,23 @@
                 </div>
             </div>
         </section>
-
+ 
         <section class="contact-section">
             <div class="container" style="max-width: 800px;">
                 <div class="contact-form">
                     <h2 style="margin-bottom: 5px; text-align: center;">Ficha de Inscrição</h2>
-                    <p style="margin-bottom: 30px; text-align: center; color: var(--accent-color); font-weight: 700;">Caminhada da Primavera</p>
+                    <p id="nomeEvento" style="margin-bottom: 30px; text-align: center; color: var(--accent-color); font-weight: 700;">A carregar evento...</p>
+ 
+                    <!-- Mensagem de feedback -->
+                    <div id="mensagem" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
                     
-                    <form action="pagamento-evento.html">
+                    <form id="inscricaoForm">
                         
                         <div class="form-group">
                             <label for="nome">Nome Completo</label>
                             <input type="text" id="nome" name="nome" required>
                         </div>
-
+ 
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="nascimento">Data de Nascimento</label>
@@ -71,7 +74,7 @@
                                 </select>
                             </div>
                         </div>
-
+ 
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="pais">País</label>
@@ -82,7 +85,7 @@
                                 <input type="text" id="equipa" name="equipa" placeholder="Individual ou nome da equipa">
                             </div>
                         </div>
-
+ 
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="telefone">Telefone / Telemóvel</label>
@@ -93,7 +96,7 @@
                                 <input type="email" id="email" name="email" required>
                             </div>
                         </div>
-
+ 
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="bi">BI / Cartão de Cidadão</label>
@@ -104,14 +107,14 @@
                                 <input type="number" id="nif" name="nif" required>
                             </div>
                         </div>
-
-                        <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Seguir para Pagamento</button>
+ 
+                        <button type="submit" id="btnInscricao" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Seguir para Pagamento</button>
                     </form>
                 </div>
             </div>
         </section>
     </main>
-
+ 
     <footer class="footer">
         <div class="container footer-container">
             <div class="footer-col">
@@ -134,6 +137,91 @@
             <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
         </div>
     </footer>
+ 
     <script src="js/main.js"></script>
+    <script type="module">
+        import { getEvento, criarInscricaoEvento, getSessao, getPerfil } from './js/supabase.js'
+ 
+        const params  = new URLSearchParams(window.location.search)
+        const eventoId = params.get('id')
+        const msgBox  = document.getElementById('mensagem')
+        const btn     = document.getElementById('btnInscricao')
+ 
+        function mostrarMensagem(texto, tipo) {
+            msgBox.textContent = texto
+            msgBox.style.display = 'block'
+            msgBox.style.backgroundColor = tipo === 'erro' ? '#fee2e2' : '#dcfce7'
+            msgBox.style.color           = tipo === 'erro' ? '#991b1b' : '#166534'
+            msgBox.style.border          = tipo === 'erro' ? '1px solid #fca5a5' : '1px solid #86efac'
+            msgBox.scrollIntoView({ behavior: 'smooth', block: 'center' })
+        }
+ 
+        // Carregar nome do evento
+        if (eventoId) {
+            const { data: evento } = await getEvento(eventoId)
+            if (evento) {
+                document.getElementById('nomeEvento').textContent = evento.titulo
+                document.title = `Inscrição - ${evento.titulo} | USGA`
+            }
+        } else {
+            document.getElementById('nomeEvento').textContent = 'Evento não especificado'
+        }
+ 
+        // Pré-preencher dados se autenticado
+        const sessao = await getSessao()
+        if (sessao) {
+            const { data: perfil } = await getPerfil(sessao.user.id)
+            if (perfil) {
+                const nomeCompleto = [perfil.nome, perfil.apelido].filter(Boolean).join(' ')
+                document.getElementById('nome').value     = nomeCompleto
+                document.getElementById('email').value    = perfil.email
+                document.getElementById('telefone').value = perfil.telefone || ''
+                document.getElementById('nif').value      = perfil.nif || ''
+                document.getElementById('pais').value     = perfil.pais || 'Portugal'
+                if (perfil.data_nascimento) document.getElementById('nascimento').value = perfil.data_nascimento
+            }
+        }
+ 
+        // Submeter inscrição
+        document.getElementById('inscricaoForm').addEventListener('submit', async (e) => {
+            e.preventDefault()
+            msgBox.style.display = 'none'
+            btn.textContent = 'A processar...'
+            btn.disabled = true
+ 
+            if (!eventoId) {
+                mostrarMensagem('Erro: evento não identificado. Volte à página de eventos.', 'erro')
+                btn.textContent = 'Seguir para Pagamento'
+                btn.disabled = false
+                return
+            }
+ 
+            const { data, error } = await criarInscricaoEvento({
+                evento_id:       eventoId,
+                nome:            document.getElementById('nome').value.trim(),
+                email:           document.getElementById('email').value.trim(),
+                telefone:        document.getElementById('telefone').value.trim(),
+                data_nascimento: document.getElementById('nascimento').value,
+                sexo:            document.getElementById('sexo').value,
+                pais:            document.getElementById('pais').value.trim(),
+                equipa:          document.getElementById('equipa').value.trim() || null,
+                bi:              document.getElementById('bi').value.trim(),
+                nif:             document.getElementById('nif').value.trim()
+            })
+ 
+            if (error) {
+                const msg = error.message.includes('unique')
+                    ? 'Já existe uma inscrição com este email para este evento.'
+                    : 'Erro ao submeter inscrição. Tente novamente.'
+                mostrarMensagem(msg, 'erro')
+                btn.textContent = 'Seguir para Pagamento'
+                btn.disabled = false
+                return
+            }
+ 
+            // Redireciona para pagamento com o id da inscrição
+            window.location.href = `pagamento-evento.html?inscricao=${data.id}&evento=${eventoId}`
+        })
+    </script>
 </body>
 </html>

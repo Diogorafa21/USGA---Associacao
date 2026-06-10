@@ -21,7 +21,7 @@
                     <li><a href="suporte.html" class="nav-link">Suporte</a></li>
                 </ul>
             </nav>
-            <a href="login.html" class="btn btn-primary">Login</a>
+            <a href="login.html" class="btn btn-primary" id="btnHeaderAuth">Login</a>
         </div>
     </header>
 
@@ -37,9 +37,9 @@
 
             <div class="container hero-container">
                 <div class="hero-content">
-                    <span class="subtitle">NATUREZA • 15 MAR 2026</span>
-                    <h1 style="font-size: 42px; margin-bottom: 10px;">Caminhada da Primavera</h1>
-                    <p style="font-size: 18px; color: #fff;">Junte-se a nós num percurso pelos trilhos mais bonitos de São Gens.</p>
+                    <span class="subtitle" id="heroSubtitulo">A carregar...</span>
+                    <h1 style="font-size: 42px; margin-bottom: 10px;" id="heroTitulo">A carregar...</h1>
+                    <p style="font-size: 18px; color: #fff;" id="heroDescricao"></p>
                 </div>
             </div>
         </section>
@@ -54,37 +54,37 @@
                 <div class="event-details-grid">
                     <div class="content-col">
                         <div class="hero-image" style="margin-bottom: 30px;">
-                            <div class="image-placeholder" style="height: 300px;"></div>
+                            <div class="image-placeholder" id="imagemEvento" style="height: 300px;"></div>
                         </div>
                         <h3>Sobre o evento</h3>
-                        <p style="margin-bottom: 20px; color: var(--text-color);">Esta caminhada tem como objetivo promover a atividade física e o contacto com a natureza. O percurso terá cerca de 10km com dificuldade média.</p>
+                        <p id="descricaoEvento" style="margin-bottom: 20px; color: var(--text-color);"></p>
                         
-                        <h3>Recomendações</h3>
-                        <ul style="list-style: disc; padding-left: 20px; color: var(--text-color);">
-                            <li>Levar calçado confortável.</li>
-                            <li>Garrafa de água individual.</li>
-                            <li>Roupa adequada à meteorologia.</li>
-                        </ul>
+                        <div id="recomendacoesBox" style="display:none;">
+                            <h3>Recomendações</h3>
+                            <p id="recomendacoesEvento" style="color: var(--text-color);"></p>
+                        </div>
                     </div>
 
                     <div class="sidebar-col">
                         <div class="event-sidebar">
                             <div class="sidebar-item">
                                 <span class="sidebar-label">Data</span>
-                                <span class="sidebar-value">15 de Março, 2026</span>
+                                <span class="sidebar-value" id="dataEvento">-</span>
                             </div>
                             <div class="sidebar-item">
                                 <span class="sidebar-label">Local</span>
-                                <span class="sidebar-value">Sede da USGA</span>
+                                <span class="sidebar-value" id="localEvento">-</span>
                             </div>
                             <div class="sidebar-item">
                                 <span class="sidebar-label">Preço Não Sócio</span>
-                                <span class="sidebar-value">5,00 €</span>
+                                <span class="sidebar-value" id="precoEvento">-</span>
                             </div>
                             
-                            <a href="inscricao-evento.html" class="btn btn-primary" style="width: 100%; text-align: center; margin-top: 20px;">Inscrever-me Agora</a>
-                            
-                            <a href="#" class="btn-outline">
+                            <div id="areaInscricao" style="margin-top: 20px;">
+                                <!-- Preenchido dinamicamente -->
+                            </div>
+
+                            <a href="#" id="btnRegulamento" class="btn-outline" style="display:none;">
                                 Ler Regulamento
                             </a>
                         </div>
@@ -96,15 +96,15 @@
 
                     <div class="stats-container">
                         <div class="stat-box">
-                            <span class="stat-number">4</span>
+                            <span class="stat-number" id="totalInscritos">0</span>
                             <span class="stat-label">Total Inscritos</span>
                         </div>
                         <div class="stat-box">
-                            <span class="stat-number" style="color: #2e7d32;">3</span>
+                            <span class="stat-number" id="totalConfirmados" style="color: #2e7d32;">0</span>
                             <span class="stat-label">Confirmados</span>
                         </div>
                         <div class="stat-box">
-                            <span class="stat-number" style="color: #ef6c00;">1</span>
+                            <span class="stat-number" id="totalPorConfirmar" style="color: #ef6c00;">0</span>
                             <span class="stat-label">Por Confirmar</span>
                         </div>
                     </div>
@@ -123,31 +123,8 @@
                                     <th>Estado</th>
                                 </tr>
                             </thead>
-                            <tbody>
-                                <tr>
-                                    <td style="font-weight:bold; color: #666;">PT</td>
-                                    <td>Maria Silva</td>
-                                    <td><strong>001</strong></td>
-                                    <td><span class="badge badge-pago">Pago</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:bold; color: #666;">PT</td>
-                                    <td>João Santos</td>
-                                    <td><strong>002</strong></td>
-                                    <td><span class="badge badge-pago">Pago</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:bold; color: #666;">ES</td>
-                                    <td>Ana Costa</td>
-                                    <td><strong>003</strong></td>
-                                    <td><span class="badge badge-pago">Pago</span></td>
-                                </tr>
-                                <tr>
-                                    <td style="font-weight:bold; color: #666;">PT</td>
-                                    <td>Pedro Oliveira</td>
-                                    <td style="color: #ccc;">-</td>
-                                    <td><span class="badge badge-pendente">Por Pagar</span></td>
-                                </tr>
+                            <tbody id="tabelaInscritos">
+                                <tr><td colspan="4" style="text-align:center; color:#999;">A carregar...</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -167,7 +144,6 @@
         document.getElementById('tableSearch').addEventListener('keyup', function() {
             let input = this.value.toLowerCase();
             let rows = document.querySelectorAll('#participantsTable tbody tr');
-            
             rows.forEach(row => {
                 let text = row.innerText.toLowerCase();
                 row.style.display = text.includes(input) ? '' : 'none';
@@ -175,5 +151,145 @@
         });
     </script>
     <script src="js/main.js"></script>
+    <script type="module">
+        import {
+            getEvento, getInscritosConfirmados, getInscricaoEvento,
+            getSessao, formatarData, formatarMoeda, supabase
+        } from './js/supabase.js'
+
+        const params   = new URLSearchParams(window.location.search)
+        const eventoId = params.get('id')
+
+        if (!eventoId) {
+            window.location.href = 'eventos.html'
+        }
+
+        // ── Carregar evento ──────────────────────────────────────────────
+        const { data: evento } = await getEvento(eventoId)
+
+        if (!evento) {
+            window.location.href = 'eventos.html'
+        }
+
+        // Preencher hero
+        const dataFormatada = new Date(evento.data_evento).toLocaleDateString('pt-PT', {
+            day: '2-digit', month: 'short', year: 'numeric'
+        }).toUpperCase()
+
+        document.getElementById('heroSubtitulo').textContent  = `${evento.categoria || 'EVENTO'} • ${dataFormatada}`
+        document.getElementById('heroTitulo').textContent     = evento.titulo
+        document.getElementById('heroDescricao').textContent  = evento.descricao_curta || ''
+        document.title = `${evento.titulo} - USGA`
+
+        // Preencher conteúdo
+        document.getElementById('descricaoEvento').textContent = evento.descricao || ''
+        document.getElementById('dataEvento').textContent      = formatarData(evento.data_evento)
+        document.getElementById('localEvento').textContent     = evento.local || '-'
+        document.getElementById('precoEvento').textContent     = evento.preco_nao_socio > 0
+            ? formatarMoeda(evento.preco_nao_socio)
+            : 'Gratuito'
+
+        if (evento.imagem_url) {
+            document.getElementById('imagemEvento').style.backgroundImage = `url(${evento.imagem_url})`
+            document.getElementById('imagemEvento').style.backgroundSize  = 'cover'
+            document.getElementById('imagemEvento').style.backgroundPosition = 'center'
+        }
+
+        if (evento.recomendacoes) {
+            document.getElementById('recomendacoesBox').style.display = 'block'
+            document.getElementById('recomendacoesEvento').textContent = evento.recomendacoes
+        }
+
+        if (evento.regulamento_url) {
+            const btnReg = document.getElementById('btnRegulamento')
+            btnReg.href = evento.regulamento_url
+            btnReg.style.display = ''
+        }
+
+        // ── Botão de inscrição / estado ──────────────────────────────────
+        const sessao = await getSessao()
+        const areaInscricao = document.getElementById('areaInscricao')
+
+        // Atualizar botão do header
+        if (sessao) {
+            document.getElementById('btnHeaderAuth').textContent = 'O Meu Perfil'
+            document.getElementById('btnHeaderAuth').href = 'perfil.html'
+        }
+
+        if (evento.estado === 'aberto') {
+            if (sessao) {
+                // Verificar se já está inscrito
+                const { data: inscricao } = await getInscricaoEvento(sessao.user.id, eventoId)
+
+                if (inscricao) {
+                    // Já inscrito — mostrar estado
+                    const estadoTexto = {
+                        confirmada:           'Inscrição Confirmada ✓',
+                        aguardando_pagamento: 'A aguardar pagamento',
+                        rejeitada:            'Inscrição Rejeitada',
+                        cancelada:            'Inscrição Cancelada'
+                    }
+                    areaInscricao.innerHTML = `
+                        <div style="padding: 12px; background: #f0fdf4; border: 1px solid #86efac; border-radius: 8px; text-align: center; font-size: 14px; margin-bottom: 10px;">
+                            <strong>${estadoTexto[inscricao.estado] || inscricao.estado}</strong>
+                        </div>
+                        <a href="estado-inscricao.html?token=${inscricao.public_token}"
+                           class="btn-outline" style="display:block; text-align:center;">
+                            Ver estado da minha inscrição
+                        </a>`
+                } else {
+                    areaInscricao.innerHTML = `
+                        <a href="inscricao-evento.html?id=${eventoId}"
+                           class="btn btn-primary" style="width: 100%; text-align: center; display: block;">
+                            Inscrever-me Agora
+                        </a>`
+                }
+            } else {
+                areaInscricao.innerHTML = `
+                    <a href="inscricao-evento.html?id=${eventoId}"
+                       class="btn btn-primary" style="width: 100%; text-align: center; display: block;">
+                        Inscrever-me Agora
+                    </a>
+                    <p style="font-size:12px; color:#999; margin-top:8px; text-align:center;">
+                        <a href="login.html" style="color:var(--accent-color);">Faça login</a> para pré-preencher os seus dados.
+                    </p>`
+            }
+        } else {
+            areaInscricao.innerHTML = `
+                <div style="padding: 12px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; text-align: center; font-size: 14px; color: #888;">
+                    Inscrições encerradas
+                </div>`
+        }
+
+        // ── Lista de inscritos confirmados ───────────────────────────────
+        const { data: inscritos } = await getInscritosConfirmados(eventoId)
+
+        // Contar totais (todos os inscritos, não só confirmados)
+        const { count: total } = await supabase
+            .from('inscricoes_evento')
+            .select('*', { count: 'exact', head: true })
+            .eq('evento_id', eventoId)
+
+        const confirmados    = inscritos?.length || 0
+        const porConfirmar   = (total || 0) - confirmados
+
+        document.getElementById('totalInscritos').textContent    = total || 0
+        document.getElementById('totalConfirmados').textContent  = confirmados
+        document.getElementById('totalPorConfirmar').textContent = porConfirmar
+
+        const tbody = document.getElementById('tabelaInscritos')
+
+        if (!inscritos || inscritos.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center; color:#999;">Ainda não há inscritos confirmados.</td></tr>'
+        } else {
+            tbody.innerHTML = inscritos.map((i, idx) => `
+                <tr>
+                    <td style="font-weight:bold; color:#666;">${i.pais || '-'}</td>
+                    <td>${i.nome}</td>
+                    <td><strong>${i.dorsal || String(idx + 1).padStart(3, '0')}</strong></td>
+                    <td><span class="badge badge-pago">Pago</span></td>
+                </tr>`).join('')
+        }
+    </script>
 </body>
 </html>
