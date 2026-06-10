@@ -14,11 +14,8 @@ export async function registar(nome, apelido, email, password) {
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: {
-      data: { nome, apelido }
-    }
+    options: { data: { nome, apelido } }
   })
-
   return { data, error }
 }
 
@@ -50,47 +47,30 @@ export async function getPerfil(userId) {
     .select('*')
     .eq('id', userId)
     .single()
-
   return { data, error }
 }
 
 export async function atualizarPerfil(userId, dados) {
-<<<<<<< Updated upstream
   const { data, error } = await supabase.rpc('atualizar_meu_perfil', {
-    p_nome: dados.nome ?? null,
-    p_apelido: dados.apelido ?? null,
-    p_telefone: dados.telefone ?? null,
+    p_nome:            dados.nome            ?? null,
+    p_apelido:         dados.apelido         ?? null,
+    p_telefone:        dados.telefone        ?? null,
     p_data_nascimento: dados.data_nascimento ?? null,
-    p_cidade: dados.cidade ?? null,
-    p_pais: dados.pais ?? null,
-    p_foto_url: dados.foto_url ?? null
+    p_cidade:          dados.cidade          ?? null,
+    p_pais:            dados.pais            ?? null,
+    p_foto_url:        dados.foto_url        ?? null
   })
-=======
-  const { data, error } = await supabase
-    .from('utilizadores')
-    .update(dados)
-    .eq('id', userId)
-    .select()
-    .single()
->>>>>>> Stashed changes
-
   return { data, error }
 }
 
 export async function criarPedidoSocio(dados) {
   const sessao = await getSessao()
-
-  const payload = {
-    ...dados,
-    utilizador_id: sessao?.user?.id ?? null
-  }
-
+  const payload = { ...dados, utilizador_id: sessao?.user?.id ?? null }
   const { data, error } = await supabase
     .from('pedidos_socio')
     .insert(payload)
     .select()
     .single()
-
   return { data, error }
 }
 
@@ -102,7 +82,6 @@ export async function getMinhasQuotas(utilizadorId) {
     .select('*')
     .eq('utilizador_id', utilizadorId)
     .order('ano', { ascending: false })
-
   return { data, error }
 }
 
@@ -115,7 +94,6 @@ export async function getEventosFuturos() {
     .gte('data_evento', new Date().toISOString())
     .in('estado', ['aberto', 'fechado'])
     .order('data_evento', { ascending: true })
-
   return { data, error }
 }
 
@@ -126,19 +104,16 @@ export async function getEventosPassados() {
     .lt('data_evento', new Date().toISOString())
     .eq('estado', 'concluido')
     .order('data_evento', { ascending: false })
-
   return { data, error }
 }
 
 export async function getEvento(idOuSlug) {
   const coluna = pareceUuid(idOuSlug) ? 'id' : 'slug'
-
   const { data, error } = await supabase
     .from('eventos')
     .select('*')
     .eq(coluna, idOuSlug)
     .single()
-
   return { data, error }
 }
 
@@ -146,18 +121,12 @@ export async function getEvento(idOuSlug) {
 
 export async function criarInscricaoEvento(dados) {
   const sessao = await getSessao()
-
-  const payload = {
-    ...dados,
-    utilizador_id: sessao?.user?.id ?? null
-  }
-
+  const payload = { ...dados, utilizador_id: sessao?.user?.id ?? null }
   const { data, error } = await supabase
     .from('inscricoes_evento')
     .insert(payload)
     .select('id, public_token, estado, pagamento_estado')
     .single()
-
   return { data, error }
 }
 
@@ -167,7 +136,6 @@ export async function getMinhasInscricoes(utilizadorId) {
     .select('*, eventos(*)')
     .eq('utilizador_id', utilizadorId)
     .order('data_inscricao', { ascending: false })
-
   return { data, error }
 }
 
@@ -178,7 +146,6 @@ export async function getInscricaoEvento(utilizadorId, eventoId) {
     .eq('utilizador_id', utilizadorId)
     .eq('evento_id', eventoId)
     .maybeSingle()
-
   return { data, error }
 }
 
@@ -188,16 +155,13 @@ export async function getInscritosConfirmados(eventoId) {
     .select('nome, pais, equipa, dorsal, data_confirmacao')
     .eq('evento_id', eventoId)
     .order('data_confirmacao', { ascending: true })
-
   return { data, error }
 }
 
 export async function getEstadoInscricao(publicToken) {
-<<<<<<< Updated upstream
   const { data, error } = await supabase
     .rpc('get_estado_inscricao', { token: publicToken })
     .maybeSingle()
-
   return { data, error }
 }
 
@@ -205,18 +169,12 @@ export async function getEstadoInscricao(publicToken) {
 
 export async function criarPagamento(dados) {
   const sessao = await getSessao()
-
-  const payload = {
-    ...dados,
-    utilizador_id: dados.utilizador_id ?? sessao?.user?.id ?? null
-  }
-
+  const payload = { ...dados, utilizador_id: dados.utilizador_id ?? sessao?.user?.id ?? null }
   const { data, error } = await supabase
     .from('pagamentos')
     .insert(payload)
     .select()
     .single()
-
   return { data, error }
 }
 
@@ -224,18 +182,12 @@ export async function criarPagamento(dados) {
 
 export async function criarMensagemSuporte(dados) {
   const sessao = await getSessao()
-
-  const payload = {
-    ...dados,
-    utilizador_id: sessao?.user?.id ?? null
-  }
-
+  const payload = { ...dados, utilizador_id: sessao?.user?.id ?? null }
   const { data, error } = await supabase
     .from('mensagens_suporte')
     .insert(payload)
     .select()
     .single()
-
   return { data, error }
 }
 
@@ -246,7 +198,6 @@ export async function getAdminPedidosSocio() {
     .from('pedidos_socio')
     .select('*')
     .order('created_at', { ascending: false })
-
   return { data, error }
 }
 
@@ -257,7 +208,6 @@ export async function atualizarPedidoSocio(id, dados) {
     .eq('id', id)
     .select()
     .single()
-
   return { data, error }
 }
 
@@ -266,7 +216,6 @@ export async function getAdminInscricoesEvento() {
     .from('inscricoes_evento')
     .select('*, eventos(titulo, data_evento)')
     .order('data_inscricao', { ascending: false })
-
   return { data, error }
 }
 
@@ -277,7 +226,6 @@ export async function atualizarInscricaoEvento(id, dados) {
     .eq('id', id)
     .select()
     .single()
-
   return { data, error }
 }
 
@@ -286,58 +234,16 @@ export async function getAdminQuotas() {
     .from('quotas')
     .select('*, utilizadores(nome, apelido, email, numero_socio)')
     .order('ano', { ascending: false })
-=======
-  const { data, error } = await supabase
-    .rpc('get_estado_inscricao', { token: publicToken })
-    .maybeSingle()
->>>>>>> Stashed changes
-
   return { data, error }
 }
 
-<<<<<<< Updated upstream
 export async function atualizarQuota(id, dados) {
   const { data, error } = await supabase
     .from('quotas')
     .update(dados)
     .eq('id', id)
-=======
-// Pagamentos -----------------------------------------------------------------
-
-export async function criarPagamento(dados) {
-  const sessao = await getSessao()
-
-  const payload = {
-    ...dados,
-    utilizador_id: dados.utilizador_id ?? sessao?.user?.id ?? null
-  }
-
-  const { data, error } = await supabase
-    .from('pagamentos')
-    .insert(payload)
     .select()
     .single()
-
-  return { data, error }
-}
-
-// Suporte --------------------------------------------------------------------
-
-export async function criarMensagemSuporte(dados) {
-  const sessao = await getSessao()
-
-  const payload = {
-    ...dados,
-    utilizador_id: sessao?.user?.id ?? null
-  }
-
-  const { data, error } = await supabase
-    .from('mensagens_suporte')
-    .insert(payload)
->>>>>>> Stashed changes
-    .select()
-    .single()
-
   return { data, error }
 }
 
@@ -345,25 +251,21 @@ export async function criarMensagemSuporte(dados) {
 
 export async function requireLogin() {
   const sessao = await getSessao()
-
   if (!sessao) {
     window.location.href = 'login.html'
     return null
   }
-
   return sessao
 }
 
 export async function requireAdmin() {
   const sessao = await requireLogin()
   if (!sessao) return null
-
   const { data } = await getPerfil(sessao.user.id)
   if (!data || data.role !== 'admin') {
     window.location.href = 'index.html'
     return null
   }
-
   return { sessao, perfil: data }
 }
 
@@ -371,7 +273,6 @@ export async function requireAdmin() {
 
 export function formatarData(dataISO) {
   if (!dataISO) return '-'
-
   return new Date(dataISO).toLocaleDateString('pt-PT', {
     day: '2-digit',
     month: 'long',
@@ -388,8 +289,4 @@ export function formatarMoeda(valor) {
 
 function pareceUuid(valor) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(valor)
-<<<<<<< Updated upstream
 }
-=======
-}
->>>>>>> Stashed changes
