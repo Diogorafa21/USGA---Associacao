@@ -11,6 +11,8 @@ No painel do Supabase:
 3. Copiar o conteudo de `schema.sql`.
 4. Executar a query.
 
+Opcionalmente, executar depois o `seed.sql` para criar os eventos de exemplo que ja aparecem nas paginas HTML.
+
 Isto cria as tabelas principais:
 
 - `utilizadores`
@@ -72,3 +74,15 @@ Depois de executar `schema.sql`, o proximo passo e ligar:
 - `perfil.html` a `utilizadores`, `quotas` e `inscricoes_evento`
 
 Essas funcoes ja estao preparadas em `js/supabase.js`.
+
+## 5. Primeiro administrador
+
+Depois de criares a tua conta pelo site, no SQL Editor do Supabase podes promover esse utilizador a admin:
+
+```sql
+update public.utilizadores
+set role = 'admin'
+where email = 'o-teu-email@example.com';
+```
+
+Depois disso, a pagina `admin.html` fica acessivel a essa conta.
