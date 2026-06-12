@@ -21,7 +21,7 @@
                     <li><a href="suporte.html" class="nav-link">Suporte</a></li>
                 </ul>
             </nav>
-            <a href="login.html" class="btn btn-primary">Login</a>
+            <a href="login.html" class="btn btn-primary" id="btnHeaderAuth">Login</a>
         </div>
     </header>
 
@@ -127,6 +127,18 @@
             <p>&copy; 2026 Associação USGA. Todos os direitos reservados.</p>
         </div>
     </footer>
+
     <script src="js/main.js"></script>
+    <script type="module">
+        import { getSessao } from './js/supabase.js'
+
+        // Atualiza o botão do header consoante o estado de autenticação
+        const sessao = await getSessao()
+        if (sessao) {
+            const btn = document.getElementById('btnHeaderAuth')
+            btn.textContent = 'O Meu Perfil'
+            btn.href = 'perfil.html'
+        }
+    </script>
 </body>
 </html>
