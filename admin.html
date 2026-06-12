@@ -8,6 +8,41 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        .admin-layout { display: flex; gap: 0; min-height: 70vh; }
+        .admin-sidebar { width: 220px; flex-shrink: 0; background: #f9f9f9; border-right: 1px solid #eee; padding: 20px 0; }
+        .admin-sidebar a { display: flex; align-items: center; gap: 10px; padding: 10px 20px; font-size: 14px; color: #444; text-decoration: none; border-left: 3px solid transparent; transition: all 0.15s; }
+        .admin-sidebar a:hover { background: #f0f0f0; color: #111; }
+        .admin-sidebar a.active { border-left-color: var(--accent-color); background: #fff; color: var(--accent-color); font-weight: 700; }
+        .admin-sidebar .sidebar-section { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .08em; padding: 16px 20px 6px; }
+        .admin-sidebar .badge-count { margin-left: auto; background: var(--accent-color); color: #fff; border-radius: 99px; font-size: 11px; padding: 1px 7px; font-weight: 700; }
+        .admin-main { flex: 1; padding: 30px; min-width: 0; }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 30px; }
+        .stat-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; text-align: center; }
+        .stat-card .num { font-size: 32px; font-weight: 700; color: var(--primary-color); }
+        .stat-card .lbl { font-size: 13px; color: #888; margin-top: 4px; }
+        .form-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
+        .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-inline input { flex: 1; min-width: 180px; }
+        .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-overlay.open { display: flex; }
+        .modal-box { background: #fff; border-radius: 10px; padding: 30px; max-width: 540px; width: 90%; max-height: 85vh; overflow-y: auto; }
+        .modal-box h3 { margin-bottom: 20px; }
+        .modal-box .form-group { margin-bottom: 14px; }
+        .modal-box label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
+        .modal-box input, .modal-box select, .modal-box textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .modal-box textarea { resize: vertical; min-height: 80px; }
+        .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+        .btn-danger { background: #fee2e2; color: #991b1b; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; }
+        .btn-secondary { background: #f0f0f0; color: #444; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; }
+        .tag-aberto { background:#dcfce7; color:#166534; }
+        .tag-fechado { background:#fee2e2; color:#991b1b; }
+        .tag-rascunho { background:#f3f4f6; color:#6b7280; }
+        .tag-concluido { background:#dbeafe; color:#1d4ed8; }
+        .tag-cancelado { background:#fef3c7; color:#92400e; }
+    </style>
 </head>
 <body class="home-page">
 
@@ -42,84 +77,248 @@
             </div>
         </section>
 
-        <section class="dashboard-section">
-            <div class="container dashboard-content">
+        <section style="padding: 0;">
+            <div class="admin-layout">
 
-                <div class="content-box">
-                    <div class="box-header">
-                        <h3>Pedidos de Socio</h3>
-                        <span class="badge badge-pendente" id="adminPedidosCount">0</span>
+                <!-- SIDEBAR -->
+                <aside class="admin-sidebar">
+                    <div class="sidebar-section">Geral</div>
+                    <a href="#" class="active" data-sec="dashboard">📊 Dashboard</a>
+
+                    <div class="sidebar-section">Eventos</div>
+                    <a href="#" data-sec="eventos">📅 Eventos</a>
+                    <a href="#" data-sec="inscricoes">📋 Inscrições <span class="badge-count" id="sb-inscricoes">0</span></a>
+
+                    <div class="sidebar-section">Sócios</div>
+                    <a href="#" data-sec="socios">👥 Sócios</a>
+                    <a href="#" data-sec="pedidos">📨 Pedidos <span class="badge-count" id="sb-pedidos">0</span></a>
+
+                    <div class="sidebar-section">Financeiro</div>
+                    <a href="#" data-sec="quotas">💳 Quotas <span class="badge-count" id="sb-quotas">0</span></a>
+                    <a href="#" data-sec="pagamentos">💰 Pagamentos</a>
+
+                    <div class="sidebar-section">Comunicação</div>
+                    <a href="#" data-sec="suporte">✉️ Suporte <span class="badge-count" id="sb-suporte">0</span></a>
+                </aside>
+
+                <!-- CONTEÚDO PRINCIPAL -->
+                <div class="admin-main">
+
+                    <!-- DASHBOARD -->
+                    <div class="admin-section active" id="sec-dashboard">
+                        <h2 style="margin-bottom:20px;">Dashboard</h2>
+                        <div class="stat-cards">
+                            <div class="stat-card"><div class="num" id="ds-socios">-</div><div class="lbl">Sócios ativos</div></div>
+                            <div class="stat-card"><div class="num" id="ds-pedidos">-</div><div class="lbl">Pedidos pendentes</div></div>
+                            <div class="stat-card"><div class="num" id="ds-inscricoes">-</div><div class="lbl">Inscrições pendentes</div></div>
+                            <div class="stat-card"><div class="num" id="ds-quotas">-</div><div class="lbl">Quotas por pagar</div></div>
+                            <div class="stat-card"><div class="num" id="ds-suporte">-</div><div class="lbl">Mensagens novas</div></div>
+                            <div class="stat-card"><div class="num" id="ds-eventos">-</div><div class="lbl">Eventos abertos</div></div>
+                        </div>
+                        <div class="content-box">
+                            <div class="box-header"><h3>Atividade recente</h3></div>
+                            <div id="ds-atividade" style="color:#999; font-size:14px;">A carregar...</div>
+                        </div>
                     </div>
 
-                    <div class="participants-table-wrapper">
-                        <table class="participants-table">
-                            <thead>
-                                <tr>
-                                    <th>Nome</th>
-                                    <th>Email</th>
-                                    <th>NIF</th>
-                                    <th>Estado</th>
-                                    <th>Acao</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminPedidosSocio">
-                                <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
-                            </tbody>
-                        </table>
+                    <!-- EVENTOS -->
+                    <div class="admin-section" id="sec-eventos">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                            <h2>Eventos</h2>
+                            <button class="btn btn-primary btn-small" onclick="abrirModalEvento()">+ Novo Evento</button>
+                        </div>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Título</th><th>Data</th><th>Estado</th><th>Vagas</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-eventos"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
                     </div>
+
+                    <!-- INSCRIÇÕES -->
+                    <div class="admin-section" id="sec-inscricoes">
+                        <h2 style="margin-bottom:20px;">Inscrições em Eventos</h2>
+                        <div class="form-inline">
+                            <select id="filtroEvento" onchange="carregarInscricoes()">
+                                <option value="">Todos os eventos</option>
+                            </select>
+                            <select id="filtroPagamento" onchange="carregarInscricoes()">
+                                <option value="">Todos os estados</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="em_validacao">Em validação</option>
+                                <option value="validado">Validado</option>
+                                <option value="rejeitado">Rejeitado</option>
+                            </select>
+                            <button class="btn btn-small" onclick="exportarInscricoes()" style="background:#f0f0f0;">⬇ Exportar CSV</button>
+                        </div>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Pagamento</th><th>Dorsal</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-inscricoes"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SÓCIOS -->
+                    <div class="admin-section" id="sec-socios">
+                        <h2 style="margin-bottom:20px;">Sócios</h2>
+                        <div class="form-inline">
+                            <input type="text" id="searchSocios" placeholder="Pesquisar por nome ou email..." oninput="filtrarSocios()">
+                            <select id="filtroEstadoSocio" onchange="filtrarSocios()">
+                                <option value="">Todos</option>
+                                <option value="ativo">Ativos</option>
+                                <option value="inativo">Inativos</option>
+                                <option value="bloqueado">Bloqueados</option>
+                            </select>
+                        </div>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Nº Sócio</th><th>Nome</th><th>Email</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-socios"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PEDIDOS DE SÓCIO -->
+                    <div class="admin-section" id="sec-pedidos">
+                        <h2 style="margin-bottom:20px;">Pedidos de Sócio</h2>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Nome</th><th>Email</th><th>NIF</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-pedidos"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- QUOTAS -->
+                    <div class="admin-section" id="sec-quotas">
+                        <h2 style="margin-bottom:20px;">Quotas</h2>
+                        <div class="form-inline">
+                            <select id="filtroEstadoQuota" onchange="carregarQuotas()">
+                                <option value="">Todos os estados</option>
+                                <option value="por_pagar">Por pagar</option>
+                                <option value="pendente_validacao">Em validação</option>
+                                <option value="pago">Pago</option>
+                                <option value="isento">Isento</option>
+                            </select>
+                            <button class="btn btn-small" onclick="exportarQuotas()" style="background:#f0f0f0;">⬇ Exportar CSV</button>
+                        </div>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Sócio</th><th>Ano</th><th>Valor</th><th>Estado</th><th>Data Pag.</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-quotas"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- PAGAMENTOS -->
+                    <div class="admin-section" id="sec-pagamentos">
+                        <h2 style="margin-bottom:20px;">Pagamentos</h2>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Tipo</th><th>Sócio</th><th>Valor</th><th>Método</th><th>Estado</th><th>Data</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-pagamentos"><tr><td colspan="7" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- SUPORTE -->
+                    <div class="admin-section" id="sec-suporte">
+                        <h2 style="margin-bottom:20px;">Mensagens de Suporte</h2>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Nome</th><th>Email</th><th>Assunto</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-suporte"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
                 </div>
-
-                <div class="content-box">
-                    <div class="box-header">
-                        <h3>Inscricoes em Eventos</h3>
-                        <span class="badge badge-pendente" id="adminInscricoesCount">0</span>
-                    </div>
-
-                    <div class="participants-table-wrapper">
-                        <table class="participants-table">
-                            <thead>
-                                <tr>
-                                    <th>Evento</th>
-                                    <th>Participante</th>
-                                    <th>Pagamento</th>
-                                    <th>Dorsal</th>
-                                    <th>Acao</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminInscricoesEvento">
-                                <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
-                <div class="content-box">
-                    <div class="box-header">
-                        <h3>Quotas</h3>
-                        <span class="badge badge-pendente" id="adminQuotasCount">0</span>
-                    </div>
-
-                    <div class="participants-table-wrapper">
-                        <table class="participants-table">
-                            <thead>
-                                <tr>
-                                    <th>Socio</th>
-                                    <th>Ano</th>
-                                    <th>Valor</th>
-                                    <th>Estado</th>
-                                    <th>Acao</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminQuotas">
-                                <tr><td colspan="5" style="text-align:center; color:#999;">A carregar...</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-
             </div>
         </section>
     </main>
+
+    <!-- MODAL EVENTO -->
+    <div class="modal-overlay" id="modalEvento">
+        <div class="modal-box">
+            <h3 id="modalEventoTitulo">Novo Evento</h3>
+            <input type="hidden" id="eventoId">
+            <div class="form-group"><label>Título</label><input type="text" id="ev-titulo"></div>
+            <div class="form-group"><label>Slug (URL)</label><input type="text" id="ev-slug" placeholder="ex: caminhada-primavera-2026"></div>
+            <div class="form-group"><label>Categoria</label><input type="text" id="ev-categoria" placeholder="ex: Natureza, Desporto"></div>
+            <div class="form-group"><label>Descrição curta</label><input type="text" id="ev-descricao-curta"></div>
+            <div class="form-group"><label>Descrição completa</label><textarea id="ev-descricao"></textarea></div>
+            <div class="form-group"><label>Recomendações</label><textarea id="ev-recomendacoes"></textarea></div>
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Data do evento</label><input type="datetime-local" id="ev-data"></div>
+                <div class="form-group"><label>Fim inscrições</label><input type="datetime-local" id="ev-fim-inscricoes"></div>
+                <div class="form-group"><label>Local</label><input type="text" id="ev-local"></div>
+                <div class="form-group"><label>Vagas</label><input type="number" id="ev-vagas" min="0"></div>
+                <div class="form-group"><label>Preço sócio (€)</label><input type="number" id="ev-preco-socio" min="0" step="0.01" value="0"></div>
+                <div class="form-group"><label>Preço não sócio (€)</label><input type="number" id="ev-preco-nao-socio" min="0" step="0.01" value="0"></div>
+            </div>
+            <div class="form-group"><label>Estado</label>
+                <select id="ev-estado">
+                    <option value="rascunho">Rascunho</option>
+                    <option value="aberto">Aberto</option>
+                    <option value="fechado">Fechado</option>
+                    <option value="concluido">Concluído</option>
+                    <option value="cancelado">Cancelado</option>
+                </select>
+            </div>
+            <div class="form-group"><label>URL da imagem</label><input type="url" id="ev-imagem"></div>
+            <div class="form-group"><label>URL do regulamento</label><input type="url" id="ev-regulamento"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modalEvento')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarEvento()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL SÓCIO -->
+    <div class="modal-overlay" id="modalSocio">
+        <div class="modal-box">
+            <h3>Editar Sócio</h3>
+            <input type="hidden" id="socioId">
+            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                <div class="form-group"><label>Nome</label><input type="text" id="sc-nome"></div>
+                <div class="form-group"><label>Apelido</label><input type="text" id="sc-apelido"></div>
+                <div class="form-group"><label>Email</label><input type="email" id="sc-email" disabled style="background:#f9f9f9;"></div>
+                <div class="form-group"><label>Telefone</label><input type="text" id="sc-telefone"></div>
+                <div class="form-group"><label>NIF</label><input type="text" id="sc-nif"></div>
+                <div class="form-group"><label>Nº Sócio</label><input type="text" id="sc-numero"></div>
+                <div class="form-group"><label>Estado</label>
+                    <select id="sc-estado">
+                        <option value="ativo">Ativo</option>
+                        <option value="inativo">Inativo</option>
+                        <option value="bloqueado">Bloqueado</option>
+                    </select>
+                </div>
+                <div class="form-group"><label>Role</label>
+                    <select id="sc-role">
+                        <option value="user">Sócio</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modalSocio')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarSocio()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL MENSAGEM SUPORTE -->
+    <div class="modal-overlay" id="modalSuporte">
+        <div class="modal-box">
+            <h3 id="modalSuporteTitulo">Mensagem</h3>
+            <div id="modalSuporteConteudo" style="font-size:14px; line-height:1.7; color:#444;"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modalSuporte')">Fechar</button>
+                <button class="btn btn-primary" id="btnResponderSuporte">Marcar respondido</button>
+            </div>
+        </div>
+    </div>
 
     <footer class="footer">
         <div class="container copyright">
@@ -130,205 +329,497 @@
     <script src="js/main.js"></script>
     <script type="module">
         import {
-            requireAdmin,
+            requireAdmin, supabase,
             getAdminPedidosSocio, atualizarPedidoSocio,
             getAdminInscricoesEvento, atualizarInscricaoEvento,
             getAdminQuotas, atualizarQuota,
             formatarData, formatarMoeda
         } from './js/supabase.js'
 
-        // Só admins acedem — redireciona se não for admin
         const auth = await requireAdmin()
         if (!auth) throw new Error('sem permissao')
 
-        // ── Utilitário de botões ─────────────────────────────────────────
-        function btnAprovar(onClick) {
+        // ── Navegação sidebar ────────────────────────────────────────────
+        window.navegarPara = function(sec) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'))
+            document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'))
+            document.getElementById('sec-' + sec)?.classList.add('active')
+            document.querySelector(`[data-sec="${sec}"]`)?.classList.add('active')
+            carregarSecao(sec)
+        }
+
+        document.querySelectorAll('.admin-sidebar a[data-sec]').forEach(a => {
+            a.addEventListener('click', e => { e.preventDefault(); navegarPara(a.dataset.sec) })
+        })
+
+        // ── Modais ───────────────────────────────────────────────────────
+        window.fecharModal = id => document.getElementById(id).classList.remove('open')
+
+        // ── Botões utilitários ───────────────────────────────────────────
+        function btnAprovar(label, onClick) {
             const b = document.createElement('button')
-            b.textContent = 'Aprovar'
+            b.textContent = label || 'Aprovar'
             b.className = 'btn btn-small btn-primary'
-            b.style.marginRight = '6px'
+            b.style.marginRight = '4px'
             b.addEventListener('click', onClick)
             return b
         }
-
-        function btnRejeitar(onClick) {
+        function btnAcao(label, cor, onClick) {
             const b = document.createElement('button')
-            b.textContent = 'Rejeitar'
+            b.textContent = label
             b.className = 'btn btn-small'
-            b.style.background = '#fee2e2'
-            b.style.color = '#991b1b'
+            b.style.cssText = `background:${cor === 'danger' ? '#fee2e2' : '#f0f0f0'};color:${cor === 'danger' ? '#991b1b' : '#444'};margin-right:4px;`
             b.addEventListener('click', onClick)
             return b
         }
 
-        // ── Pedidos de Sócio ─────────────────────────────────────────────
-        async function carregarPedidos() {
-            const { data } = await getAdminPedidosSocio()
-            const tbody = document.getElementById('adminPedidosSocio')
-            const pendentes = data?.filter(p => p.estado === 'pendente') || []
+        const pagBadge = {
+            pendente:     '<span class="badge badge-pendente">Pendente</span>',
+            em_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validação</span>',
+            validado:     '<span class="badge badge-pago">Validado</span>',
+            rejeitado:    '<span class="badge badge-nao-socio">Rejeitado</span>'
+        }
+        const quotaBadge = {
+            por_pagar:         '<span class="badge badge-pendente">Por Pagar</span>',
+            pendente_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validação</span>',
+            pago:              '<span class="badge badge-pago">Pago</span>',
+            isento:            '<span class="badge badge-pago">Isento</span>',
+            cancelado:         '<span class="badge badge-nao-socio">Cancelado</span>'
+        }
+        const estadoBadgeSocio = {
+            ativo:     '<span class="badge badge-pago">Ativo</span>',
+            inativo:   '<span class="badge badge-pendente">Inativo</span>',
+            bloqueado: '<span class="badge badge-nao-socio">Bloqueado</span>'
+        }
 
-            document.getElementById('adminPedidosCount').textContent = pendentes.length
+        // ── DASHBOARD ────────────────────────────────────────────────────
+        async function carregarDashboard() {
+            const [
+                { count: socios },
+                { count: pedidos },
+                { count: inscricoes },
+                { count: quotas },
+                { count: suporteMsg },
+                { count: eventos }
+            ] = await Promise.all([
+                supabase.from('utilizadores').select('*', { count:'exact', head:true }).eq('estado','ativo'),
+                supabase.from('pedidos_socio').select('*', { count:'exact', head:true }).eq('estado','pendente'),
+                supabase.from('inscricoes_evento').select('*', { count:'exact', head:true }).eq('pagamento_estado','pendente'),
+                supabase.from('quotas').select('*', { count:'exact', head:true }).eq('estado','por_pagar'),
+                supabase.from('mensagens_suporte').select('*', { count:'exact', head:true }).eq('estado','novo'),
+                supabase.from('eventos').select('*', { count:'exact', head:true }).eq('estado','aberto')
+            ])
+            document.getElementById('ds-socios').textContent    = socios ?? 0
+            document.getElementById('ds-pedidos').textContent   = pedidos ?? 0
+            document.getElementById('ds-inscricoes').textContent = inscricoes ?? 0
+            document.getElementById('ds-quotas').textContent    = quotas ?? 0
+            document.getElementById('ds-suporte').textContent   = suporteMsg ?? 0
+            document.getElementById('ds-eventos').textContent   = eventos ?? 0
 
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem pedidos.</td></tr>'
-                return
-            }
+            document.getElementById('sb-pedidos').textContent  = pedidos ?? 0
+            document.getElementById('sb-inscricoes').textContent = inscricoes ?? 0
+            document.getElementById('sb-quotas').textContent   = quotas ?? 0
+            document.getElementById('sb-suporte').textContent  = suporteMsg ?? 0
+
+            const { data: recente } = await supabase
+                .from('inscricoes_evento')
+                .select('nome, data_inscricao, eventos(titulo)')
+                .order('data_inscricao', { ascending: false })
+                .limit(5)
+
+            const div = document.getElementById('ds-atividade')
+            if (!recente?.length) { div.textContent = 'Sem atividade recente.'; return }
+            div.innerHTML = recente.map(r => `
+                <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:14px;">
+                    <strong>${r.nome}</strong> inscrito em <em>${r.eventos?.titulo || '-'}</em>
+                    <span style="float:right;color:#999;font-size:12px;">${formatarData(r.data_inscricao)}</span>
+                </div>`).join('')
+        }
+
+        // ── EVENTOS ──────────────────────────────────────────────────────
+        let todosEventos = []
+
+        async function carregarEventos() {
+            const { data } = await supabase.from('eventos').select('*').order('data_evento', { ascending: false })
+            todosEventos = data || []
+            const tbody = document.getElementById('tbl-eventos')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem eventos.</td></tr>'; return }
+
+            const tagClass = { aberto:'tag-aberto', fechado:'tag-fechado', rascunho:'tag-rascunho', concluido:'tag-concluido', cancelado:'tag-cancelado' }
 
             tbody.innerHTML = ''
-            data.forEach(p => {
+            data.forEach(ev => {
                 const tr = document.createElement('tr')
-                const estadoBadge = p.estado === 'pendente'
-                    ? '<span class="badge badge-pendente">Pendente</span>'
-                    : p.estado === 'aprovado'
-                        ? '<span class="badge badge-pago">Aprovado</span>'
-                        : '<span class="badge badge-nao-socio">Rejeitado</span>'
-
                 tr.innerHTML = `
-                    <td>${p.nome} ${p.apelido}</td>
-                    <td>${p.email}</td>
-                    <td>${p.nif || '-'}</td>
-                    <td>${estadoBadge}</td>
+                    <td><strong>${ev.titulo}</strong><br><small style="color:#999;">${ev.slug}</small></td>
+                    <td>${formatarData(ev.data_evento)}</td>
+                    <td><span class="badge ${tagClass[ev.estado] || ''}" style="padding:3px 10px;border-radius:99px;font-size:12px;">${ev.estado}</span></td>
+                    <td>${ev.vagas ?? 'Ilimitado'}</td>
                     <td></td>`
-
-                if (p.estado === 'pendente') {
-                    const tdAcao = tr.querySelector('td:last-child')
-                    tdAcao.appendChild(btnAprovar(async () => {
-                        await atualizarPedidoSocio(p.id, { estado: 'aprovado' })
-                        carregarPedidos()
-                    }))
-                    tdAcao.appendChild(btnRejeitar(async () => {
-                        await atualizarPedidoSocio(p.id, { estado: 'rejeitado' })
-                        carregarPedidos()
-                    }))
-                }
-
+                const td = tr.querySelector('td:last-child')
+                td.appendChild(btnAprovar('Editar', () => abrirModalEvento(ev)))
+                td.appendChild(btnAcao('Eliminar', 'danger', async () => {
+                    if (confirm(`Eliminar "${ev.titulo}"?`)) {
+                        await supabase.from('eventos').delete().eq('id', ev.id)
+                        carregarEventos()
+                    }
+                }))
                 tbody.appendChild(tr)
             })
+
+            // Popular filtro de eventos nas inscrições
+            const sel = document.getElementById('filtroEvento')
+            sel.innerHTML = '<option value="">Todos os eventos</option>'
+            data.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.titulo; sel.appendChild(o) })
         }
 
-        // ── Inscrições em Eventos ────────────────────────────────────────
-        async function carregarInscricoes() {
-            const { data } = await getAdminInscricoesEvento()
-            const tbody = document.getElementById('adminInscricoesEvento')
-            const pendentes = data?.filter(i => i.pagamento_estado === 'em_validacao') || []
+        window.abrirModalEvento = function(ev) {
+            document.getElementById('modalEventoTitulo').textContent = ev ? 'Editar Evento' : 'Novo Evento'
+            document.getElementById('eventoId').value      = ev?.id || ''
+            document.getElementById('ev-titulo').value     = ev?.titulo || ''
+            document.getElementById('ev-slug').value       = ev?.slug || ''
+            document.getElementById('ev-categoria').value  = ev?.categoria || ''
+            document.getElementById('ev-descricao-curta').value = ev?.descricao_curta || ''
+            document.getElementById('ev-descricao').value  = ev?.descricao || ''
+            document.getElementById('ev-recomendacoes').value = ev?.recomendacoes || ''
+            document.getElementById('ev-data').value       = ev?.data_evento ? ev.data_evento.slice(0,16) : ''
+            document.getElementById('ev-fim-inscricoes').value = ev?.data_fim_inscricoes ? ev.data_fim_inscricoes.slice(0,16) : ''
+            document.getElementById('ev-local').value      = ev?.local || ''
+            document.getElementById('ev-vagas').value      = ev?.vagas || ''
+            document.getElementById('ev-preco-socio').value = ev?.preco_socio ?? 0
+            document.getElementById('ev-preco-nao-socio').value = ev?.preco_nao_socio ?? 0
+            document.getElementById('ev-estado').value     = ev?.estado || 'rascunho'
+            document.getElementById('ev-imagem').value     = ev?.imagem_url || ''
+            document.getElementById('ev-regulamento').value = ev?.regulamento_url || ''
+            document.getElementById('modalEvento').classList.add('open')
+        }
 
-            document.getElementById('adminInscricoesCount').textContent = pendentes.length
-
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem inscricoes.</td></tr>'
-                return
+        window.guardarEvento = async function() {
+            const id = document.getElementById('eventoId').value
+            const payload = {
+                titulo:           document.getElementById('ev-titulo').value.trim(),
+                slug:             document.getElementById('ev-slug').value.trim(),
+                categoria:        document.getElementById('ev-categoria').value.trim() || null,
+                descricao_curta:  document.getElementById('ev-descricao-curta').value.trim() || null,
+                descricao:        document.getElementById('ev-descricao').value.trim() || null,
+                recomendacoes:    document.getElementById('ev-recomendacoes').value.trim() || null,
+                data_evento:      document.getElementById('ev-data').value || null,
+                data_fim_inscricoes: document.getElementById('ev-fim-inscricoes').value || null,
+                local:            document.getElementById('ev-local').value.trim() || null,
+                vagas:            parseInt(document.getElementById('ev-vagas').value) || null,
+                preco_socio:      parseFloat(document.getElementById('ev-preco-socio').value) || 0,
+                preco_nao_socio:  parseFloat(document.getElementById('ev-preco-nao-socio').value) || 0,
+                estado:           document.getElementById('ev-estado').value,
+                imagem_url:       document.getElementById('ev-imagem').value.trim() || null,
+                regulamento_url:  document.getElementById('ev-regulamento').value.trim() || null
             }
-
-            const pagBadge = {
-                pendente:     '<span class="badge badge-pendente">Pendente</span>',
-                em_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validacao</span>',
-                validado:     '<span class="badge badge-pago">Validado</span>',
-                rejeitado:    '<span class="badge badge-nao-socio">Rejeitado</span>'
+            if (id) {
+                await supabase.from('eventos').update(payload).eq('id', id)
+            } else {
+                await supabase.from('eventos').insert(payload)
             }
+            fecharModal('modalEvento')
+            carregarEventos()
+        }
+
+        // ── INSCRIÇÕES ───────────────────────────────────────────────────
+        window.carregarInscricoes = async function() {
+            const eventoFiltro   = document.getElementById('filtroEvento').value
+            const pagFiltro      = document.getElementById('filtroPagamento').value
+            let query = supabase.from('inscricoes_evento').select('*, eventos(titulo)').order('data_inscricao', { ascending: false })
+            if (eventoFiltro)  query = query.eq('evento_id', eventoFiltro)
+            if (pagFiltro)     query = query.eq('pagamento_estado', pagFiltro)
+            const { data } = await query
+            window._inscricoes = data || []
+            const tbody = document.getElementById('tbl-inscricoes')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
 
             tbody.innerHTML = ''
             data.forEach(i => {
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
                     <td>${i.eventos?.titulo || '-'}</td>
-                    <td>${i.nome}<br><small style="color:#999;">${i.email}</small></td>
+                    <td>${i.nome}</td>
+                    <td style="font-size:12px;">${i.email}</td>
                     <td>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
-                    <td>
-                        <input type="text" value="${i.dorsal || ''}"
-                            id="dorsal_${i.id}"
-                            style="width:60px; padding:4px 6px; border:1px solid #ddd; border-radius:4px; font-size:13px;">
-                    </td>
+                    <td><input type="text" value="${i.dorsal || ''}" id="d_${i.id}" style="width:55px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:13px;"></td>
                     <td></td>`
-
-                const tdAcao = tr.querySelector('td:last-child')
-
+                const td = tr.querySelector('td:last-child')
                 if (i.pagamento_estado !== 'validado') {
-                    tdAcao.appendChild(btnAprovar(async () => {
-                        const dorsal = document.getElementById(`dorsal_${i.id}`).value.trim() || null
-                        await atualizarInscricaoEvento(i.id, {
-                            pagamento_estado: 'validado',
-                            estado: 'confirmada',
-                            dorsal,
-                            data_confirmacao: new Date().toISOString()
-                        })
+                    td.appendChild(btnAprovar('Confirmar', async () => {
+                        const dorsal = document.getElementById(`d_${i.id}`).value.trim() || null
+                        await atualizarInscricaoEvento(i.id, { pagamento_estado:'validado', estado:'confirmada', dorsal, data_confirmacao: new Date().toISOString() })
                         carregarInscricoes()
                     }))
                 }
-
                 if (i.estado !== 'rejeitada' && i.estado !== 'cancelada') {
-                    tdAcao.appendChild(btnRejeitar(async () => {
-                        await atualizarInscricaoEvento(i.id, {
-                            pagamento_estado: 'rejeitado',
-                            estado: 'rejeitada'
-                        })
+                    td.appendChild(btnAcao('Rejeitar', 'danger', async () => {
+                        await atualizarInscricaoEvento(i.id, { pagamento_estado:'rejeitado', estado:'rejeitada' })
                         carregarInscricoes()
                     }))
                 }
-
+                td.appendChild(btnAcao('Eliminar', 'danger', async () => {
+                    if (confirm('Eliminar esta inscrição?')) {
+                        await supabase.from('inscricoes_evento').delete().eq('id', i.id)
+                        carregarInscricoes()
+                    }
+                }))
                 tbody.appendChild(tr)
             })
         }
 
-        // ── Quotas ───────────────────────────────────────────────────────
-        async function carregarQuotas() {
-            const { data } = await getAdminQuotas()
-            const tbody = document.getElementById('adminQuotas')
-            const pendentes = data?.filter(q =>
-                q.estado === 'por_pagar' || q.estado === 'pendente_validacao'
-            ) || []
+        window.exportarInscricoes = function() {
+            const data = window._inscricoes || []
+            if (!data.length) return alert('Sem dados para exportar.')
+            const header = 'Evento,Nome,Email,Estado Pagamento,Dorsal,Data Inscrição'
+            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pagamento_estado}","${i.dorsal || ''}","${i.data_inscricao}"`)
+            const csv = [header, ...rows].join('\n')
+            const a = document.createElement('a')
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+            a.download = 'inscricoes.csv'
+            a.click()
+        }
 
-            document.getElementById('adminQuotasCount').textContent = pendentes.length
+        // ── SÓCIOS ───────────────────────────────────────────────────────
+        let todosSocios = []
 
-            if (!data || data.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#999;">Sem quotas.</td></tr>'
-                return
-            }
+        async function carregarSocios() {
+            const { data } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
+            todosSocios = data || []
+            renderSocios(todosSocios)
+        }
 
-            const quotaBadge = {
-                por_pagar:          '<span class="badge badge-pendente">Por Pagar</span>',
-                pendente_validacao:  '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validacao</span>',
-                pago:               '<span class="badge badge-pago">Pago</span>',
-                isento:             '<span class="badge badge-pago">Isento</span>',
-                cancelado:          '<span class="badge badge-nao-socio">Cancelado</span>'
-            }
-
+        function renderSocios(data) {
+            const tbody = document.getElementById('tbl-socios')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem sócios.</td></tr>'; return }
             tbody.innerHTML = ''
-            data.forEach(q => {
-                const socio = q.utilizadores
-                const nomeSocio = socio
-                    ? `${socio.nome || ''} ${socio.apelido || ''}`.trim()
-                    : '-'
-
+            data.forEach(s => {
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
-                    <td>${nomeSocio}<br><small style="color:#999;">${socio?.email || ''}</small></td>
-                    <td>${q.ano}</td>
-                    <td>${formatarMoeda(q.valor)}</td>
-                    <td>${quotaBadge[q.estado] || q.estado}</td>
+                    <td>${s.numero_socio || '-'}</td>
+                    <td>${s.nome || ''} ${s.apelido || ''}</td>
+                    <td style="font-size:12px;">${s.email}</td>
+                    <td>${estadoBadgeSocio[s.estado] || s.estado}</td>
                     <td></td>`
-
-                const tdAcao = tr.querySelector('td:last-child')
-
-                if (q.estado !== 'pago' && q.estado !== 'isento') {
-                    tdAcao.appendChild(btnAprovar(async () => {
-                        await atualizarQuota(q.id, {
-                            estado: 'pago',
-                            data_pagamento: new Date().toISOString().split('T')[0]
-                        })
-                        carregarQuotas()
+                const td = tr.querySelector('td:last-child')
+                td.appendChild(btnAprovar('Editar', () => abrirModalSocio(s)))
+                if (s.estado !== 'bloqueado') {
+                    td.appendChild(btnAcao('Bloquear', 'danger', async () => {
+                        await supabase.from('utilizadores').update({ estado:'bloqueado' }).eq('id', s.id)
+                        carregarSocios()
                     }))
-                    tdAcao.appendChild(btnRejeitar(async () => {
-                        await atualizarQuota(q.id, { estado: 'cancelado' })
-                        carregarQuotas()
+                } else {
+                    td.appendChild(btnAcao('Desbloquear', 'normal', async () => {
+                        await supabase.from('utilizadores').update({ estado:'ativo' }).eq('id', s.id)
+                        carregarSocios()
                     }))
                 }
-
                 tbody.appendChild(tr)
             })
         }
 
-        // Carregar tudo
-        await Promise.all([carregarPedidos(), carregarInscricoes(), carregarQuotas()])
+        window.filtrarSocios = function() {
+            const termo  = document.getElementById('searchSocios').value.toLowerCase()
+            const estado = document.getElementById('filtroEstadoSocio').value
+            const filtrado = todosSocios.filter(s => {
+                const nome = `${s.nome || ''} ${s.apelido || ''} ${s.email || ''}`.toLowerCase()
+                return nome.includes(termo) && (!estado || s.estado === estado)
+            })
+            renderSocios(filtrado)
+        }
+
+        window.abrirModalSocio = function(s) {
+            document.getElementById('socioId').value    = s.id
+            document.getElementById('sc-nome').value    = s.nome || ''
+            document.getElementById('sc-apelido').value = s.apelido || ''
+            document.getElementById('sc-email').value   = s.email || ''
+            document.getElementById('sc-telefone').value = s.telefone || ''
+            document.getElementById('sc-nif').value     = s.nif || ''
+            document.getElementById('sc-numero').value  = s.numero_socio || ''
+            document.getElementById('sc-estado').value  = s.estado || 'ativo'
+            document.getElementById('sc-role').value    = s.role || 'user'
+            document.getElementById('modalSocio').classList.add('open')
+        }
+
+        window.guardarSocio = async function() {
+            const id = document.getElementById('socioId').value
+            await supabase.from('utilizadores').update({
+                nome:         document.getElementById('sc-nome').value.trim(),
+                apelido:      document.getElementById('sc-apelido').value.trim(),
+                telefone:     document.getElementById('sc-telefone').value.trim() || null,
+                nif:          document.getElementById('sc-nif').value.trim() || null,
+                numero_socio: document.getElementById('sc-numero').value.trim() || null,
+                estado:       document.getElementById('sc-estado').value,
+                role:         document.getElementById('sc-role').value
+            }).eq('id', id)
+            fecharModal('modalSocio')
+            carregarSocios()
+        }
+
+        // ── PEDIDOS DE SÓCIO ─────────────────────────────────────────────
+        async function carregarPedidos() {
+            const { data } = await getAdminPedidosSocio()
+            const tbody = document.getElementById('tbl-pedidos')
+            document.getElementById('sb-pedidos').textContent = data?.filter(p => p.estado === 'pendente').length || 0
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem pedidos.</td></tr>'; return }
+            tbody.innerHTML = ''
+            data.forEach(p => {
+                const badge = p.estado === 'pendente' ? '<span class="badge badge-pendente">Pendente</span>'
+                    : p.estado === 'aprovado' ? '<span class="badge badge-pago">Aprovado</span>'
+                    : '<span class="badge badge-nao-socio">Rejeitado</span>'
+                const tr = document.createElement('tr')
+                tr.innerHTML = `<td>${p.nome} ${p.apelido}</td><td style="font-size:12px;">${p.email}</td><td>${p.nif || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
+                const td = tr.querySelector('td:last-child')
+                if (p.estado === 'pendente') {
+                    td.appendChild(btnAprovar('Aprovar', async () => { await atualizarPedidoSocio(p.id, { estado:'aprovado' }); carregarPedidos() }))
+                    td.appendChild(btnAcao('Rejeitar', 'danger', async () => { await atualizarPedidoSocio(p.id, { estado:'rejeitado' }); carregarPedidos() }))
+                }
+                tbody.appendChild(tr)
+            })
+        }
+
+        // ── QUOTAS ───────────────────────────────────────────────────────
+        let todasQuotas = []
+
+        window.carregarQuotas = async function() {
+            const filtro = document.getElementById('filtroEstadoQuota').value
+            const { data } = await getAdminQuotas()
+            todasQuotas = data || []
+            const filtrado = filtro ? data?.filter(q => q.estado === filtro) : data
+            document.getElementById('sb-quotas').textContent = data?.filter(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao').length || 0
+            const tbody = document.getElementById('tbl-quotas')
+            if (!filtrado?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem quotas.</td></tr>'; return }
+            tbody.innerHTML = ''
+            filtrado.forEach(q => {
+                const socio = q.utilizadores
+                const nome = socio ? `${socio.nome || ''} ${socio.apelido || ''}`.trim() : '-'
+                const tr = document.createElement('tr')
+                tr.innerHTML = `<td>${nome}<br><small style="color:#999;">${socio?.email || ''}</small></td><td>${q.ano}</td><td>${formatarMoeda(q.valor)}</td><td>${quotaBadge[q.estado] || q.estado}</td><td style="font-size:12px;">${q.data_pagamento ? formatarData(q.data_pagamento) : '-'}</td><td></td>`
+                const td = tr.querySelector('td:last-child')
+                if (q.estado !== 'pago' && q.estado !== 'isento') {
+                    td.appendChild(btnAprovar('Validar', async () => { await atualizarQuota(q.id, { estado:'pago', data_pagamento: new Date().toISOString().split('T')[0] }); carregarQuotas() }))
+                    td.appendChild(btnAcao('Isentar', 'normal', async () => { await atualizarQuota(q.id, { estado:'isento' }); carregarQuotas() }))
+                    td.appendChild(btnAcao('Cancelar', 'danger', async () => { await atualizarQuota(q.id, { estado:'cancelado' }); carregarQuotas() }))
+                }
+                tbody.appendChild(tr)
+            })
+        }
+
+        window.exportarQuotas = function() {
+            const data = todasQuotas
+            if (!data.length) return alert('Sem dados para exportar.')
+            const header = 'Nome,Email,Ano,Valor,Estado,Data Pagamento'
+            const rows = data.map(q => {
+                const s = q.utilizadores
+                return `"${s?.nome || ''} ${s?.apelido || ''}","${s?.email || ''}","${q.ano}","${q.valor}","${q.estado}","${q.data_pagamento || ''}"`
+            })
+            const csv = [header, ...rows].join('\n')
+            const a = document.createElement('a')
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+            a.download = 'quotas.csv'
+            a.click()
+        }
+
+        // ── PAGAMENTOS ───────────────────────────────────────────────────
+        async function carregarPagamentos() {
+            const { data } = await supabase
+                .from('pagamentos')
+                .select('*, utilizadores(nome, apelido, email)')
+                .order('created_at', { ascending: false })
+            const tbody = document.getElementById('tbl-pagamentos')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem pagamentos.</td></tr>'; return }
+            tbody.innerHTML = ''
+            data.forEach(p => {
+                const u = p.utilizadores
+                const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : '-'
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                    <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span></td>
+                    <td>${nome}<br><small style="color:#999;">${u?.email || ''}</small></td>
+                    <td>${formatarMoeda(p.valor)}</td>
+                    <td>${p.metodo || '-'}</td>
+                    <td>${pagBadge[p.estado] || p.estado}</td>
+                    <td style="font-size:12px;">${formatarData(p.created_at)}</td>
+                    <td></td>`
+                const td = tr.querySelector('td:last-child')
+                if (p.estado === 'pendente' || p.estado === 'em_validacao') {
+                    td.appendChild(btnAprovar('Validar', async () => {
+                        await supabase.from('pagamentos').update({ estado:'validado', validado_por: auth.sessao.user.id, validado_em: new Date().toISOString() }).eq('id', p.id)
+                        carregarPagamentos()
+                    }))
+                    td.appendChild(btnAcao('Rejeitar', 'danger', async () => {
+                        await supabase.from('pagamentos').update({ estado:'rejeitado' }).eq('id', p.id)
+                        carregarPagamentos()
+                    }))
+                }
+                tbody.appendChild(tr)
+            })
+        }
+
+        // ── SUPORTE ──────────────────────────────────────────────────────
+        async function carregarSuporte() {
+            const { data } = await supabase.from('mensagens_suporte').select('*').order('created_at', { ascending: false })
+            document.getElementById('sb-suporte').textContent = data?.filter(m => m.estado === 'novo').length || 0
+            const tbody = document.getElementById('tbl-suporte')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem mensagens.</td></tr>'; return }
+            const estadoBadgeMsg = {
+                novo:        '<span class="badge badge-pendente">Novo</span>',
+                em_analise:  '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em análise</span>',
+                respondido:  '<span class="badge badge-pago">Respondido</span>',
+                arquivado:   '<span class="badge" style="background:#f0f0f0;color:#888;">Arquivado</span>'
+            }
+            tbody.innerHTML = ''
+            data.forEach(m => {
+                const tr = document.createElement('tr')
+                tr.innerHTML = `<td>${m.nome}</td><td style="font-size:12px;">${m.email}</td><td>${m.assunto}</td><td style="font-size:12px;">${formatarData(m.created_at)}</td><td>${estadoBadgeMsg[m.estado] || m.estado}</td><td></td>`
+                const td = tr.querySelector('td:last-child')
+                td.appendChild(btnAprovar('Ver', () => {
+                    document.getElementById('modalSuporteTitulo').textContent = m.assunto
+                    document.getElementById('modalSuporteConteudo').innerHTML = `
+                        <p><strong>De:</strong> ${m.nome} &lt;${m.email}&gt;</p>
+                        <p><strong>Data:</strong> ${formatarData(m.created_at)}</p>
+                        <hr style="margin:12px 0;border:0;border-top:1px solid #eee;">
+                        <p style="white-space:pre-wrap;">${m.mensagem}</p>`
+                    document.getElementById('btnResponderSuporte').onclick = async () => {
+                        await supabase.from('mensagens_suporte').update({ estado:'respondido' }).eq('id', m.id)
+                        fecharModal('modalSuporte')
+                        carregarSuporte()
+                    }
+                    document.getElementById('modalSuporte').classList.add('open')
+                }))
+                if (m.estado !== 'arquivado') {
+                    td.appendChild(btnAcao('Arquivar', 'normal', async () => {
+                        await supabase.from('mensagens_suporte').update({ estado:'arquivado' }).eq('id', m.id)
+                        carregarSuporte()
+                    }))
+                }
+                tbody.appendChild(tr)
+            })
+        }
+
+        // ── Carregar secção ──────────────────────────────────────────────
+        const secCarregadas = new Set()
+        window.carregarSecao = async function(sec) {
+            if (secCarregadas.has(sec)) return
+            secCarregadas.add(sec)
+            if (sec === 'dashboard')  await carregarDashboard()
+            if (sec === 'eventos')    await carregarEventos()
+            if (sec === 'inscricoes') { await carregarEventos(); await carregarInscricoes() }
+            if (sec === 'socios')     await carregarSocios()
+            if (sec === 'pedidos')    await carregarPedidos()
+            if (sec === 'quotas')     await carregarQuotas()
+            if (sec === 'pagamentos') await carregarPagamentos()
+            if (sec === 'suporte')    await carregarSuporte()
+        }
+
+        // Carregar dashboard inicial
+        await carregarDashboard()
+        secCarregadas.add('dashboard')
+
+        // Fechar modal ao clicar fora
+        document.querySelectorAll('.modal-overlay').forEach(m => {
+            m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open') })
+        })
     </script>
 </body>
 </html>
