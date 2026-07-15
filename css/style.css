@@ -883,3 +883,101 @@ body.home-page .nav-link.active {
         margin-bottom: 20px;
     }
 }
+/* --- NAVBAR MOBILE (HAMBURGUER) --- */
+.nav-toggle {
+    display: none;
+    flex-direction: column;
+    justify-content: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    z-index: 1100;
+}
+
+.nav-toggle span {
+    display: block;
+    width: 100%;
+    height: 2px;
+    background-color: #fff;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+}
+
+/* Cor das barras quando header não é transparente */
+body:not(.home-page) .nav-toggle span {
+    background-color: var(--primary-color);
+}
+
+/* Animação para X quando aberto */
+.nav-toggle.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.nav-toggle.open span:nth-child(2) { opacity: 0; }
+.nav-toggle.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: flex;
+    }
+
+    .nav {
+        display: block;
+        position: fixed;
+        top: 0;
+        right: -100%;
+        width: 75%;
+        max-width: 300px;
+        height: 100vh;
+        background-color: #fff;
+        z-index: 1050;
+        padding: 80px 30px 30px;
+        box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+        transition: right 0.3s ease;
+        overflow-y: auto;
+    }
+
+    .nav.open {
+        right: 0;
+    }
+
+    .nav-list {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0;
+    }
+
+    .nav-list li {
+        width: 100%;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .nav-link {
+        display: block;
+        padding: 16px 0 !important;
+        font-size: 16px;
+        color: var(--primary-color) !important;
+        text-shadow: none !important;
+        background: none !important;
+    }
+
+    .nav-link:hover, .nav-link.active {
+        color: var(--accent-color) !important;
+        font-weight: 700;
+        background: none !important;
+    }
+
+    /* Overlay escuro atrás do menu */
+    .nav-overlay {
+        display: none;
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 1040;
+    }
+
+    .nav-overlay.open {
+        display: block;
+    }
+}
