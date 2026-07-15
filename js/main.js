@@ -1,4 +1,52 @@
 document.addEventListener('DOMContentLoaded', async function () {
+  // ── Navbar Mobile (Hamburguer) ─────────────────────────────────
+  const navToggle = document.createElement('button')
+  navToggle.className = 'nav-toggle'
+  navToggle.setAttribute('aria-label', 'Abrir menu')
+  navToggle.innerHTML = '<span></span><span></span><span></span>'
+
+  const navOverlay = document.createElement('div')
+  navOverlay.className = 'nav-overlay'
+
+  const nav = document.querySelector('.nav')
+  const headerContainer = document.querySelector('.header-container')
+
+  if (nav && headerContainer) {
+    // Inserir botão antes do botão de login
+    const loginBtn = headerContainer.querySelector('.btn-primary')
+    headerContainer.insertBefore(navToggle, loginBtn)
+    document.body.appendChild(navOverlay)
+
+    function abrirMenu() {
+      nav.classList.add('open')
+      navToggle.classList.add('open')
+      navOverlay.classList.add('open')
+      navToggle.setAttribute('aria-label', 'Fechar menu')
+      document.body.style.overflow = 'hidden'
+    }
+
+    function fecharMenu() {
+      nav.classList.remove('open')
+      navToggle.classList.remove('open')
+      navOverlay.classList.remove('open')
+      navToggle.setAttribute('aria-label', 'Abrir menu')
+      document.body.style.overflow = ''
+    }
+
+    navToggle.addEventListener('click', () => {
+      nav.classList.contains('open') ? fecharMenu() : abrirMenu()
+    })
+
+    navOverlay.addEventListener('click', fecharMenu)
+
+    // Fechar ao clicar num link do menu
+    nav.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', fecharMenu)
+    })
+  }
+  // ────────────────────────────────────────────────────────────────
+
+
   let api = null
 
   try {
