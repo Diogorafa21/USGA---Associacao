@@ -50,6 +50,7 @@ export async function getPerfil(userId) {
   return { data, error }
 }
 
+// Agora inclui p_nif (corrigido)
 export async function atualizarPerfil(userId, dados) {
   const { data, error } = await supabase.rpc('atualizar_meu_perfil', {
     p_nome:            dados.nome            ?? null,
@@ -58,7 +59,8 @@ export async function atualizarPerfil(userId, dados) {
     p_data_nascimento: dados.data_nascimento ?? null,
     p_cidade:          dados.cidade          ?? null,
     p_pais:            dados.pais            ?? null,
-    p_foto_url:        dados.foto_url        ?? null
+    p_foto_url:        dados.foto_url        ?? null,
+    p_nif:             dados.nif             ?? null
   })
   return { data, error }
 }
@@ -119,14 +121,20 @@ export async function getEvento(idOuSlug) {
 
 // Inscricoes -----------------------------------------------------------------
 
+// Usa o novo RPC que cria inscrição + pagamento numa só operação
 export async function criarInscricaoEvento(dados) {
-  const sessao = await getSessao()
-  const payload = { ...dados, utilizador_id: sessao?.user?.id ?? null }
-  const { data, error } = await supabase
-    .from('inscricoes_evento')
-    .insert(payload)
-    .select('id, public_token, estado, pagamento_estado')
-    .single()
+  const { data, error } = await supabase.rpc('criar_inscricao_com_pagamento', {
+    p_evento_id:       dados.evento_id,
+    p_nome:            dados.nome,
+    p_email:           dados.email,
+    p_telefone:        dados.telefone        ?? null,
+    p_nif:             dados.nif             ?? null,
+    p_bi:              dados.bi              ?? null,
+    p_data_nascimento: dados.data_nascimento ?? null,
+    p_sexo:            dados.sexo            ?? null,
+    p_pais:            dados.pais            ?? 'Portugal',
+    p_equipa:          dados.equipa          ?? null
+  })
   return { data, error }
 }
 
@@ -175,6 +183,24 @@ export async function criarPagamento(dados) {
     .insert(payload)
     .select()
     .single()
+  return { data, error }
+}
+
+// Usa o RPC transacional (corrigido)
+export async function validarPagamento(pagamentoId, dorsal = null, observacoes = null) {
+  const { data, error } = await supabase.rpc('validar_pagamento', {
+    p_pagamento_id: pagamentoId,
+    p_dorsal:       dorsal,
+    p_observacoes:  observacoes
+  })
+  return { data, error }
+}
+
+export async function rejeitarPagamento(pagamentoId, motivo = null) {
+  const { data, error } = await supabase.rpc('rejeitar_pagamento', {
+    p_pagamento_id: pagamentoId,
+    p_motivo:       motivo
+  })
   return { data, error }
 }
 
@@ -244,6 +270,14 @@ export async function atualizarQuota(id, dados) {
     .eq('id', id)
     .select()
     .single()
+  return { data, error }
+}
+
+export async function getAdminPagamentos() {
+  const { data, error } = await supabase
+    .from('pagamentos')
+    .select('*, utilizadores(nome, apelido, email), inscricoes_evento(nome, evento_id, eventos(titulo)), quotas(ano, utilizadores(nome, apelido))')
+    .order('created_at', { ascending: false })
   return { data, error }
 }
 
