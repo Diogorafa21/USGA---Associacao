@@ -71,7 +71,7 @@
                 </div>
 
                 <!-- Link para verificar estado da inscrição -->
-                <div id="linkEstado" style="margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: 14px;">
+                <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: 14px;">
                     <p style="margin-bottom: 8px;">Pode verificar o estado da sua inscrição a qualquer momento:</p>
                     <a id="btnEstado" href="#" style="color: var(--accent-color); font-weight: 700;">Ver estado da minha inscrição →</a>
                 </div>
@@ -89,56 +89,48 @@
 
     <script src="js/main.js"></script>
     <script type="module">
-        import { getEvento, getSessao, supabase, formatarMoeda } from './js/supabase.js'
+        import { getEvento, getEstadoInscricao, formatarMoeda } from './js/supabase.js'
 
         const params      = new URLSearchParams(window.location.search)
         const inscricaoId = params.get('inscricao')
+        const pagamentoId = params.get('pagamento')
+        const token       = params.get('token')
         const eventoId    = params.get('evento')
 
-        // Carregar dados do evento
+        // Usar o token para obter nome do inscrito via RPC (security definer — sem RLS)
+        if (token) {
+            const { data } = await getEstadoInscricao(token)
+            if (data) {
+                document.getElementById('nomeInscrito').textContent = data.nome
+                document.getElementById('referencia').textContent   = `${data.nome} + ${data.evento_titulo || ''}`
+                document.getElementById('nomeEvento').textContent   = data.evento_titulo || 'A carregar...'
+                document.title = `Pagamento - ${data.evento_titulo || 'Evento'} | USGA`
+            }
+            document.getElementById('btnEstado').href = `estado-inscricao.html?token=${token}`
+        }
+
+        // Carregar valor do evento (via query pública — eventos são públicos)
         if (eventoId) {
             const { data: evento } = await getEvento(eventoId)
             if (evento) {
-                document.getElementById('nomeEvento').textContent = evento.titulo
-                document.title = `Pagamento - ${evento.titulo} | USGA`
-
-                // Determinar valor (sócio ou não sócio)
-                const sessao = await getSessao()
-                let valor = evento.preco_nao_socio
-
-                if (sessao) {
-                    const { data: perfil } = await supabase
-                        .from('utilizadores')
-                        .select('role, estado')
-                        .eq('id', sessao.user.id)
-                        .single()
-                    if (perfil && perfil.estado === 'ativo') valor = evento.preco_socio
+                if (!token) {
+                    document.getElementById('nomeEvento').textContent = evento.titulo
+                    document.title = `Pagamento - ${evento.titulo} | USGA`
                 }
-
+                // Valor: usar preco do evento como fallback
+                // (o valor real foi calculado pelo RPC e está no registo de pagamento)
+                const valor = evento.preco_nao_socio
                 document.getElementById('valorPagar').textContent = valor > 0
                     ? formatarMoeda(valor)
                     : 'Consultar regulamento do evento'
             }
         }
 
-        // Carregar dados da inscrição
-        if (inscricaoId) {
-            const { data: inscricao } = await supabase
-                .from('inscricoes_evento')
-                .select('nome, public_token')
-                .eq('id', inscricaoId)
-                .single()
-
-            if (inscricao) {
-                document.getElementById('nomeInscrito').textContent = inscricao.nome
-                document.getElementById('referencia').textContent   = `${inscricao.nome} + ${document.getElementById('nomeEvento').textContent}`
-
-                // Link para verificar estado
-                if (inscricao.public_token) {
-                    document.getElementById('btnEstado').href =
-                        `estado-inscricao.html?token=${inscricao.public_token}`
-                }
-            }
+        // Fallback: se não vieram parâmetros válidos
+        if (!token && !eventoId) {
+            document.getElementById('nomeEvento').textContent  = '-'
+            document.getElementById('nomeInscrito').textContent = '-'
+            document.getElementById('valorPagar').textContent  = '-'
         }
     </script>
 </body>
