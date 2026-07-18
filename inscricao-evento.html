@@ -142,10 +142,10 @@
     <script type="module">
         import { getEvento, criarInscricaoEvento, getSessao, getPerfil } from './js/supabase.js'
  
-        const params  = new URLSearchParams(window.location.search)
+        const params   = new URLSearchParams(window.location.search)
         const eventoId = params.get('id')
-        const msgBox  = document.getElementById('mensagem')
-        const btn     = document.getElementById('btnInscricao')
+        const msgBox   = document.getElementById('mensagem')
+        const btn      = document.getElementById('btnInscricao')
  
         function mostrarMensagem(texto, tipo) {
             msgBox.textContent = texto
@@ -210,7 +210,7 @@
             })
  
             if (error) {
-                const msg = error.message.includes('unique')
+                const msg = error.message.includes('unique') || error.message.includes('already')
                     ? 'Já existe uma inscrição com este email para este evento.'
                     : 'Erro ao submeter inscrição. Tente novamente.'
                 mostrarMensagem(msg, 'erro')
@@ -218,9 +218,13 @@
                 btn.disabled = false
                 return
             }
- 
-            // Redireciona para pagamento com o id da inscrição
-            window.location.href = `pagamento-evento.html?inscricao=${data.id}&evento=${eventoId}`
+
+            // O RPC devolve: inscricao_id, pagamento_id, public_token, valor, evento_titulo
+            const inscricaoId = data.inscricao_id
+            const pagamentoId = data.pagamento_id
+            const token       = data.public_token
+
+            window.location.href = `pagamento-evento.html?inscricao=${inscricaoId}&pagamento=${pagamentoId}&token=${token}&evento=${eventoId}`
         })
     </script>
 </body>
