@@ -1,52 +1,4 @@
 document.addEventListener('DOMContentLoaded', async function () {
-  // ── Navbar Mobile (Hamburguer) ─────────────────────────────────
-  const navToggle = document.createElement('button')
-  navToggle.className = 'nav-toggle'
-  navToggle.setAttribute('aria-label', 'Abrir menu')
-  navToggle.innerHTML = '<span></span><span></span><span></span>'
-
-  const navOverlay = document.createElement('div')
-  navOverlay.className = 'nav-overlay'
-
-  const nav = document.querySelector('.nav')
-  const headerContainer = document.querySelector('.header-container')
-
-  if (nav && headerContainer) {
-    // Inserir botão antes do botão de login
-    const loginBtn = headerContainer.querySelector('.btn-primary')
-    headerContainer.insertBefore(navToggle, loginBtn)
-    document.body.appendChild(navOverlay)
-
-    function abrirMenu() {
-      nav.classList.add('open')
-      navToggle.classList.add('open')
-      navOverlay.classList.add('open')
-      navToggle.setAttribute('aria-label', 'Fechar menu')
-      document.body.style.overflow = 'hidden'
-    }
-
-    function fecharMenu() {
-      nav.classList.remove('open')
-      navToggle.classList.remove('open')
-      navOverlay.classList.remove('open')
-      navToggle.setAttribute('aria-label', 'Abrir menu')
-      document.body.style.overflow = ''
-    }
-
-    navToggle.addEventListener('click', () => {
-      nav.classList.contains('open') ? fecharMenu() : abrirMenu()
-    })
-
-    navOverlay.addEventListener('click', fecharMenu)
-
-    // Fechar ao clicar num link do menu
-    nav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', fecharMenu)
-    })
-  }
-  // ────────────────────────────────────────────────────────────────
-
-
   let api = null
 
   try {
@@ -69,17 +21,19 @@ document.addEventListener('DOMContentLoaded', async function () {
     return
   }
 
-  configurarLogin(api)
-  configurarRegisto(api)
-  configurarPedidoSocio(api)
-  configurarPerfil(api, sessao)
-  configurarInscricaoEvento(api)
-  configurarEventoPublico(api)
-  configurarPagamentoEvento()
-  configurarEstadoInscricao(api)
-  configurarAdmin(api)
-  configurarLogout(api)
-  configurarPreviewFoto()
+  // admin.html tem lógica própria via script type="module" — não inicializar aqui
+  if (!isPagina('admin.html')) {
+    configurarLogin(api)
+    configurarRegisto(api)
+    configurarPedidoSocio(api)
+    configurarPerfil(api, sessao)
+    configurarInscricaoEvento(api)
+    configurarEventoPublico(api)
+    configurarPagamentoEvento()
+    configurarEstadoInscricao(api)
+    configurarLogout(api)
+    configurarPreviewFoto()
+  }
 })
 
 function configurarLogin(api) {
@@ -323,11 +277,12 @@ async function configurarInscricaoEvento(api) {
       return
     }
 
-    sessionStorage.setItem('usga_inscricao_evento_id', data.id)
+    sessionStorage.setItem('usga_inscricao_evento_id', data.inscricao_id)
     sessionStorage.setItem('usga_inscricao_evento_token', data.public_token)
 
     const params = new URLSearchParams({
-      inscricao: data.id,
+      inscricao: data.inscricao_id,
+      pagamento: data.pagamento_id,
       token: data.public_token
     })
 
@@ -606,15 +561,16 @@ function estadoQuotaLabel(estado) {
 }
 
 async function carregarEventoAtual(api) {
-  const slug = getSlugEventoAtual()
-  const { data } = await api.getEvento(slug)
-
+  const idOuSlug = getSlugEventoAtual()
+  if (!idOuSlug) return null
+  const { data } = await api.getEvento(idOuSlug)
   return data
 }
 
 function getSlugEventoAtual() {
   const params = new URLSearchParams(window.location.search)
-  return params.get('evento') || 'caminhada-da-primavera'
+  // Suporta ?id=UUID (novo) e ?evento=slug (compatibilidade)
+  return params.get('id') || params.get('evento') || null
 }
 
 function atualizarLinkInscricaoEvento() {
