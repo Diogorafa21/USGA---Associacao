@@ -147,51 +147,5 @@
         });
     </script>
     <script src="js/main.js"></script>
-    <script type="module">
-        import { getEventosFuturos, getEventosPassados } from './js/supabase.js'
-
-        function renderCard(ev, tipo) {
-            const data = new Date(ev.data_evento).toLocaleDateString('pt-PT', {
-                day: '2-digit', month: 'short', year: 'numeric'
-            })
-            const categoria = [ev.categoria, data].filter(Boolean).join(' • ')
-            const imagem = ev.imagem_url
-                ? `<img src="${ev.imagem_url}" alt="${ev.titulo}" style="width:100%; height:100%; object-fit:cover;">`
-                : '<div class="image-placeholder"></div>'
-            const destino = tipo === 'futuro'
-                ? `evento-futuro.html?id=${ev.id}`
-                : `evento-passado.html?id=${ev.id}`
-
-            return `
-                <a href="${destino}" class="project-card">
-                    <div class="project-image">${imagem}</div>
-                    <div class="project-info">
-                        <span class="project-category">${categoria}</span>
-                        <h3>${ev.titulo}</h3>
-                        <p>${ev.descricao_curta || ''}</p>
-                    </div>
-                </a>`
-        }
-
-        // Carregar eventos futuros
-        const { data: futuros } = await getEventosFuturos()
-        const futureList = document.getElementById('futureEventsList')
-
-        if (!futuros || futuros.length === 0) {
-            futureList.innerHTML = '<p style="color:#999; font-style:italic;">Não há eventos agendados de momento.</p>'
-        } else {
-            futureList.innerHTML = futuros.map(ev => renderCard(ev, 'futuro')).join('')
-        }
-
-        // Carregar eventos passados
-        const { data: passados } = await getEventosPassados()
-        const pastList = document.getElementById('pastEventsList')
-
-        if (!passados || passados.length === 0) {
-            pastList.innerHTML = '<p style="color:#999; font-style:italic;">Ainda não há eventos no arquivo.</p>'
-        } else {
-            pastList.innerHTML = passados.map(ev => renderCard(ev, 'passado')).join('')
-        }
-    </script>
 </body>
 </html>
