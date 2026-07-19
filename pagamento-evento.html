@@ -88,50 +88,5 @@
     </footer>
 
     <script src="js/main.js"></script>
-    <script type="module">
-        import { getEvento, getEstadoInscricao, formatarMoeda } from './js/supabase.js'
-
-        const params      = new URLSearchParams(window.location.search)
-        const inscricaoId = params.get('inscricao')
-        const pagamentoId = params.get('pagamento')
-        const token       = params.get('token')
-        const eventoId    = params.get('evento')
-
-        // Usar o token para obter nome do inscrito via RPC (security definer — sem RLS)
-        if (token) {
-            const { data } = await getEstadoInscricao(token)
-            if (data) {
-                document.getElementById('nomeInscrito').textContent = data.nome
-                document.getElementById('referencia').textContent   = `${data.nome} + ${data.evento_titulo || ''}`
-                document.getElementById('nomeEvento').textContent   = data.evento_titulo || 'A carregar...'
-                document.title = `Pagamento - ${data.evento_titulo || 'Evento'} | USGA`
-            }
-            document.getElementById('btnEstado').href = `estado-inscricao.html?token=${token}`
-        }
-
-        // Carregar valor do evento (via query pública — eventos são públicos)
-        if (eventoId) {
-            const { data: evento } = await getEvento(eventoId)
-            if (evento) {
-                if (!token) {
-                    document.getElementById('nomeEvento').textContent = evento.titulo
-                    document.title = `Pagamento - ${evento.titulo} | USGA`
-                }
-                // Valor: usar preco do evento como fallback
-                // (o valor real foi calculado pelo RPC e está no registo de pagamento)
-                const valor = evento.preco_nao_socio
-                document.getElementById('valorPagar').textContent = valor > 0
-                    ? formatarMoeda(valor)
-                    : 'Consultar regulamento do evento'
-            }
-        }
-
-        // Fallback: se não vieram parâmetros válidos
-        if (!token && !eventoId) {
-            document.getElementById('nomeEvento').textContent  = '-'
-            document.getElementById('nomeInscrito').textContent = '-'
-            document.getElementById('valorPagar').textContent  = '-'
-        }
-    </script>
 </body>
 </html>
