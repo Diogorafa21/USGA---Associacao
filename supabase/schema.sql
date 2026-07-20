@@ -143,6 +143,7 @@ create trigger inscricoes_evento_set_updated_at before update on public.inscrico
 
 create table if not exists public.pagamentos (
   id                  uuid primary key default gen_random_uuid(),
+  public_token        uuid not null default gen_random_uuid(),
   tipo                text not null check (tipo in ('quota','evento')),
   utilizador_id       uuid references public.utilizadores(id) on delete set null,
   quota_id            uuid references public.quotas(id) on delete cascade,
@@ -162,6 +163,7 @@ create table if not exists public.pagamentos (
     (tipo = 'evento' and inscricao_evento_id is not null and quota_id is null)
   )
 );
+create unique index if not exists pagamentos_public_token_idx on public.pagamentos(public_token);
 create trigger pagamentos_set_updated_at before update on public.pagamentos
   for each row execute function public.set_updated_at();
 
@@ -285,17 +287,118 @@ begin
     (p_evento_id, auth.uid(), p_nome, p_email, p_telefone, p_nif, p_bi, p_data_nascimento, p_sexo, p_pais, p_equipa)
   returning * into v_inscricao;
 
-  insert into public.pagamentos (tipo, utilizador_id, inscricao_evento_id, valor)
-  values ('evento', auth.uid(), v_inscricao.id, v_valor)
+  insert into public.pagamentos (tipo, utilizador_id, inscricao_evento_id, valor, referencia)
+  values ('evento', auth.uid(), v_inscricao.id, v_valor, concat(v_inscricao.nome, ' - ', v_evento.titulo))
   returning * into v_pagamento;
 
   return jsonb_build_object(
     'inscricao_id',  v_inscricao.id,
     'public_token',  v_inscricao.public_token,
     'pagamento_id',  v_pagamento.id,
+    'pagamento_token', v_pagamento.public_token,
     'valor',         v_valor,
+    'nome',          v_inscricao.nome,
     'evento_titulo', v_evento.titulo
   );
+end; $$;
+
+-- ── RPC: criar pedido de sócio público ─────────────────────────────────────
+
+create or replace function public.criar_pedido_socio(
+  p_nome text,
+  p_apelido text,
+  p_email text,
+  p_telefone text default null,
+  p_nif text default null,
+  p_cc text default null,
+  p_data_nascimento date default null,
+  p_cidade text default null
+)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pedido public.pedidos_socio;
+begin
+  insert into public.pedidos_socio (
+    utilizador_id, nome, apelido, email, telefone, nif, cc, data_nascimento, cidade
+  )
+  values (
+    auth.uid(), p_nome, p_apelido, p_email, p_telefone, p_nif, p_cc, p_data_nascimento, p_cidade
+  )
+  returning * into v_pedido;
+
+  return jsonb_build_object('id', v_pedido.id, 'estado', v_pedido.estado);
+end; $$;
+
+-- ── RPC: consultar/submeter comprovativo por token público ─────────────────
+
+create or replace function public.get_pagamento_publico(p_pagamento_token uuid)
+returns table (
+  pagamento_id uuid,
+  pagamento_token uuid,
+  tipo text,
+  valor numeric,
+  metodo text,
+  referencia text,
+  comprovativo_url text,
+  estado text,
+  evento_titulo text,
+  inscricao_id uuid,
+  inscricao_token uuid,
+  inscrito_nome text,
+  quota_ano integer
+)
+language sql stable security definer set search_path = public as $$
+  select
+    p.id,
+    p.public_token,
+    p.tipo,
+    p.valor,
+    p.metodo,
+    p.referencia,
+    p.comprovativo_url,
+    p.estado,
+    e.titulo,
+    i.id,
+    i.public_token,
+    i.nome,
+    q.ano
+  from public.pagamentos p
+  left join public.inscricoes_evento i on i.id = p.inscricao_evento_id
+  left join public.eventos e on e.id = i.evento_id
+  left join public.quotas q on q.id = p.quota_id
+  where p.public_token = p_pagamento_token;
+$$;
+
+create or replace function public.submeter_comprovativo_pagamento(
+  p_pagamento_token uuid,
+  p_comprovativo_url text,
+  p_referencia text default null
+)
+returns jsonb language plpgsql security definer set search_path = public as $$
+declare v_pagamento public.pagamentos;
+begin
+  update public.pagamentos set
+    comprovativo_url = nullif(trim(p_comprovativo_url), ''),
+    referencia = coalesce(nullif(trim(p_referencia), ''), referencia),
+    estado = 'em_validacao'
+  where public_token = p_pagamento_token
+    and estado in ('pendente','em_validacao','rejeitado')
+  returning * into v_pagamento;
+
+  if not found then raise exception 'Pagamento não encontrado ou já validado'; end if;
+
+  if v_pagamento.tipo = 'evento' and v_pagamento.inscricao_evento_id is not null then
+    update public.inscricoes_evento set pagamento_estado = 'em_validacao'
+    where id = v_pagamento.inscricao_evento_id
+      and estado = 'aguardando_pagamento';
+  end if;
+
+  if v_pagamento.tipo = 'quota' and v_pagamento.quota_id is not null then
+    update public.quotas set estado = 'pendente_validacao'
+    where id = v_pagamento.quota_id
+      and estado in ('por_pagar','pendente_validacao');
+  end if;
+
+  return jsonb_build_object('ok', true, 'pagamento_id', v_pagamento.id);
 end; $$;
 
 -- ── RPC: validar pagamento (transacional) ────────────────────
@@ -427,6 +530,16 @@ create policy "pagamentos_select_own_or_admin" on public.pagamentos for select
 create policy "pagamentos_admin_update" on public.pagamentos for update
   using (public.is_admin()) with check (public.is_admin());
 
+-- storage comprovativos
+insert into storage.buckets (id, name, public)
+values ('comprovativos', 'comprovativos', false)
+on conflict (id) do nothing;
+
+create policy "comprovativos_insert_public" on storage.objects for insert
+  with check (bucket_id = 'comprovativos');
+create policy "comprovativos_admin_select" on storage.objects for select
+  using (bucket_id = 'comprovativos' and public.is_admin());
+
 -- mensagens_suporte
 create policy "mensagens_suporte_insert_public" on public.mensagens_suporte for insert
   with check (estado = 'novo');
@@ -447,7 +560,10 @@ grant select on public.eventos            to anon, authenticated;
 grant select on public.inscritos_publicos to anon, authenticated;
 
 grant execute on function public.get_estado_inscricao(uuid)                                         to anon, authenticated;
+grant execute on function public.criar_pedido_socio(text,text,text,text,text,text,date,text)         to anon, authenticated;
 grant execute on function public.criar_inscricao_com_pagamento(uuid,text,text,text,text,text,date,text,text,text) to anon, authenticated;
+grant execute on function public.get_pagamento_publico(uuid)                                        to anon, authenticated;
+grant execute on function public.submeter_comprovativo_pagamento(uuid,text,text)                     to anon, authenticated;
 grant execute on function public.atualizar_meu_perfil(text,text,text,date,text,text,text,text)      to authenticated;
 grant execute on function public.validar_pagamento(uuid,text,text)                                  to authenticated;
 grant execute on function public.rejeitar_pagamento(uuid,text)                                      to authenticated;
