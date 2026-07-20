@@ -61,17 +61,34 @@
                         <span>Inscrito:</span>
                         <span id="nomeInscrito" style="font-weight: 700;">A carregar...</span>
                     </div>
+                    <div style="display: flex; justify-content: space-between; margin-top: 10px;">
+                        <span>Estado:</span>
+                        <span id="estadoPagamento" style="font-weight: 700;">A carregar...</span>
+                    </div>
                 </div>
 
                 <div class="instructions" style="background: var(--bg-light); padding: 20px; border-radius: 8px; font-size: 14px; text-align: left;">
                     <p><strong>Importante:</strong></p>
-                    <p>Envie o comprovativo para <a href="mailto:eventos@usga.pt" style="color: var(--accent-color); font-weight: 700;">eventos@usga.pt</a>.</p>
+                    <p>Carregue o comprovativo nesta página para que a equipa possa validar a inscrição no back-office.</p>
                     <p style="margin-top: 10px;">Na descrição da transferência indique: <strong id="referencia">Nome + Evento</strong>.</p>
                     <p style="margin-top: 10px;">A sua inscrição só fica confirmada após validação do pagamento pela equipa USGA.</p>
                 </div>
 
+                <form id="comprovativoForm" class="contact-form" style="margin-top: 20px; text-align: left;">
+                    <div id="mensagemComprovativo" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
+                    <div class="form-group">
+                        <label for="referenciaPagamento">Referência usada na transferência</label>
+                        <input type="text" id="referenciaPagamento" name="referenciaPagamento" placeholder="Ex: Nome + Evento">
+                    </div>
+                    <div class="form-group">
+                        <label for="ficheiroComprovativo">Comprovativo</label>
+                        <input type="file" id="ficheiroComprovativo" name="ficheiroComprovativo" accept=".pdf,image/*" required>
+                    </div>
+                    <button type="submit" id="btnEnviarComprovativo" class="btn btn-primary" style="width: 100%;">Enviar Comprovativo</button>
+                </form>
+
                 <!-- Link para verificar estado da inscrição -->
-                <div id="linkEstado" style="margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: 14px;">
+                <div style="margin-top: 20px; padding: 15px; background: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; font-size: 14px;">
                     <p style="margin-bottom: 8px;">Pode verificar o estado da sua inscrição a qualquer momento:</p>
                     <a id="btnEstado" href="#" style="color: var(--accent-color); font-weight: 700;">Ver estado da minha inscrição →</a>
                 </div>
@@ -88,58 +105,5 @@
     </footer>
 
     <script src="js/main.js"></script>
-    <script type="module">
-        import { getEvento, getSessao, supabase, formatarMoeda } from './js/supabase.js'
-
-        const params      = new URLSearchParams(window.location.search)
-        const inscricaoId = params.get('inscricao')
-        const eventoId    = params.get('evento')
-
-        // Carregar dados do evento
-        if (eventoId) {
-            const { data: evento } = await getEvento(eventoId)
-            if (evento) {
-                document.getElementById('nomeEvento').textContent = evento.titulo
-                document.title = `Pagamento - ${evento.titulo} | USGA`
-
-                // Determinar valor (sócio ou não sócio)
-                const sessao = await getSessao()
-                let valor = evento.preco_nao_socio
-
-                if (sessao) {
-                    const { data: perfil } = await supabase
-                        .from('utilizadores')
-                        .select('role, estado')
-                        .eq('id', sessao.user.id)
-                        .single()
-                    if (perfil && perfil.estado === 'ativo') valor = evento.preco_socio
-                }
-
-                document.getElementById('valorPagar').textContent = valor > 0
-                    ? formatarMoeda(valor)
-                    : 'Consultar regulamento do evento'
-            }
-        }
-
-        // Carregar dados da inscrição
-        if (inscricaoId) {
-            const { data: inscricao } = await supabase
-                .from('inscricoes_evento')
-                .select('nome, public_token')
-                .eq('id', inscricaoId)
-                .single()
-
-            if (inscricao) {
-                document.getElementById('nomeInscrito').textContent = inscricao.nome
-                document.getElementById('referencia').textContent   = `${inscricao.nome} + ${document.getElementById('nomeEvento').textContent}`
-
-                // Link para verificar estado
-                if (inscricao.public_token) {
-                    document.getElementById('btnEstado').href =
-                        `estado-inscricao.html?token=${inscricao.public_token}`
-                }
-            }
-        }
-    </script>
 </body>
 </html>

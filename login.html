@@ -105,47 +105,5 @@
     </footer>
 
     <script src="js/main.js"></script>
-    <script type="module">
-        import { login, getSessao } from './js/supabase.js'
-
-        // Se já tem sessão activa, redireciona para o perfil
-        getSessao().then(sessao => {
-            if (sessao) window.location.href = 'perfil.html'
-        })
-
-        const form   = document.getElementById('loginForm')
-        const btn    = document.getElementById('btnLogin')
-        const msgBox = document.getElementById('mensagem')
-
-        function mostrarMensagem(texto, tipo) {
-            msgBox.textContent = texto
-            msgBox.style.display = 'block'
-            msgBox.style.backgroundColor = tipo === 'erro' ? '#fee2e2' : '#dcfce7'
-            msgBox.style.color           = tipo === 'erro' ? '#991b1b' : '#166534'
-            msgBox.style.border          = tipo === 'erro' ? '1px solid #fca5a5' : '1px solid #86efac'
-        }
-
-        form.addEventListener('submit', async (e) => {
-            e.preventDefault()
-            msgBox.style.display = 'none'
-            btn.textContent = 'A entrar...'
-            btn.disabled = true
-
-            const email    = document.getElementById('email').value.trim()
-            const password = document.getElementById('password').value
-
-            const { error } = await login(email, password)
-
-            if (error) {
-                mostrarMensagem('Email ou password incorretos. Tente novamente.', 'erro')
-                btn.textContent = 'Entrar'
-                btn.disabled = false
-                return
-            }
-
-            mostrarMensagem('Login efetuado! A redirecionar...', 'sucesso')
-            setTimeout(() => window.location.href = 'perfil.html', 1000)
-        })
-    </script>
 </body>
 </html>
