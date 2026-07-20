@@ -66,13 +66,16 @@ export async function atualizarPerfil(userId, dados) {
 }
 
 export async function criarPedidoSocio(dados) {
-  const sessao = await getSessao()
-  const payload = { ...dados, utilizador_id: sessao?.user?.id ?? null }
-  const { data, error } = await supabase
-    .from('pedidos_socio')
-    .insert(payload)
-    .select()
-    .single()
+  const { data, error } = await supabase.rpc('criar_pedido_socio', {
+    p_nome:            dados.nome,
+    p_apelido:         dados.apelido,
+    p_email:           dados.email,
+    p_telefone:        dados.telefone        ?? null,
+    p_nif:             dados.nif             ?? null,
+    p_cc:              dados.cc              ?? null,
+    p_data_nascimento: dados.data_nascimento ?? null,
+    p_cidade:          dados.cidade          ?? null
+  })
   return { data, error }
 }
 
@@ -183,6 +186,41 @@ export async function criarPagamento(dados) {
     .insert(payload)
     .select()
     .single()
+  return { data, error }
+}
+
+export async function getPagamentoPublico(pagamentoToken) {
+  const { data, error } = await supabase
+    .rpc('get_pagamento_publico', { p_pagamento_token: pagamentoToken })
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function uploadComprovativoPagamento(pagamentoToken, file) {
+  const ext = file.name.includes('.') ? file.name.split('.').pop().toLowerCase() : 'bin'
+  const safeName = file.name
+    .replace(/\.[^.]+$/, '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9_-]+/gi, '-')
+    .replace(/^-+|-+$/g, '')
+    .slice(0, 60) || 'comprovativo'
+  const path = `${pagamentoToken}/${Date.now()}-${safeName}.${ext}`
+
+  const { data, error } = await supabase
+    .storage
+    .from('comprovativos')
+    .upload(path, file, { upsert: false })
+
+  return { data, error, path }
+}
+
+export async function submeterComprovativoPagamento(pagamentoToken, comprovativoPath, referencia = null) {
+  const { data, error } = await supabase.rpc('submeter_comprovativo_pagamento', {
+    p_pagamento_token: pagamentoToken,
+    p_comprovativo_url: comprovativoPath,
+    p_referencia: referencia
+  })
   return { data, error }
 }
 
