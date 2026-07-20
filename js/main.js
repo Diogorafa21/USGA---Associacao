@@ -39,10 +39,25 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     navOverlay.addEventListener('click', fecharMenu)
 
-    // Fechar ao clicar num link do menu
+    // Fechar ao clicar num link do menu e garantir navegação em mobile
     nav.querySelectorAll('.nav-link').forEach(link => {
-      link.addEventListener('click', fecharMenu)
+      link.addEventListener('click', function (e) {
+        // Fecha o menu imediatamente para feedback visual
+        fecharMenu()
+        const href = this.getAttribute('href')
+        const target = this.getAttribute('target')
+        // Se for anchor interno ou abrir em nova aba, deixar o comportamento padrão
+        if (!href || href.startsWith('#') || target === '_blank') return
+        // Prevenir navegação imediata para permitir animação de fecho no mobile
+        e.preventDefault()
+        setTimeout(() => { window.location.href = href }, 220)
+      })
     })
+
+    // Fechar com ESC e ao redimensionar/orientacao (melhora UX mobile)
+    window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharMenu() })
+    window.addEventListener('resize', () => { if (window.innerWidth > 768 && nav.classList.contains('open')) fecharMenu() })
+    window.addEventListener('orientationchange', fecharMenu)
   }
   // ────────────────────────────────────────────────────────────────
 

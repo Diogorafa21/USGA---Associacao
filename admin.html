@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
@@ -95,7 +95,7 @@
 
                     <div class="sidebar-section">Financeiro</div>
                     <a href="#" data-sec="quotas">💳 Quotas <span class="badge-count" id="sb-quotas">0</span></a>
-                    <a href="#" data-sec="pagamentos">💰 Pagamentos <span class="badge-count" id="sb-pagamentos">0</span></a>
+                    <a href="#" data-sec="pagamentos">💰 Pagamentos</a>
 
                     <div class="sidebar-section">Comunicação</div>
                     <a href="#" data-sec="suporte">✉️ Suporte <span class="badge-count" id="sb-suporte">0</span></a>
@@ -214,23 +214,9 @@
                     <!-- PAGAMENTOS -->
                     <div class="admin-section" id="sec-pagamentos">
                         <h2 style="margin-bottom:20px;">Pagamentos</h2>
-                        <div class="form-inline">
-                            <select id="filtroPagamentoEstado" onchange="carregarPagamentos()">
-                                <option value="">Todos os estados</option>
-                                <option value="pendente">Pendente</option>
-                                <option value="em_validacao">Em validação</option>
-                                <option value="validado">Validado</option>
-                                <option value="rejeitado">Rejeitado</option>
-                            </select>
-                            <select id="filtroPagamentoTipo" onchange="carregarPagamentos()">
-                                <option value="">Todos os tipos</option>
-                                <option value="evento">Evento</option>
-                                <option value="quota">Quota</option>
-                            </select>
-                        </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Tipo</th><th>Sócio</th><th>Referência</th><th>Valor</th><th>Estado</th><th>Data</th><th>Ações</th></tr></thead>
+                                <thead><tr><th>Tipo</th><th>Sócio</th><th>Valor</th><th>Método</th><th>Estado</th><th>Data</th><th>Ações</th></tr></thead>
                                 <tbody id="tbl-pagamentos"><tr><td colspan="7" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
@@ -322,43 +308,6 @@
         </div>
     </div>
 
-    <!-- MODAL VALIDAR PAGAMENTO -->
-    <div class="modal-overlay" id="modalValidarPagamento">
-        <div class="modal-box">
-            <h3>Validar Pagamento</h3>
-            <input type="hidden" id="vp-id">
-            <p id="vp-info" style="font-size:14px; color:#555; margin-bottom:20px;"></p>
-            <div class="form-group" id="vp-dorsal-group">
-                <label>Dorsal (opcional, para inscrições em eventos)</label>
-                <input type="text" id="vp-dorsal" placeholder="ex: 001">
-            </div>
-            <div class="form-group">
-                <label>Observações (opcional)</label>
-                <textarea id="vp-observacoes" rows="3"></textarea>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="fecharModal('modalValidarPagamento')">Cancelar</button>
-                <button class="btn btn-primary" onclick="confirmarValidarPagamento()">Confirmar Validação</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL REJEITAR PAGAMENTO -->
-    <div class="modal-overlay" id="modalRejeitarPagamento">
-        <div class="modal-box">
-            <h3>Rejeitar Pagamento</h3>
-            <input type="hidden" id="rp-id">
-            <div class="form-group">
-                <label>Motivo da rejeição (opcional)</label>
-                <textarea id="rp-motivo" rows="3" placeholder="ex: Comprovativo ilegível, valor incorreto..."></textarea>
-            </div>
-            <div class="modal-actions">
-                <button class="btn-secondary" onclick="fecharModal('modalRejeitarPagamento')">Cancelar</button>
-                <button class="btn-danger" onclick="confirmarRejeitarPagamento()">Confirmar Rejeição</button>
-            </div>
-        </div>
-    </div>
-
     <!-- MODAL MENSAGEM SUPORTE -->
     <div class="modal-overlay" id="modalSuporte">
         <div class="modal-box">
@@ -384,7 +333,6 @@
             getAdminPedidosSocio, atualizarPedidoSocio,
             getAdminInscricoesEvento, atualizarInscricaoEvento,
             getAdminQuotas, atualizarQuota,
-            validarPagamento, rejeitarPagamento,
             formatarData, formatarMoeda
         } from './js/supabase.js'
 
@@ -392,7 +340,6 @@
         if (!auth) throw new Error('sem permissao')
 
         // ── Navegação sidebar ────────────────────────────────────────────
-        // Não usa cache (secCarregadas removido) — recarrega sempre ao navegar
         window.navegarPara = function(sec) {
             document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'))
             document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'))
@@ -405,6 +352,7 @@
             a.addEventListener('click', e => { e.preventDefault(); navegarPara(a.dataset.sec) })
         })
 
+        // ── Modais ───────────────────────────────────────────────────────
         window.fecharModal = id => document.getElementById(id).classList.remove('open')
 
         // ── Botões utilitários ───────────────────────────────────────────
@@ -452,29 +400,26 @@
                 { count: inscricoes },
                 { count: quotas },
                 { count: suporteMsg },
-                { count: eventos },
-                { count: pagPendentes }
+                { count: eventos }
             ] = await Promise.all([
                 supabase.from('utilizadores').select('*', { count:'exact', head:true }).eq('estado','ativo'),
                 supabase.from('pedidos_socio').select('*', { count:'exact', head:true }).eq('estado','pendente'),
                 supabase.from('inscricoes_evento').select('*', { count:'exact', head:true }).eq('pagamento_estado','pendente'),
                 supabase.from('quotas').select('*', { count:'exact', head:true }).eq('estado','por_pagar'),
                 supabase.from('mensagens_suporte').select('*', { count:'exact', head:true }).eq('estado','novo'),
-                supabase.from('eventos').select('*', { count:'exact', head:true }).eq('estado','aberto'),
-                supabase.from('pagamentos').select('*', { count:'exact', head:true }).in('estado',['pendente','em_validacao'])
+                supabase.from('eventos').select('*', { count:'exact', head:true }).eq('estado','aberto')
             ])
-            document.getElementById('ds-socios').textContent     = socios ?? 0
-            document.getElementById('ds-pedidos').textContent    = pedidos ?? 0
+            document.getElementById('ds-socios').textContent    = socios ?? 0
+            document.getElementById('ds-pedidos').textContent   = pedidos ?? 0
             document.getElementById('ds-inscricoes').textContent = inscricoes ?? 0
-            document.getElementById('ds-quotas').textContent     = quotas ?? 0
-            document.getElementById('ds-suporte').textContent    = suporteMsg ?? 0
-            document.getElementById('ds-eventos').textContent    = eventos ?? 0
+            document.getElementById('ds-quotas').textContent    = quotas ?? 0
+            document.getElementById('ds-suporte').textContent   = suporteMsg ?? 0
+            document.getElementById('ds-eventos').textContent   = eventos ?? 0
 
-            document.getElementById('sb-pedidos').textContent    = pedidos ?? 0
+            document.getElementById('sb-pedidos').textContent  = pedidos ?? 0
             document.getElementById('sb-inscricoes').textContent = inscricoes ?? 0
-            document.getElementById('sb-quotas').textContent     = quotas ?? 0
-            document.getElementById('sb-suporte').textContent    = suporteMsg ?? 0
-            document.getElementById('sb-pagamentos').textContent = pagPendentes ?? 0
+            document.getElementById('sb-quotas').textContent   = quotas ?? 0
+            document.getElementById('sb-suporte').textContent  = suporteMsg ?? 0
 
             const { data: recente } = await supabase
                 .from('inscricoes_evento')
@@ -492,11 +437,16 @@
         }
 
         // ── EVENTOS ──────────────────────────────────────────────────────
+        let todosEventos = []
+
         async function carregarEventos() {
             const { data } = await supabase.from('eventos').select('*').order('data_evento', { ascending: false })
+            todosEventos = data || []
             const tbody = document.getElementById('tbl-eventos')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem eventos.</td></tr>'; return }
+
             const tagClass = { aberto:'tag-aberto', fechado:'tag-fechado', rascunho:'tag-rascunho', concluido:'tag-concluido', cancelado:'tag-cancelado' }
+
             tbody.innerHTML = ''
             data.forEach(ev => {
                 const tr = document.createElement('tr')
@@ -516,53 +466,52 @@
                 }))
                 tbody.appendChild(tr)
             })
+
             // Popular filtro de eventos nas inscrições
             const sel = document.getElementById('filtroEvento')
-            const valorAtual = sel.value
             sel.innerHTML = '<option value="">Todos os eventos</option>'
             data.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.titulo; sel.appendChild(o) })
-            if (valorAtual) sel.value = valorAtual
         }
 
         window.abrirModalEvento = function(ev) {
             document.getElementById('modalEventoTitulo').textContent = ev ? 'Editar Evento' : 'Novo Evento'
-            document.getElementById('eventoId').value           = ev?.id || ''
-            document.getElementById('ev-titulo').value          = ev?.titulo || ''
-            document.getElementById('ev-slug').value            = ev?.slug || ''
-            document.getElementById('ev-categoria').value       = ev?.categoria || ''
+            document.getElementById('eventoId').value      = ev?.id || ''
+            document.getElementById('ev-titulo').value     = ev?.titulo || ''
+            document.getElementById('ev-slug').value       = ev?.slug || ''
+            document.getElementById('ev-categoria').value  = ev?.categoria || ''
             document.getElementById('ev-descricao-curta').value = ev?.descricao_curta || ''
-            document.getElementById('ev-descricao').value       = ev?.descricao || ''
-            document.getElementById('ev-recomendacoes').value   = ev?.recomendacoes || ''
-            document.getElementById('ev-data').value            = ev?.data_evento ? ev.data_evento.slice(0,16) : ''
-            document.getElementById('ev-fim-inscricoes').value  = ev?.data_fim_inscricoes ? ev.data_fim_inscricoes.slice(0,16) : ''
-            document.getElementById('ev-local').value           = ev?.local || ''
-            document.getElementById('ev-vagas').value           = ev?.vagas || ''
-            document.getElementById('ev-preco-socio').value     = ev?.preco_socio ?? 0
+            document.getElementById('ev-descricao').value  = ev?.descricao || ''
+            document.getElementById('ev-recomendacoes').value = ev?.recomendacoes || ''
+            document.getElementById('ev-data').value       = ev?.data_evento ? ev.data_evento.slice(0,16) : ''
+            document.getElementById('ev-fim-inscricoes').value = ev?.data_fim_inscricoes ? ev.data_fim_inscricoes.slice(0,16) : ''
+            document.getElementById('ev-local').value      = ev?.local || ''
+            document.getElementById('ev-vagas').value      = ev?.vagas || ''
+            document.getElementById('ev-preco-socio').value = ev?.preco_socio ?? 0
             document.getElementById('ev-preco-nao-socio').value = ev?.preco_nao_socio ?? 0
-            document.getElementById('ev-estado').value          = ev?.estado || 'rascunho'
-            document.getElementById('ev-imagem').value          = ev?.imagem_url || ''
-            document.getElementById('ev-regulamento').value     = ev?.regulamento_url || ''
+            document.getElementById('ev-estado').value     = ev?.estado || 'rascunho'
+            document.getElementById('ev-imagem').value     = ev?.imagem_url || ''
+            document.getElementById('ev-regulamento').value = ev?.regulamento_url || ''
             document.getElementById('modalEvento').classList.add('open')
         }
 
         window.guardarEvento = async function() {
             const id = document.getElementById('eventoId').value
             const payload = {
-                titulo:              document.getElementById('ev-titulo').value.trim(),
-                slug:                document.getElementById('ev-slug').value.trim(),
-                categoria:           document.getElementById('ev-categoria').value.trim() || null,
-                descricao_curta:     document.getElementById('ev-descricao-curta').value.trim() || null,
-                descricao:           document.getElementById('ev-descricao').value.trim() || null,
-                recomendacoes:       document.getElementById('ev-recomendacoes').value.trim() || null,
-                data_evento:         document.getElementById('ev-data').value || null,
+                titulo:           document.getElementById('ev-titulo').value.trim(),
+                slug:             document.getElementById('ev-slug').value.trim(),
+                categoria:        document.getElementById('ev-categoria').value.trim() || null,
+                descricao_curta:  document.getElementById('ev-descricao-curta').value.trim() || null,
+                descricao:        document.getElementById('ev-descricao').value.trim() || null,
+                recomendacoes:    document.getElementById('ev-recomendacoes').value.trim() || null,
+                data_evento:      document.getElementById('ev-data').value || null,
                 data_fim_inscricoes: document.getElementById('ev-fim-inscricoes').value || null,
-                local:               document.getElementById('ev-local').value.trim() || null,
-                vagas:               parseInt(document.getElementById('ev-vagas').value) || null,
-                preco_socio:         parseFloat(document.getElementById('ev-preco-socio').value) || 0,
-                preco_nao_socio:     parseFloat(document.getElementById('ev-preco-nao-socio').value) || 0,
-                estado:              document.getElementById('ev-estado').value,
-                imagem_url:          document.getElementById('ev-imagem').value.trim() || null,
-                regulamento_url:     document.getElementById('ev-regulamento').value.trim() || null
+                local:            document.getElementById('ev-local').value.trim() || null,
+                vagas:            parseInt(document.getElementById('ev-vagas').value) || null,
+                preco_socio:      parseFloat(document.getElementById('ev-preco-socio').value) || 0,
+                preco_nao_socio:  parseFloat(document.getElementById('ev-preco-nao-socio').value) || 0,
+                estado:           document.getElementById('ev-estado').value,
+                imagem_url:       document.getElementById('ev-imagem').value.trim() || null,
+                regulamento_url:  document.getElementById('ev-regulamento').value.trim() || null
             }
             if (id) {
                 await supabase.from('eventos').update(payload).eq('id', id)
@@ -575,15 +524,16 @@
 
         // ── INSCRIÇÕES ───────────────────────────────────────────────────
         window.carregarInscricoes = async function() {
-            const eventoFiltro = document.getElementById('filtroEvento').value
-            const pagFiltro    = document.getElementById('filtroPagamento').value
+            const eventoFiltro   = document.getElementById('filtroEvento').value
+            const pagFiltro      = document.getElementById('filtroPagamento').value
             let query = supabase.from('inscricoes_evento').select('*, eventos(titulo)').order('data_inscricao', { ascending: false })
-            if (eventoFiltro) query = query.eq('evento_id', eventoFiltro)
-            if (pagFiltro)    query = query.eq('pagamento_estado', pagFiltro)
+            if (eventoFiltro)  query = query.eq('evento_id', eventoFiltro)
+            if (pagFiltro)     query = query.eq('pagamento_estado', pagFiltro)
             const { data } = await query
             window._inscricoes = data || []
             const tbody = document.getElementById('tbl-inscricoes')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
+
             tbody.innerHTML = ''
             data.forEach(i => {
                 const tr = document.createElement('tr')
@@ -624,7 +574,10 @@
             const header = 'Evento,Nome,Email,Estado Pagamento,Dorsal,Data Inscrição'
             const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pagamento_estado}","${i.dorsal || ''}","${i.data_inscricao}"`)
             const csv = [header, ...rows].join('\n')
-            const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'inscricoes.csv'; a.click()
+            const a = document.createElement('a')
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+            a.download = 'inscricoes.csv'
+            a.click()
         }
 
         // ── SÓCIOS ───────────────────────────────────────────────────────
@@ -668,22 +621,23 @@
         window.filtrarSocios = function() {
             const termo  = document.getElementById('searchSocios').value.toLowerCase()
             const estado = document.getElementById('filtroEstadoSocio').value
-            renderSocios(todosSocios.filter(s => {
+            const filtrado = todosSocios.filter(s => {
                 const nome = `${s.nome || ''} ${s.apelido || ''} ${s.email || ''}`.toLowerCase()
                 return nome.includes(termo) && (!estado || s.estado === estado)
-            }))
+            })
+            renderSocios(filtrado)
         }
 
         window.abrirModalSocio = function(s) {
-            document.getElementById('socioId').value     = s.id
-            document.getElementById('sc-nome').value     = s.nome || ''
-            document.getElementById('sc-apelido').value  = s.apelido || ''
-            document.getElementById('sc-email').value    = s.email || ''
+            document.getElementById('socioId').value    = s.id
+            document.getElementById('sc-nome').value    = s.nome || ''
+            document.getElementById('sc-apelido').value = s.apelido || ''
+            document.getElementById('sc-email').value   = s.email || ''
             document.getElementById('sc-telefone').value = s.telefone || ''
-            document.getElementById('sc-nif').value      = s.nif || ''
-            document.getElementById('sc-numero').value   = s.numero_socio || ''
-            document.getElementById('sc-estado').value   = s.estado || 'ativo'
-            document.getElementById('sc-role').value     = s.role || 'user'
+            document.getElementById('sc-nif').value     = s.nif || ''
+            document.getElementById('sc-numero').value  = s.numero_socio || ''
+            document.getElementById('sc-estado').value  = s.estado || 'ativo'
+            document.getElementById('sc-role').value    = s.role || 'user'
             document.getElementById('modalSocio').classList.add('open')
         }
 
@@ -710,11 +664,9 @@
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem pedidos.</td></tr>'; return }
             tbody.innerHTML = ''
             data.forEach(p => {
-                const badge = p.estado === 'pendente'
-                    ? '<span class="badge badge-pendente">Pendente</span>'
-                    : p.estado === 'aprovado'
-                        ? '<span class="badge badge-pago">Aprovado</span>'
-                        : '<span class="badge badge-nao-socio">Rejeitado</span>'
+                const badge = p.estado === 'pendente' ? '<span class="badge badge-pendente">Pendente</span>'
+                    : p.estado === 'aprovado' ? '<span class="badge badge-pago">Aprovado</span>'
+                    : '<span class="badge badge-nao-socio">Rejeitado</span>'
                 const tr = document.createElement('tr')
                 tr.innerHTML = `<td>${p.nome} ${p.apelido}</td><td style="font-size:12px;">${p.email}</td><td>${p.nif || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
                 const td = tr.querySelector('td:last-child')
@@ -734,7 +686,7 @@
             const { data } = await getAdminQuotas()
             todasQuotas = data || []
             const filtrado = filtro ? data?.filter(q => q.estado === filtro) : data
-            document.getElementById('sb-quotas').textContent = data?.filter(q => ['por_pagar','pendente_validacao'].includes(q.estado)).length || 0
+            document.getElementById('sb-quotas').textContent = data?.filter(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao').length || 0
             const tbody = document.getElementById('tbl-quotas')
             if (!filtrado?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem quotas.</td></tr>'; return }
             tbody.innerHTML = ''
@@ -762,93 +714,46 @@
                 return `"${s?.nome || ''} ${s?.apelido || ''}","${s?.email || ''}","${q.ano}","${q.valor}","${q.estado}","${q.data_pagamento || ''}"`
             })
             const csv = [header, ...rows].join('\n')
-            const a = document.createElement('a'); a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv); a.download = 'quotas.csv'; a.click()
+            const a = document.createElement('a')
+            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
+            a.download = 'quotas.csv'
+            a.click()
         }
 
-        // ── PAGAMENTOS (usa RPCs transacionais) ──────────────────────────
-        window.carregarPagamentos = async function() {
-            const estadoFiltro = document.getElementById('filtroPagamentoEstado').value
-            const tipoFiltro   = document.getElementById('filtroPagamentoTipo').value
-            let query = supabase
+        // ── PAGAMENTOS ───────────────────────────────────────────────────
+        async function carregarPagamentos() {
+            const { data } = await supabase
                 .from('pagamentos')
-                .select('*, utilizadores(nome, apelido, email), inscricoes_evento(nome, eventos(titulo)), quotas(ano)')
+                .select('*, utilizadores(nome, apelido, email)')
                 .order('created_at', { ascending: false })
-            if (estadoFiltro) query = query.eq('estado', estadoFiltro)
-            if (tipoFiltro)   query = query.eq('tipo', tipoFiltro)
-            const { data } = await query
-
-            const pendentes = data?.filter(p => ['pendente','em_validacao'].includes(p.estado)).length || 0
-            document.getElementById('sb-pagamentos').textContent = pendentes
-
             const tbody = document.getElementById('tbl-pagamentos')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem pagamentos.</td></tr>'; return }
-
             tbody.innerHTML = ''
             data.forEach(p => {
-                const u    = p.utilizadores
-                const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : 'Anónimo'
-                // Referência: nome do evento ou ano da quota
-                const ref = p.tipo === 'evento'
-                    ? (p.inscricoes_evento?.eventos?.titulo || '-')
-                    : (p.quotas ? `Quota ${p.quotas.ano}` : '-')
-
+                const u = p.utilizadores
+                const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : '-'
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
                     <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span></td>
                     <td>${nome}<br><small style="color:#999;">${u?.email || ''}</small></td>
-                    <td style="font-size:13px;">${ref}</td>
                     <td>${formatarMoeda(p.valor)}</td>
+                    <td>${p.metodo || '-'}</td>
                     <td>${pagBadge[p.estado] || p.estado}</td>
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
                 if (p.estado === 'pendente' || p.estado === 'em_validacao') {
-                    // Usar RPC transacional em vez de .update() direto
-                    td.appendChild(btnAprovar('Validar', () => abrirModalValidarPagamento(p)))
-                    td.appendChild(btnAcao('Rejeitar', 'danger', () => abrirModalRejeitarPagamento(p)))
+                    td.appendChild(btnAprovar('Validar', async () => {
+                        await supabase.from('pagamentos').update({ estado:'validado', validado_por: auth.sessao.user.id, validado_em: new Date().toISOString() }).eq('id', p.id)
+                        carregarPagamentos()
+                    }))
+                    td.appendChild(btnAcao('Rejeitar', 'danger', async () => {
+                        await supabase.from('pagamentos').update({ estado:'rejeitado' }).eq('id', p.id)
+                        carregarPagamentos()
+                    }))
                 }
                 tbody.appendChild(tr)
             })
-        }
-
-        // Modal validar pagamento
-        window.abrirModalValidarPagamento = function(p) {
-            document.getElementById('vp-id').value = p.id
-            document.getElementById('vp-observacoes').value = ''
-            document.getElementById('vp-dorsal').value = ''
-            document.getElementById('vp-info').textContent =
-                `${p.tipo === 'evento' ? 'Inscrição em evento' : 'Quota'} — ${formatarMoeda(p.valor)}`
-            // Mostrar dorsal só para eventos
-            document.getElementById('vp-dorsal-group').style.display = p.tipo === 'evento' ? 'block' : 'none'
-            document.getElementById('modalValidarPagamento').classList.add('open')
-        }
-
-        window.confirmarValidarPagamento = async function() {
-            const id          = document.getElementById('vp-id').value
-            const dorsal      = document.getElementById('vp-dorsal').value.trim() || null
-            const observacoes = document.getElementById('vp-observacoes').value.trim() || null
-            const { error }   = await validarPagamento(id, dorsal, observacoes)
-            if (error) { alert('Erro ao validar: ' + error.message); return }
-            fecharModal('modalValidarPagamento')
-            carregarPagamentos()
-            carregarDashboard()
-        }
-
-        // Modal rejeitar pagamento
-        window.abrirModalRejeitarPagamento = function(p) {
-            document.getElementById('rp-id').value = p.id
-            document.getElementById('rp-motivo').value = ''
-            document.getElementById('modalRejeitarPagamento').classList.add('open')
-        }
-
-        window.confirmarRejeitarPagamento = async function() {
-            const id      = document.getElementById('rp-id').value
-            const motivo  = document.getElementById('rp-motivo').value.trim() || null
-            const { error } = await rejeitarPagamento(id, motivo)
-            if (error) { alert('Erro ao rejeitar: ' + error.message); return }
-            fecharModal('modalRejeitarPagamento')
-            carregarPagamentos()
-            carregarDashboard()
         }
 
         // ── SUPORTE ──────────────────────────────────────────────────────
@@ -858,10 +763,10 @@
             const tbody = document.getElementById('tbl-suporte')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem mensagens.</td></tr>'; return }
             const estadoBadgeMsg = {
-                novo:       '<span class="badge badge-pendente">Novo</span>',
-                em_analise: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em análise</span>',
-                respondido: '<span class="badge badge-pago">Respondido</span>',
-                arquivado:  '<span class="badge" style="background:#f0f0f0;color:#888;">Arquivado</span>'
+                novo:        '<span class="badge badge-pendente">Novo</span>',
+                em_analise:  '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em análise</span>',
+                respondido:  '<span class="badge badge-pago">Respondido</span>',
+                arquivado:   '<span class="badge" style="background:#f0f0f0;color:#888;">Arquivado</span>'
             }
             tbody.innerHTML = ''
             data.forEach(m => {
@@ -893,8 +798,10 @@
         }
 
         // ── Carregar secção ──────────────────────────────────────────────
-        // Sem cache — recarrega sempre para mostrar dados atualizados
+        const secCarregadas = new Set()
         window.carregarSecao = async function(sec) {
+            if (secCarregadas.has(sec)) return
+            secCarregadas.add(sec)
             if (sec === 'dashboard')  await carregarDashboard()
             if (sec === 'eventos')    await carregarEventos()
             if (sec === 'inscricoes') { await carregarEventos(); await carregarInscricoes() }
@@ -907,6 +814,7 @@
 
         // Carregar dashboard inicial
         await carregarDashboard()
+        secCarregadas.add('dashboard')
 
         // Fechar modal ao clicar fora
         document.querySelectorAll('.modal-overlay').forEach(m => {

@@ -1,4 +1,4 @@
-// USGA - cliente Supabase e funcoes de dados.
+﻿// USGA - cliente Supabase e funcoes de dados.
 // Este ficheiro deve ser importado em scripts type="module".
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -270,14 +270,6 @@ export async function atualizarQuota(id, dados) {
     .eq('id', id)
     .select()
     .single()
-  return { data, error }
-}
-
-export async function getAdminPagamentos() {
-  const { data, error } = await supabase
-    .from('pagamentos')
-    .select('*, utilizadores(nome, apelido, email), inscricoes_evento(nome, evento_id, eventos(titulo)), quotas(ano, utilizadores(nome, apelido))')
-    .order('created_at', { ascending: false })
   return { data, error }
 }
 
