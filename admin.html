@@ -382,7 +382,7 @@
         import {
             requireAdmin, supabase,
             getAdminPedidosSocio, atualizarPedidoSocio,
-            getAdminInscricoesEvento, atualizarInscricaoEvento,
+            getAdminInscricoesEvento,
             getAdminQuotas, atualizarQuota,
             validarPagamento, rejeitarPagamento,
             formatarData, formatarMoeda
@@ -595,18 +595,8 @@
                     <td><input type="text" value="${i.dorsal || ''}" id="d_${i.id}" style="width:55px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:13px;"></td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
-                if (i.pagamento_estado !== 'validado') {
-                    td.appendChild(btnAprovar('Confirmar', async () => {
-                        const dorsal = document.getElementById(`d_${i.id}`).value.trim() || null
-                        await atualizarInscricaoEvento(i.id, { pagamento_estado:'validado', estado:'confirmada', dorsal, data_confirmacao: new Date().toISOString() })
-                        carregarInscricoes()
-                    }))
-                }
-                if (i.estado !== 'rejeitada' && i.estado !== 'cancelada') {
-                    td.appendChild(btnAcao('Rejeitar', 'danger', async () => {
-                        await atualizarInscricaoEvento(i.id, { pagamento_estado:'rejeitado', estado:'rejeitada' })
-                        carregarInscricoes()
-                    }))
+                if (i.pagamento_estado !== 'validado' && i.estado !== 'rejeitada' && i.estado !== 'cancelada') {
+                    td.appendChild(btnAprovar('Validar pagamento', () => navegarPara('pagamentos')))
                 }
                 td.appendChild(btnAcao('Eliminar', 'danger', async () => {
                     if (confirm('Eliminar esta inscrição?')) {
@@ -802,12 +792,12 @@
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
+                if (p.comprovativo_url) {
+                    td.appendChild(btnAcao('Comprovativo', 'normal', () => abrirComprovativo(p.comprovativo_url)))
+                }
                 if (p.estado === 'pendente' || p.estado === 'em_validacao') {
                     // Usar RPC transacional em vez de .update() direto
                     td.appendChild(btnAprovar('Validar', () => abrirModalValidarPagamento(p)))
-                    td.appendChild(btnAcao('Rejeitar', 'danger', () => abrirModalRejeitarPagamento(p)))
-                }
-                tbody.appendChild(tr)
             })
         }
 
@@ -831,6 +821,7 @@
             if (error) { alert('Erro ao validar: ' + error.message); return }
             fecharModal('modalValidarPagamento')
             carregarPagamentos()
+            carregarInscricoes()
             carregarDashboard()
         }
 
@@ -848,8 +839,29 @@
             if (error) { alert('Erro ao rejeitar: ' + error.message); return }
             fecharModal('modalRejeitarPagamento')
             carregarPagamentos()
+            carregarInscricoes()
             carregarDashboard()
         }
+
+        window.abrirComprovativo = async function(path) {
+            if (/^https?:\/\//i.test(path)) {
+                window.open(path, '_blank', 'noopener')
+                return
+            }
+
+            const { data, error } = await supabase
+                .storage
+                .from('comprovativos')
+                .createSignedUrl(path, 60 * 10)
+
+            if (error || !data?.signedUrl) {
+                alert('Não foi possível abrir o comprovativo.')
+                return
+            }
+
+            window.open(data.signedUrl, '_blank', 'noopener')
+        }
+
 
         // ── SUPORTE ──────────────────────────────────────────────────────
         async function carregarSuporte() {
