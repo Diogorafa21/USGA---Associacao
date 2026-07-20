@@ -4,7 +4,7 @@ Este diretorio guarda a base tecnica para ligar o site ao Supabase.
 
 ## 1. Criar a base de dados
 
-No painel do Supabase:
+Para um projeto Supabase novo:
 
 1. Abrir `SQL Editor`.
 2. Criar uma nova query.
@@ -12,6 +12,12 @@ No painel do Supabase:
 4. Executar a query.
 
 Opcionalmente, executar depois o `seed.sql` para criar os eventos de exemplo que ja aparecem nas paginas HTML.
+
+Para um projeto Supabase que ja tinha a versao anterior instalada:
+
+1. Abrir `SQL Editor`.
+2. Executar `migration_20260720_payment_proofs.sql`.
+3. Nao executar `schema.sql` por cima de uma base ja em uso, a menos que esteja a recriar tudo do zero.
 
 Isto cria as tabelas principais:
 
@@ -86,3 +92,17 @@ where email = 'o-teu-email@example.com';
 ```
 
 Depois disso, a pagina `admin.html` fica acessivel a essa conta.
+
+## 6. Pagamentos e comprovativos
+
+As inscricoes em eventos criam automaticamente um registo em `pagamentos`.
+
+Fluxo recomendado:
+
+1. Participante faz a inscricao.
+2. A pagina de pagamento mostra valor, evento, referencia e estado.
+3. Participante carrega o comprovativo.
+4. O pagamento passa para `em_validacao`.
+5. O admin valida ou rejeita no separador `Pagamentos`.
+
+Os comprovativos usam o bucket privado `comprovativos`. O admin abre os ficheiros a partir do back-office atraves de URLs assinados temporarias.
