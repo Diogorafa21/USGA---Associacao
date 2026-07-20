@@ -175,6 +175,33 @@ export async function getEstadoInscricao(publicToken) {
 
 // Pagamentos -----------------------------------------------------------------
 
+export async function getPagamentoPublico(pagamentoToken) {
+  const { data, error } = await supabase
+    .rpc('get_pagamento_publico', { p_pagamento_token: pagamentoToken })
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function getPagamentoByInscricao(inscricaoId) {
+  const { data, error } = await supabase
+    .from('pagamentos')
+    .select('*')
+    .eq('inscricao_evento_id', inscricaoId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+  return { data, error }
+}
+
+export async function getInscricaoById(inscricaoId) {
+  const { data, error } = await supabase
+    .from('inscricoes_evento')
+    .select('*, eventos(*)')
+    .eq('id', inscricaoId)
+    .maybeSingle()
+  return { data, error }
+}
+
 export async function criarPagamento(dados) {
   const sessao = await getSessao()
   const payload = { ...dados, utilizador_id: dados.utilizador_id ?? sessao?.user?.id ?? null }

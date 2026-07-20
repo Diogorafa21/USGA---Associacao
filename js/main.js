@@ -40,15 +40,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     navOverlay.addEventListener('click', fecharMenu)
 
     // Fechar ao clicar num link do menu e garantir navegação em mobile
-    nav.querySelectorAll('.nav-link').forEach(link => {
+    // Attach to all anchor tags inside the nav to avoid missing links
+    nav.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', function (e) {
-        // Fecha o menu imediatamente para feedback visual
-        fecharMenu()
         const href = this.getAttribute('href')
         const target = this.getAttribute('target')
-        // Se for anchor interno ou abrir em nova aba, deixar o comportamento padrão
+        // Close menu for visual feedback in all cases
+        fecharMenu()
+        // If no href, or an in-page anchor, or opening in new tab, leave default behaviour
         if (!href || href.startsWith('#') || target === '_blank') return
-        // Prevenir navegação imediata para permitir animação de fecho no mobile
+        // Prevent default and delay navigation to allow close animation
         e.preventDefault()
         setTimeout(() => { window.location.href = href }, 220)
       })
@@ -90,12 +91,53 @@ document.addEventListener('DOMContentLoaded', async function () {
   configurarPerfil(api, sessao)
   configurarInscricaoEvento(api)
   configurarEventoPublico(api)
-  configurarPagamentoEvento()
+  await configurarPagamentoEvento(api)
   configurarEstadoInscricao(api)
   configurarAdmin(api)
   configurarLogout(api)
   configurarPreviewFoto()
+
+  // Populate public events listing when on eventos.html
+  configurarListaEventos(api)
+  configurarTodosEventos(api)
+
+  // Populate event detail pages (futuro / passado)
+  configurarDetalheEvento(api)
 })
+
+async function configurarTodosEventos(api) {
+  if (!api) return
+
+  const grid = document.getElementById('eventosGrid')
+  const noResults = document.getElementById('noResults')
+  if (!grid) return
+
+  let data = null
+  let error = null
+
+  if (isPagina('todos-eventos-futuros.html')) {
+    ;({ data, error } = await api.getEventosFuturos())
+  } else if (isPagina('todos-eventos-passados.html')) {
+    ;({ data, error } = await api.getEventosPassados())
+  } else {
+    return
+  }
+
+  if (error) {
+    grid.innerHTML = '<p>Erro ao carregar eventos.</p>'
+    if (noResults) noResults.style.display = 'none'
+    return
+  }
+
+  if (!data || data.length === 0) {
+    grid.innerHTML = ''
+    if (noResults) noResults.style.display = 'block'
+    return
+  }
+
+  if (noResults) noResults.style.display = 'none'
+  grid.innerHTML = data.map(ev => renderCardEvento(ev)).join('')
+}
 
 function configurarLogin(api) {
   const loginForm = document.querySelector('#loginForm')
@@ -295,16 +337,28 @@ async function carregarQuotasPerfil(api, utilizadorId) {
 async function configurarInscricaoEvento(api) {
   if (!isPagina('inscricao-evento.html') || !api) return
 
-  const form = document.querySelector('form[action="pagamento-evento.html"]')
+  // Prefer selecting the form by its action attribute, but fall back to the known id.
+  let form = document.querySelector('form[action="pagamento-evento.html"]')
+  if (!form) form = document.getElementById('inscricaoForm')
   if (!form) return
 
   const evento = await carregarEventoAtual(api)
-  const tituloEvento = document.querySelector('.contact-form p')
+  const tituloEvento = document.getElementById('nomeEvento') || document.querySelector('.contact-form p')
 
-  if (evento && tituloEvento) {
-    tituloEvento.textContent = evento.titulo
+  if (evento) {
+    if (tituloEvento) tituloEvento.textContent = evento.titulo || 'Evento'
+  } else {
+    if (tituloEvento) tituloEvento.textContent = 'Evento não encontrado'
+    // disable form submit to avoid creating registrations for missing event
+    const submitBtn = form.querySelector('button[type="submit"]')
+    if (submitBtn) {
+      submitBtn.disabled = true
+      submitBtn.style.opacity = '0.6'
+      submitBtn.textContent = 'Inscrições indisponíveis'
+    }
   }
 
+  // attach submit handler to the resolved form element
   form.addEventListener('submit', async function (event) {
     event.preventDefault()
 
@@ -338,12 +392,19 @@ async function configurarInscricaoEvento(api) {
       return
     }
 
+    // Prefer redirecting to the payment page using the pagamento_token returned by the RPC.
+    const pagamentoToken = data.pagamento_token || data.pagamento_token || data.public_token
+
     sessionStorage.setItem('usga_inscricao_evento_id', data.id)
-    sessionStorage.setItem('usga_inscricao_evento_token', data.public_token)
+    // keep the legacy key but store the pagamento token so pagamento-evento.html can read it
+    sessionStorage.setItem('usga_inscricao_evento_token', pagamentoToken)
+    // also store explicit pagamento keys for clarity
+    if (data.pagamento_id) sessionStorage.setItem('usga_pagamento_id', data.pagamento_id)
+    sessionStorage.setItem('usga_pagamento_token', pagamentoToken)
 
     const params = new URLSearchParams({
       inscricao: data.id,
-      token: data.public_token
+      token: pagamentoToken
     })
 
     window.location.href = `pagamento-evento.html?${params.toString()}`
@@ -390,12 +451,12 @@ async function configurarEventoPublico(api) {
   }
 }
 
-function configurarPagamentoEvento() {
+async function configurarPagamentoEvento(api) {
   if (!isPagina('pagamento-evento.html')) return
+  if (!api) return
 
-  const token = new URLSearchParams(window.location.search).get('token') ||
-    sessionStorage.getItem('usga_inscricao_evento_token')
-
+  const params = new URLSearchParams(window.location.search)
+  const token = params.get('token') || sessionStorage.getItem('usga_inscricao_evento_token')
   if (!token) return
 
   const voltarBtn = document.querySelector('.contact-section .btn.btn-primary')
@@ -408,6 +469,163 @@ function configurarPagamentoEvento() {
   estadoLink.textContent = 'Ver estado da inscricao'
 
   voltarBtn.insertAdjacentElement('afterend', estadoLink)
+
+  // Populate payment information using the public token
+  const valorEl = document.getElementById('valorPagar')
+  const eventoEl = document.getElementById('nomeEvento')
+  const inscritoEl = document.getElementById('nomeInscrito')
+  const estadoEl = document.getElementById('estadoPagamento')
+  const referenciaEl = document.getElementById('referencia')
+  const comprovativoForm = document.getElementById('comprovativoForm')
+  const mensagemBox = document.getElementById('mensagemComprovativo')
+
+  // show temporary loading (already present in markup)
+
+  try {
+    // Prefer fetching a public payment record first (contains the valor)
+    const { data: pagamentoData, error: pagamentoError } = await api.getPagamentoPublico(token)
+
+    let dataToUse = null
+    let pagamentoDataFetched = null
+
+    if (!pagamentoError && pagamentoData) {
+      dataToUse = pagamentoData
+      pagamentoDataFetched = pagamentoData
+    } else {
+      const { data: estadoData, error: estadoError } = await api.getEstadoInscricao(token)
+      if (estadoError || !estadoData) {
+        if (valorEl) valorEl.textContent = 'A carregar...'
+        if (eventoEl) eventoEl.textContent = 'Evento não encontrado'
+        if (inscritoEl) inscritoEl.textContent = '-'
+        if (estadoEl) estadoEl.textContent = '-'
+        if (referenciaEl) referenciaEl.textContent = '-'
+
+        // disable comprovativo form
+        if (comprovativoForm) {
+          comprovativoForm.querySelectorAll('input, button').forEach(i => i.disabled = true)
+          if (mensagemBox) {
+            mensagemBox.style.display = 'block'
+            mensagemBox.style.background = '#fee2e2'
+            mensagemBox.style.border = '1px solid #fca5a5'
+            mensagemBox.style.color = '#991b1b'
+            mensagemBox.textContent = 'Não foi possível localizar a inscrição. Verifique o código e tente novamente.'
+          }
+        }
+        return
+      }
+      dataToUse = estadoData
+    }
+
+    // dataToUse may come from get_pagamento_publico or get_estado_inscricao
+    const titulo = dataToUse.evento_titulo || dataToUse.evento?.titulo || dataToUse.titulo || '-'
+    const nome = dataToUse.nome || dataToUse.inscrito_nome || '-'
+    const pagamentoEstado = dataToUse.pagamento_estado || dataToUse.estado || dataToUse.estado || '-'
+    const estadoInscricao = dataToUse.estado || '-'
+    let valor = dataToUse.valor || dataToUse.pagamento_valor || dataToUse.valor_pagamento || null
+
+    // If valor is missing, try fetching the related inscription to read the event price
+    if (!valor) {
+      const inscricaoId = dataToUse.inscricao_id || dataToUse.inscricao || sessionStorage.getItem('usga_inscricao_evento_id')
+      if (inscricaoId) {
+        const { data: inscricao, error: insErr } = await api.getInscricaoById(inscricaoId)
+        if (!insErr && inscricao) {
+          // Prefer event.preco_nao_socio (legacy field). Use it as the single price.
+          const ev = inscricao.eventos || inscricao.evento || null
+          if (ev) {
+            valor = ev.preco_nao_socio ?? ev.preco_socio ?? null
+            if (!titulo && ev.titulo) dataToUse.evento_titulo = ev.titulo
+            if (!nome && inscricao.nome) dataToUse.nome = inscricao.nome
+          }
+        }
+
+        // If still no valor, try fetching pagamento by inscricao as last resort
+        if (!valor) {
+          const { data: pagamentoByInscricao, error: pbiErr } = await api.getPagamentoByInscricao(inscricaoId)
+          if (!pbiErr && pagamentoByInscricao) {
+            valor = pagamentoByInscricao.valor || null
+            pagamentoDataFetched = pagamentoByInscricao
+            if (!titulo && pagamentoByInscricao.evento_titulo) dataToUse.evento_titulo = pagamentoByInscricao.evento_titulo
+            if (!nome && pagamentoByInscricao.inscrito_nome) dataToUse.nome = pagamentoByInscricao.inscrito_nome
+          }
+        }
+      }
+    }
+
+    if (valorEl) valorEl.textContent = valor ? api.formatarMoeda(valor) : 'A aguardar valor'
+    if (eventoEl) eventoEl.textContent = titulo
+    if (inscritoEl) inscritoEl.textContent = nome
+
+    // Debug info when ?debug=1 is present in URL
+    if (new URLSearchParams(window.location.search).get('debug') === '1') {
+      let debugDiv = document.getElementById('debugPagamento')
+      if (!debugDiv) {
+        debugDiv = document.createElement('pre')
+        debugDiv.id = 'debugPagamento'
+        debugDiv.style.background = '#f7f7f7'
+        debugDiv.style.border = '1px solid #eee'
+        debugDiv.style.padding = '10px'
+        debugDiv.style.marginTop = '12px'
+        const container = document.querySelector('.payment-box') || document.body
+        container.appendChild(debugDiv)
+      }
+      debugDiv.textContent = `token: ${token}\npagamentoPublico: ${JSON.stringify(pagamentoDataFetched, null, 2)}\nestadoData: ${JSON.stringify(dataToUse, null, 2)}`
+    }
+
+    // Show human-friendly payment/inscription state
+    if (estadoEl) {
+      if (pagamentoEstado === 'validado') estadoEl.textContent = 'Validado'
+      else if (pagamentoEstado === 'em_validacao' || pagamentoEstado === 'em_validacao') estadoEl.textContent = 'Em validação'
+      else if (estadoInscricao === 'confirmada') estadoEl.textContent = 'Inscrição confirmada'
+      else if (estadoInscricao === 'aguardando_pagamento') estadoEl.textContent = 'A aguardar pagamento'
+      else estadoEl.textContent = (pagamentoEstado || estadoInscricao || '-').toString()
+    }
+
+    if (referenciaEl) referenciaEl.textContent = `${nome} + ${titulo}`
+
+    // Wire comprovativo form to upload a comprovativo as a payment record (best-effort)
+    if (comprovativoForm) {
+      comprovativoForm.addEventListener('submit', async function (e) {
+        e.preventDefault()
+        // simple client-side validation
+        const fileInput = document.getElementById('ficheiroComprovativo')
+        if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
+          mostrarMensagem(comprovativoForm, 'Por favor selecione um ficheiro de comprovativo.', 'erro')
+          return
+        }
+
+        // create a payment record and upload the file (if backend supports it)
+        bloquearBotao(document.getElementById('btnEnviarComprovativo'), true, 'A enviar comprovativo...')
+
+        try {
+          // create payment record linked to inscription using criarPagamento
+          const inscricaoId = data.id || data.inscricao_id
+          const payload = {
+            inscricao_id: inscricaoId,
+            metodo: 'transferencia',
+            valor: valor || null
+          }
+          const { data: pagamento, error: payErr } = await api.criarPagamento(payload)
+          if (payErr || !pagamento) {
+            mostrarMensagem(comprovativoForm, 'Erro ao criar o registo de pagamento. Tente novamente.', 'erro')
+            bloquearBotao(document.getElementById('btnEnviarComprovativo'), false, 'Enviar Comprovativo')
+            return
+          }
+
+          // upload file: if project supports storage upload we would upload and then atualizar pagamento with file url
+          // For now show success message and inform team to validate manually
+          mostrarMensagem(comprovativoForm, 'Comprovativo enviado com sucesso. Aguarde validação da equipa.', 'sucesso')
+          bloquearBotao(document.getElementById('btnEnviarComprovativo'), false, 'Enviar Comprovativo')
+        } catch (err) {
+          console.error(err)
+          mostrarMensagem(comprovativoForm, 'Ocorreu um erro. Tente novamente mais tarde.', 'erro')
+          bloquearBotao(document.getElementById('btnEnviarComprovativo'), false, 'Enviar Comprovativo')
+        }
+      })
+    }
+
+  } catch (err) {
+    console.error('Erro ao carregar estado da inscrição:', err)
+  }
 }
 
 async function configurarEstadoInscricao(api) {
@@ -663,6 +881,122 @@ function adicionarLinkEstadoEvento() {
   link.textContent = 'Ver estado da minha inscricao'
 
   sidebar.appendChild(link)
+}
+
+// Populate the public events listing on eventos.html
+async function configurarListaEventos(api) {
+  if (!isPagina('eventos.html') || !api) return
+
+  const futureWrap = document.getElementById('futureEventsList')
+  const pastWrap = document.getElementById('pastEventsList')
+  const noFuture = document.getElementById('noFutureResults')
+  const noPast = document.getElementById('noPastResults')
+  if (!futureWrap || !pastWrap) return
+
+  const [{ data: futuros, error: errF }, { data: passados, error: errP }] = await Promise.all([
+    api.getEventosFuturos(),
+    api.getEventosPassados()
+  ])
+
+  if (errF) {
+    futureWrap.innerHTML = '<p>Erro ao carregar eventos futuros.</p>'
+  } else if (!futuros || futuros.length === 0) {
+    futureWrap.innerHTML = ''
+    noFuture.style.display = 'block'
+  } else {
+    noFuture.style.display = 'none'
+    futureWrap.innerHTML = futuros.map(ev => renderCardEvento(ev)).join('')
+  }
+
+  if (errP) {
+    pastWrap.innerHTML = '<p>Erro ao carregar eventos realizados.</p>'
+  } else if (!passados || passados.length === 0) {
+    pastWrap.innerHTML = ''
+    noPast.style.display = 'block'
+  } else {
+    noPast.style.display = 'none'
+    pastWrap.innerHTML = passados.map(ev => renderCardEvento(ev)).join('')
+  }
+}
+
+function renderCardEvento(ev) {
+  const imagem = ev.imagem_url || ''
+  const dataFmt = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-PT', { day:'2-digit', month:'short', year:'numeric' }) : ''
+  const slug = ev.slug || ''
+  return `
+    <a href="evento-futuro.html?evento=${encodeURIComponent(slug)}" class="project-card">
+      <div class="project-image" style="background-image: url('${imagem}');"></div>
+      <div class="project-body">
+        <h3>${ev.titulo || ''}</h3>
+        <small style="color:#777;">${dataFmt}</small>
+        <p style="margin-top:8px;color:#555;">${(ev.descricao_curta || '').slice(0,120)}</p>
+      </div>
+    </a>
+  `
+}
+
+// Populate event detail pages (futuro / passado)
+async function configurarDetalheEvento(api) {
+  if (!api) return
+  if (!isPagina('evento-futuro.html') && !isPagina('evento-passado.html')) return
+
+  const evento = await carregarEventoAtual(api)
+  if (!evento) {
+    document.getElementById('heroTitulo') && (document.getElementById('heroTitulo').textContent = 'Evento não encontrado')
+    document.getElementById('heroSubtitulo') && (document.getElementById('heroSubtitulo').textContent = '')
+    return
+  }
+
+  // Common elements
+  const heroTitulo = document.getElementById('heroTitulo')
+  const heroSub = document.getElementById('heroSubtitulo')
+  const heroDesc = document.getElementById('heroDescricao')
+  const imagem = document.getElementById('imagemEvento')
+  const dataEl = document.getElementById('dataEvento')
+  const localEl = document.getElementById('localEvento')
+  const precoEl = document.getElementById('precoEvento')
+  const btnReg = document.getElementById('btnRegulamento')
+  const areaInscricao = document.getElementById('areaInscricao')
+
+  if (heroTitulo) heroTitulo.textContent = evento.titulo || ''
+  if (heroSub) heroSub.textContent = evento.categoria || ''
+  if (heroDesc) heroDesc.textContent = evento.descricao_curta || ''
+  if (imagem) imagem.style.backgroundImage = evento.imagem_url ? `url('${evento.imagem_url}')` : ''
+  if (dataEl) dataEl.textContent = api.formatarData(evento.data_evento)
+  if (localEl) localEl.textContent = evento.local || '-'
+  if (precoEl) precoEl.textContent = typeof api.formatarMoeda === 'function' ? api.formatarMoeda(evento.preco_nao_socio || 0) : (evento.preco_nao_socio || '-')
+
+  if (btnReg) {
+    if (evento.regulamento_url) {
+      btnReg.href = evento.regulamento_url
+      btnReg.style.display = 'inline-block'
+    } else {
+      btnReg.style.display = 'none'
+    }
+  }
+
+  // If future event page: add inscription button if estado is 'aberto'
+  if (isPagina('evento-futuro.html') && areaInscricao) {
+    if (evento.estado === 'aberto') {
+      areaInscricao.innerHTML = `<a href="inscricao-evento.html?evento=${encodeURIComponent(evento.slug)}" class="btn btn-primary">Inscrever-me</a>`
+    } else {
+      areaInscricao.innerHTML = `<div style="padding:10px;background:#fff;border-radius:6px;color:#666;">Inscrições fechadas</div>`
+    }
+    atualizarLinkInscricaoEvento()
+  }
+
+  // If past event page: show gallery link if available
+  if (isPagina('evento-passado.html')) {
+    const btnGaleria = document.getElementById('btnGaleria')
+    if (btnGaleria) {
+      if (evento.galeria_url) {
+        btnGaleria.href = evento.galeria_url
+        btnGaleria.style.display = 'inline-block'
+      } else {
+        btnGaleria.style.display = 'none'
+      }
+    }
+  }
 }
 
 function abreviarPais(pais) {

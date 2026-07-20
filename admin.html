@@ -91,6 +91,7 @@
 
                     <div class="sidebar-section">Sócios</div>
                     <a href="#" data-sec="socios">👥 Sócios</a>
+                    <a href="#" data-sec="utilizadores">👤 Utilizadores</a>
                     <a href="#" data-sec="pedidos">📨 Pedidos <span class="badge-count" id="sb-pedidos">0</span></a>
 
                     <div class="sidebar-section">Financeiro</div>
@@ -175,6 +176,26 @@
                             <table class="participants-table">
                                 <thead><tr><th>Nº Sócio</th><th>Nome</th><th>Email</th><th>Estado</th><th>Ações</th></tr></thead>
                                 <tbody id="tbl-socios"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- UTILIZADORES -->
+                    <div class="admin-section" id="sec-utilizadores">
+                        <h2 style="margin-bottom:20px;">Utilizadores</h2>
+                        <div class="form-inline">
+                            <input type="text" id="searchUtilizadores" placeholder="Pesquisar por nome ou email..." oninput="filtrarUtilizadores()">
+                            <select id="filtroEstadoUtilizador" onchange="filtrarUtilizadores()">
+                                <option value="">Todos</option>
+                                <option value="ativo">Ativos</option>
+                                <option value="inativo">Inativos</option>
+                                <option value="bloqueado">Bloqueados</option>
+                            </select>
+                        </div>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Nome</th><th>Email</th><th>Nº Sócio</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-utilizadores"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -266,7 +287,11 @@
                     <option value="cancelado">Cancelado</option>
                 </select>
             </div>
-            <div class="form-group"><label>URL da imagem</label><input type="url" id="ev-imagem"></div>
+            <div class="form-group"><label>Imagem (upload)</label>
+                <input type="file" id="ev-imagem-file" accept="image/*">
+                <input type="hidden" id="ev-imagem">
+                <div id="ev-imagem-preview" style="margin-top:8px; display:none;"><img id="ev-imagem-preview-img" src="" alt="Preview" style="max-width:100%; max-height:240px; object-fit: contain; border-radius:6px; border:1px solid #eee;"></div>
+            </div>
             <div class="form-group"><label>URL do regulamento</label><input type="url" id="ev-regulamento"></div>
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="fecharModal('modalEvento')">Cancelar</button>
@@ -402,12 +427,13 @@
                 { count: suporteMsg },
                 { count: eventos }
             ] = await Promise.all([
-                supabase.from('utilizadores').select('*', { count:'exact', head:true }).eq('estado','ativo'),
-                supabase.from('pedidos_socio').select('*', { count:'exact', head:true }).eq('estado','pendente'),
-                supabase.from('inscricoes_evento').select('*', { count:'exact', head:true }).eq('pagamento_estado','pendente'),
-                supabase.from('quotas').select('*', { count:'exact', head:true }).eq('estado','por_pagar'),
-                supabase.from('mensagens_suporte').select('*', { count:'exact', head:true }).eq('estado','novo'),
-                supabase.from('eventos').select('*', { count:'exact', head:true }).eq('estado','aberto')
+            // Count only actual members (have numero_socio)
+            supabase.from('utilizadores').select('*', { count:'exact', head:true }).not('numero_socio','is', null),
+            supabase.from('pedidos_socio').select('*', { count:'exact', head:true }).eq('estado','pendente'),
+            supabase.from('inscricoes_evento').select('*', { count:'exact', head:true }).eq('pagamento_estado','pendente'),
+            supabase.from('quotas').select('*', { count:'exact', head:true }).eq('estado','por_pagar'),
+            supabase.from('mensagens_suporte').select('*', { count:'exact', head:true }).eq('estado','novo'),
+            supabase.from('eventos').select('*', { count:'exact', head:true }).eq('estado','aberto')
             ])
             document.getElementById('ds-socios').textContent    = socios ?? 0
             document.getElementById('ds-pedidos').textContent   = pedidos ?? 0
@@ -489,13 +515,26 @@
             document.getElementById('ev-preco-socio').value = ev?.preco_socio ?? 0
             document.getElementById('ev-preco-nao-socio').value = ev?.preco_nao_socio ?? 0
             document.getElementById('ev-estado').value     = ev?.estado || 'rascunho'
+            // set hidden imagem url field and preview
             document.getElementById('ev-imagem').value     = ev?.imagem_url || ''
+            const preview = document.getElementById('ev-imagem-preview')
+            const previewImg = document.getElementById('ev-imagem-preview-img')
+            const fileInput = document.getElementById('ev-imagem-file')
+            if (fileInput) fileInput.value = ''
+            if (ev?.imagem_url) {
+                if (previewImg) previewImg.src = ev.imagem_url
+                if (preview) preview.style.display = 'block'
+            } else {
+                if (previewImg) previewImg.src = ''
+                if (preview) preview.style.display = 'none'
+            }
             document.getElementById('ev-regulamento').value = ev?.regulamento_url || ''
             document.getElementById('modalEvento').classList.add('open')
         }
 
         window.guardarEvento = async function() {
             const id = document.getElementById('eventoId').value
+            // prepare payload excluding imagem_url initially
             const payload = {
                 titulo:           document.getElementById('ev-titulo').value.trim(),
                 slug:             document.getElementById('ev-slug').value.trim(),
@@ -510,9 +549,54 @@
                 preco_socio:      parseFloat(document.getElementById('ev-preco-socio').value) || 0,
                 preco_nao_socio:  parseFloat(document.getElementById('ev-preco-nao-socio').value) || 0,
                 estado:           document.getElementById('ev-estado').value,
-                imagem_url:       document.getElementById('ev-imagem').value.trim() || null,
                 regulamento_url:  document.getElementById('ev-regulamento').value.trim() || null
             }
+
+            // handle image upload if a file was selected
+            const fileInput = document.getElementById('ev-imagem-file')
+            const existingUrl = document.getElementById('ev-imagem').value.trim() || null
+            if (fileInput && fileInput.files && fileInput.files.length > 0) {
+                const file = fileInput.files[0]
+                const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
+                const path = `eventos/${fileName}`
+
+                // Quick check: ensure the 'eventos' bucket exists before attempting upload so we can show a clearer error
+                try {
+                    const { data: listTest, error: listErr } = await supabase.storage.from('eventos').list('', { limit: 1 })
+                    if (listErr) {
+                        console.error('Storage bucket check failed', listErr)
+                        alert('Bucket "eventos" not found in Supabase Storage. Please create it in the Supabase dashboard: Storage → New bucket → name "eventos" and set it to Public. After creating the bucket, try the upload again.')
+                        return
+                    }
+                } catch (err) {
+                    console.error('Error checking storage bucket:', err)
+                    alert('Erro ao verificar o bucket de armazenamento. Verifique a consola para mais detalhes.')
+                    return
+                }
+
+                try {
+                    // Use upsert:true to avoid "already exists" failures and simplify flow
+                    const { data: uploadData, error: uploadErr } = await supabase.storage.from('eventos').upload(path, file, { cacheControl: '3600', upsert: true })
+                    if (uploadErr) {
+                        console.error('Upload error', uploadErr)
+                        alert('Erro ao enviar a imagem: ' + (uploadErr.message || JSON.stringify(uploadErr)))
+                        return
+                    }
+
+                    // get public URL
+                    const { data: publicUrlData, error: publicErr } = await supabase.storage.from('eventos').getPublicUrl(path)
+                    if (publicErr) console.error('getPublicUrl error', publicErr)
+                    payload.imagem_url = publicUrlData?.publicUrl || null
+                } catch (err) {
+                    console.error('Erro ao enviar imagem:', err)
+                    alert('Erro ao enviar a imagem. Verifique a consola e tente novamente. Detalhe: ' + (err.message || JSON.stringify(err)))
+                    return
+                }
+            } else {
+                // no new file — preserve existing URL if present
+                if (existingUrl) payload.imagem_url = existingUrl
+            }
+
             if (id) {
                 await supabase.from('eventos').update(payload).eq('id', id)
             } else {
@@ -521,6 +605,24 @@
             fecharModal('modalEvento')
             carregarEventos()
         }
+
+        // preview image when file chosen
+        document.getElementById('ev-imagem-file')?.addEventListener('change', function () {
+            const file = this.files && this.files[0]
+            const preview = document.getElementById('ev-imagem-preview')
+            const previewImg = document.getElementById('ev-imagem-preview-img')
+            if (file && previewImg) {
+                const reader = new FileReader()
+                reader.onload = function (e) {
+                    previewImg.src = e.target.result
+                    if (preview) preview.style.display = 'block'
+                }
+                reader.readAsDataURL(file)
+            } else {
+                if (previewImg) previewImg.src = ''
+                if (preview) preview.style.display = 'none'
+            }
+        })
 
         // ── INSCRIÇÕES ───────────────────────────────────────────────────
         window.carregarInscricoes = async function() {
@@ -584,7 +686,12 @@
         let todosSocios = []
 
         async function carregarSocios() {
-            const { data } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
+            // Only fetch users that have a numero_socio (actual members)
+            const { data } = await supabase.from('utilizadores')
+                .select('*')
+                .not('numero_socio','is', null)
+                .neq('numero_socio','')
+                .order('created_at', { ascending: false })
             todosSocios = data || []
             renderSocios(todosSocios)
         }
@@ -618,6 +725,75 @@
             })
         }
 
+        let todosUtilizadores = []
+
+        async function carregarUtilizadores() {
+            const { data } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
+            todosUtilizadores = data || []
+            renderUtilizadores(todosUtilizadores)
+        }
+
+        function renderUtilizadores(data) {
+            const tbody = document.getElementById('tbl-utilizadores')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem utilizadores.</td></tr>'; return }
+            tbody.innerHTML = ''
+            data.forEach(u => {
+                const tr = document.createElement('tr')
+                tr.innerHTML = `
+                    <td>${u.nome || ''} ${u.apelido || ''}</td>
+                    <td style="font-size:12px;">${u.email}</td>
+                    <td>${u.numero_socio || '-'}</td>
+                    <td>${estadoBadgeSocio[u.estado] || u.estado}</td>
+                    <td></td>`
+                const td = tr.querySelector('td:last-child')
+                td.appendChild(btnAprovar('Editar', () => abrirModalSocio(u)))
+                if (!u.numero_socio) {
+                    td.appendChild(btnAcao('Atribuir Nº', 'normal', async () => {
+                        if (!confirm('Atribuir o próximo número de sócio a este utilizador?')) return
+                        const { data, error } = await supabase.rpc('assign_next_numero_socio', { p_user_id: u.id })
+                        if (error) return alert('Erro ao atribuir número: ' + error.message)
+                        carregarUtilizadores()
+                        carregarSocios()
+                    }))
+                }
+                if (u.estado !== 'bloqueado') {
+                    td.appendChild(btnAcao('Bloquear', 'danger', async () => { await supabase.from('utilizadores').update({ estado:'bloqueado' }).eq('id', u.id); carregarUtilizadores(); carregarSocios() }))
+                } else {
+                    td.appendChild(btnAcao('Desbloquear', 'normal', async () => { await supabase.from('utilizadores').update({ estado:'ativo' }).eq('id', u.id); carregarUtilizadores(); carregarSocios() }))
+                }
+                if (u.role !== 'admin') {
+                    td.appendChild(btnAcao('Tornar Admin', 'normal', async () => { await supabase.from('utilizadores').update({ role:'admin' }).eq('id', u.id); carregarUtilizadores() }))
+                } else {
+                    td.appendChild(btnAcao('Remover Admin', 'danger', async () => { await supabase.from('utilizadores').update({ role:'user' }).eq('id', u.id); carregarUtilizadores() }))
+                }
+                tbody.appendChild(tr)
+            })
+        }
+
+        window.filtrarUtilizadores = function() {
+            const termo  = document.getElementById('searchUtilizadores').value.toLowerCase()
+            const estado = document.getElementById('filtroEstadoUtilizador').value
+            const filtrado = todosUtilizadores.filter(u => {
+                const nome = `${u.nome || ''} ${u.apelido || ''} ${u.email || ''}`.toLowerCase()
+                return nome.includes(termo) && (!estado || u.estado === estado)
+            })
+            renderUtilizadores(filtrado)
+        }
+
+        // obterProximoNumeroSocio is no longer used; server-side RPC provides the next available number atomically.
+        // Keeping this function commented in case a client-only fallback is desired in the future.
+        /*
+        async function obterProximoNumeroSocio() {
+            const { data } = await supabase.from('utilizadores').select('numero_socio').not('numero_socio','is', null).neq('numero_socio','')
+            const nums = (data || []).map(x => parseInt(x.numero_socio, 10)).filter(n => !isNaN(n))
+            // compute smallest missing positive integer
+            let i = 1
+            const set = new Set(nums)
+            while (set.has(i)) i++
+            return String(i)
+        }
+        */
+
         window.filtrarSocios = function() {
             const termo  = document.getElementById('searchSocios').value.toLowerCase()
             const estado = document.getElementById('filtroEstadoSocio').value
@@ -643,16 +819,31 @@
 
         window.guardarSocio = async function() {
             const id = document.getElementById('socioId').value
-            await supabase.from('utilizadores').update({
+            const numeroVal = document.getElementById('sc-numero').value.trim()
+            const payload = {
                 nome:         document.getElementById('sc-nome').value.trim(),
                 apelido:      document.getElementById('sc-apelido').value.trim(),
                 telefone:     document.getElementById('sc-telefone').value.trim() || null,
                 nif:          document.getElementById('sc-nif').value.trim() || null,
-                numero_socio: document.getElementById('sc-numero').value.trim() || null,
                 estado:       document.getElementById('sc-estado').value,
                 role:         document.getElementById('sc-role').value
-            }).eq('id', id)
+            }
+
+            // If admin provided a numero_socio (manual assignment), validate and call RPC to assign atomically
+            if (numeroVal) {
+                const num = parseInt(numeroVal, 10)
+                if (!Number.isInteger(num) || num <= 0) return alert('Número inválido. Deve ser inteiro positivo maior que 0.')
+                const { data, error } = await supabase.rpc('assign_numero_socio', { p_user_id: id, p_num: num })
+                if (error) return alert('Erro ao atribuir número: ' + error.message)
+                // update other profile fields as normal
+                await supabase.from('utilizadores').update(payload).eq('id', id)
+            } else {
+                // No numero provided — clear the field and update normally
+                await supabase.from('utilizadores').update(Object.assign(payload, { numero_socio: null })).eq('id', id)
+            }
+
             fecharModal('modalSocio')
+            carregarUtilizadores()
             carregarSocios()
         }
 
@@ -806,6 +997,7 @@
             if (sec === 'eventos')    await carregarEventos()
             if (sec === 'inscricoes') { await carregarEventos(); await carregarInscricoes() }
             if (sec === 'socios')     await carregarSocios()
+            if (sec === 'utilizadores') await carregarUtilizadores()
             if (sec === 'pedidos')    await carregarPedidos()
             if (sec === 'quotas')     await carregarQuotas()
             if (sec === 'pagamentos') await carregarPagamentos()

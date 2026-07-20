@@ -450,6 +450,9 @@ body.home-page .nav-link.active {
     border-radius: 8px;
     overflow: hidden;
     margin-bottom: 20px;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
 }
 
 .image-placeholder {
@@ -457,6 +460,9 @@ body.home-page .nav-link.active {
     height: 100%;
     background-color: #ddd; 
     transition: transform 0.5s ease;
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
 }
 
 .project-card:hover .image-placeholder {
@@ -501,6 +507,11 @@ body.home-page .nav-link.active {
     padding: 30px;
     border-radius: 8px;
     height: fit-content;
+}
+
+.event-sidebar .btn {
+    width: 100%;
+    justify-content: center;
 }
 
 .sidebar-item {
