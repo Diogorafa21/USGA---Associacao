@@ -197,7 +197,8 @@ create table if not exists public.audit_logs (
 
 -- ── Vistas públicas ──────────────────────────────────────────
 
-create or replace view public.inscritos_publicos as
+create or replace view public.inscritos_publicos
+with (security_invoker = true) as
 select i.evento_id, i.nome, coalesce(i.pais,'Portugal') as pais,
        i.equipa, i.dorsal, i.data_confirmacao
 from public.inscricoes_evento i
