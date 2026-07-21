@@ -969,12 +969,17 @@
 
         // ── PAGAMENTOS ───────────────────────────────────────────────────
         async function carregarPagamentos() {
-            const { data } = await supabase
-                .from('pagamentos')
-                .select('*, utilizadores(nome, apelido, email)')
-                .order('created_at', { ascending: false })
-            const tbody = document.getElementById('tbl-pagamentos')
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem pagamentos.</td></tr>'; return }
+            const { data, error } = await supabase
+        .from('pagamentos')
+        .select('*, utilizadores!utilizador_id(nome, apelido, email)')
+        .order('created_at', { ascending: false })
+    const tbody = document.getElementById('tbl-pagamentos')
+    if (error) {
+        console.error('Erro ao carregar pagamentos:', error)
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c00;">Erro ao carregar pagamentos: ' + error.message + '</td></tr>'
+        return
+    }
+    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem pagamentos.</td></tr>'; return }
             tbody.innerHTML = ''
             data.forEach(p => {
                 const u = p.utilizadores
