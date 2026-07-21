@@ -579,7 +579,6 @@ async function configurarEventoPublico(api) {
   if (!isPagina('evento-futuro.html') || !api) return
 
   const evento = await carregarEventoAtual(api)
-  adicionarLinkEstadoEvento()
   atualizarLinkInscricaoEvento()
 
   if (!evento) return
@@ -622,17 +621,6 @@ async function configurarPagamentoEvento(api) {
   const params = new URLSearchParams(window.location.search)
   const token = params.get('token') || sessionStorage.getItem('usga_inscricao_evento_token')
   if (!token) return
-
-  const voltarBtn = document.querySelector('.contact-section .btn.btn-primary')
-  if (!voltarBtn) return
-
-  const estadoLink = document.createElement('a')
-  estadoLink.href = `estado-inscricao.html?token=${encodeURIComponent(token)}`
-  estadoLink.className = 'btn-outline'
-  estadoLink.style.marginTop = '15px'
-  estadoLink.textContent = 'Ver estado da inscricao'
-
-  voltarBtn.insertAdjacentElement('afterend', estadoLink)
 
   // Populate payment information using the public token
   const valorEl = document.getElementById('valorPagar')
@@ -894,19 +882,6 @@ function adicionarLinkAdminPerfil() {
   link.textContent = 'Back-office'
 
   card.appendChild(link)
-}
-
-function adicionarLinkEstadoEvento() {
-  const sidebar = document.querySelector('.event-sidebar')
-  if (!sidebar || sidebar.querySelector('[data-status-link]')) return
-
-  const link = document.createElement('a')
-  link.href = 'estado-inscricao.html'
-  link.className = 'btn-outline'
-  link.dataset.statusLink = 'true'
-  link.textContent = 'Ver estado da minha inscricao'
-
-  sidebar.appendChild(link)
 }
 
 // Populate the public events listing on eventos.html
