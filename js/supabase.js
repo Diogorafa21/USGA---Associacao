@@ -133,7 +133,8 @@ export async function criarInscricaoEvento(dados) {
     p_data_nascimento: dados.data_nascimento ?? null,
     p_sexo:            dados.sexo            ?? null,
     p_pais:            dados.pais            ?? 'Portugal',
-    p_equipa:          dados.equipa          ?? null
+    p_equipa:          dados.equipa          ?? null,
+    p_tamanho_tshirt:  dados.tamanho_tshirt  ?? null
   })
   return { data, error }
 }
