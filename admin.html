@@ -154,8 +154,8 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Estado</th><th>Dorsal</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-inscricoes"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-inscricoes"><tr><td colspan="7" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -484,6 +484,7 @@
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
                 td.appendChild(btnAprovar('Editar', () => abrirModalEvento(ev)))
+                td.appendChild(btnAcao('Ver Inscrições', null, () => verInscricoesEvento(ev.id)))
                 td.appendChild(btnAcao('Eliminar', 'danger', async () => {
                     if (confirm(`Eliminar "${ev.titulo}"?`)) {
                         await supabase.from('eventos').delete().eq('id', ev.id)
@@ -497,6 +498,24 @@
             const sel = document.getElementById('filtroEvento')
             sel.innerHTML = '<option value="">Todos os eventos</option>'
             data.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.titulo; sel.appendChild(o) })
+        }
+
+        // Muda para a secção de Inscrições já filtrada por um evento especifico
+        window.verInscricoesEvento = async function(eventoId) {
+            document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'))
+            document.querySelectorAll('.admin-sidebar a').forEach(a => a.classList.remove('active'))
+            document.getElementById('sec-inscricoes')?.classList.add('active')
+            document.querySelector('[data-sec="inscricoes"]')?.classList.add('active')
+
+            if (!secCarregadas.has('inscricoes')) {
+                secCarregadas.add('inscricoes')
+                await carregarEventos()
+                iniciarSubscricaoInscricoes()
+            }
+
+            const filtro = document.getElementById('filtroEvento')
+            if (filtro) filtro.value = eventoId
+            await carregarInscricoes()
         }
 
         window.abrirModalEvento = function(ev) {
@@ -646,7 +665,7 @@
             }
             window._inscricoes = data || []
             const tbody = document.getElementById('tbl-inscricoes')
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
 
             tbody.innerHTML = ''
             data.forEach(i => {
@@ -665,6 +684,7 @@
                             <button type="button" id="btnDorsal_${i.id}" class="btn btn-small" style="background:#f0f0f0;color:#444;padding:4px 10px;">OK</button>
                         </div>
                     </td>
+                    <td>${i.tamanho_tshirt || '-'}</td>
                     <td></td>`
                 const btnDorsalOk = tr.querySelector(`#btnDorsal_${i.id}`)
                 if (btnDorsalOk) {
@@ -719,8 +739,8 @@
         window.exportarInscricoes = function() {
             const data = window._inscricoes || []
             if (!data.length) return alert('Sem dados para exportar.')
-            const header = 'Evento,Nome,Email,Estado Pagamento,Dorsal,Data Inscrição'
-            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pagamento_estado}","${i.dorsal || ''}","${i.data_inscricao}"`)
+            const header = 'Evento,Nome,Email,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
+            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pagamento_estado}","${i.dorsal || ''}","${i.tamanho_tshirt || ''}","${i.data_inscricao}"`)
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
