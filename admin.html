@@ -659,8 +659,33 @@
                     <td>${i.nome}</td>
                     <td style="font-size:12px;">${i.email}</td>
                     <td>${estadoInscricao}<br>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
-                    <td><input type="text" value="${i.dorsal || ''}" id="d_${i.id}" style="width:55px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:13px;"></td>
+                    <td>
+                        <div style="display:flex;gap:4px;align-items:center;">
+                            <input type="text" value="${i.dorsal || ''}" id="d_${i.id}" style="width:55px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:13px;">
+                            <button type="button" id="btnDorsal_${i.id}" class="btn btn-small" style="background:#f0f0f0;color:#444;padding:4px 10px;">OK</button>
+                        </div>
+                    </td>
                     <td></td>`
+                const btnDorsalOk = tr.querySelector(`#btnDorsal_${i.id}`)
+                if (btnDorsalOk) {
+                    btnDorsalOk.addEventListener('click', async () => {
+                        const inputDorsal = document.getElementById(`d_${i.id}`)
+                        const novoDorsal = inputDorsal.value.trim() || null
+                        const textoOriginal = btnDorsalOk.textContent
+                        btnDorsalOk.disabled = true
+                        btnDorsalOk.textContent = '...'
+                        const { error: errDorsal } = await atualizarInscricaoEvento(i.id, { dorsal: novoDorsal })
+                        btnDorsalOk.disabled = false
+                        if (errDorsal) {
+                            alert('Erro ao guardar o dorsal: ' + errDorsal.message)
+                            btnDorsalOk.textContent = textoOriginal
+                            return
+                        }
+                        i.dorsal = novoDorsal
+                        btnDorsalOk.textContent = '✓'
+                        setTimeout(() => { btnDorsalOk.textContent = textoOriginal }, 1200)
+                    })
+                }
                 const td = tr.querySelector('td:last-child')
                 if (i.pagamento_estado !== 'validado') {
                     td.appendChild(btnAprovar('Confirmar', async () => {
