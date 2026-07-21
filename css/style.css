@@ -983,6 +983,10 @@ body:not(.home-page) .nav-toggle span {
         z-index: 2001;
         touch-action: manipulation;
         -webkit-tap-highlight-color: transparent;
+        -webkit-user-select: none;
+        -moz-user-select: none;
+        -ms-user-select: none;
+        user-select: none;
     }
 
     .nav-link:hover, .nav-link.active {
