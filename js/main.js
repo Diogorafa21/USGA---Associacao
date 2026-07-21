@@ -622,6 +622,17 @@ async function configurarPagamentoEvento(api) {
   const token = params.get('token') || sessionStorage.getItem('usga_inscricao_evento_token')
   if (!token) return
 
+  const voltarBtn = document.querySelector('.contact-section .btn.btn-primary')
+  if (!voltarBtn) return
+
+  const estadoLink = document.createElement('a')
+  estadoLink.href = `estado-inscricao.html?token=${encodeURIComponent(token)}`
+  estadoLink.className = 'btn-outline'
+  estadoLink.style.marginTop = '15px'
+  estadoLink.textContent = 'Ver estado da inscricao'
+
+  voltarBtn.insertAdjacentElement('afterend', estadoLink)
+
   // Populate payment information using the public token
   const valorEl = document.getElementById('valorPagar')
   const eventoEl = document.getElementById('nomeEvento')
