@@ -159,11 +159,14 @@ async function configurarTodosEventos(api) {
 
   let data = null
   let error = null
+  let destino = 'evento-futuro.html'
 
   if (isPagina('todos-eventos-futuros.html')) {
     ;({ data, error } = await api.getEventosFuturos())
+    destino = 'evento-futuro.html'
   } else if (isPagina('todos-eventos-passados.html')) {
     ;({ data, error } = await api.getEventosPassados())
+    destino = 'evento-passado.html'
   } else {
     return
   }
@@ -181,7 +184,7 @@ async function configurarTodosEventos(api) {
   }
 
   if (noResults) noResults.style.display = 'none'
-  grid.innerHTML = data.map(ev => renderCardEvento(ev)).join('')
+  grid.innerHTML = data.map(ev => renderCardEvento(ev, destino)).join('')
 }
 
 function configurarLogin(api) {
@@ -832,148 +835,11 @@ async function configurarEstadoInscricao(api) {
 async function configurarAdmin(api) {
   if (!isPagina('admin.html') || !api) return
 
-  const admin = await api.requireAdmin()
-  if (!admin) return
-
-  await Promise.all([
-    carregarAdminPedidosSocio(api),
-    carregarAdminInscricoes(api),
-    carregarAdminQuotas(api)
-  ])
-}
-
-async function carregarAdminPedidosSocio(api) {
-  const tbody = document.getElementById('adminPedidosSocio')
-  const count = document.getElementById('adminPedidosCount')
-  if (!tbody) return
-
-  const { data, error } = await api.getAdminPedidosSocio()
-  if (error) {
-    tbody.innerHTML = '<tr><td colspan="5">Nao foi possivel carregar os pedidos.</td></tr>'
-    return
-  }
-
-  const pedidos = data || []
-  if (count) count.textContent = pedidos.length
-
-  if (pedidos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Sem pedidos registados.</td></tr>'
-    return
-  }
-
-  tbody.innerHTML = pedidos.map(pedido => `
-    <tr>
-      <td>${pedido.nome} ${pedido.apelido || ''}</td>
-      <td>${pedido.email}</td>
-      <td>${pedido.nif || '-'}</td>
-      <td><span class="badge ${pedido.estado === 'aprovado' ? 'badge-pago' : 'badge-pendente'}">${pedido.estado}</span></td>
-      <td>
-        <button class="btn btn-small btn-primary" data-admin-action="aprovar-pedido" data-id="${pedido.id}">Aprovar</button>
-      </td>
-    </tr>
-  `).join('')
-
-  tbody.querySelectorAll('[data-admin-action="aprovar-pedido"]').forEach(button => {
-    button.addEventListener('click', async function () {
-      await api.atualizarPedidoSocio(this.dataset.id, { estado: 'aprovado' })
-      await carregarAdminPedidosSocio(api)
-    })
-  })
-}
-
-async function carregarAdminInscricoes(api) {
-  const tbody = document.getElementById('adminInscricoesEvento')
-  const count = document.getElementById('adminInscricoesCount')
-  if (!tbody) return
-
-  const { data, error } = await api.getAdminInscricoesEvento()
-  if (error) {
-    tbody.innerHTML = '<tr><td colspan="5">Nao foi possivel carregar as inscricoes.</td></tr>'
-    return
-  }
-
-  const inscricoes = data || []
-  const pendentes = inscricoes.filter(item => item.estado === 'aguardando_pagamento')
-  if (count) count.textContent = pendentes.length
-
-  if (inscricoes.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Sem inscricoes registadas.</td></tr>'
-    return
-  }
-
-  tbody.innerHTML = inscricoes.map(inscricao => `
-    <tr>
-      <td>${inscricao.eventos?.titulo || '-'}</td>
-      <td>${inscricao.nome}<br><span style="font-size: 12px; color: #777;">${inscricao.email}</span></td>
-      <td><span class="badge ${inscricao.pagamento_estado === 'validado' ? 'badge-pago' : 'badge-pendente'}">${estadoPagamentoLabel(inscricao.pagamento_estado)}</span></td>
-      <td>${inscricao.dorsal || '-'}</td>
-      <td>
-        <button class="btn btn-small btn-primary" data-admin-action="confirmar-inscricao" data-id="${inscricao.id}">Confirmar</button>
-      </td>
-    </tr>
-  `).join('')
-
-  tbody.querySelectorAll('[data-admin-action="confirmar-inscricao"]').forEach(button => {
-    button.addEventListener('click', async function () {
-      const dorsal = window.prompt('Dorsal do participante (opcional):', '')
-      await api.atualizarInscricaoEvento(this.dataset.id, {
-        estado: 'confirmada',
-        pagamento_estado: 'validado',
-        dorsal: dorsal || null,
-        data_confirmacao: new Date().toISOString()
-      })
-      await carregarAdminInscricoes(api)
-    })
-  })
-}
-
-async function carregarAdminQuotas(api) {
-  const tbody = document.getElementById('adminQuotas')
-  const count = document.getElementById('adminQuotasCount')
-  if (!tbody) return
-
-  const { data, error } = await api.getAdminQuotas()
-  if (error) {
-    tbody.innerHTML = '<tr><td colspan="5">Nao foi possivel carregar as quotas.</td></tr>'
-    return
-  }
-
-  const quotas = data || []
-  const pendentes = quotas.filter(quota => ['por_pagar', 'pendente_validacao'].includes(quota.estado))
-  if (count) count.textContent = pendentes.length
-
-  if (quotas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Sem quotas registadas.</td></tr>'
-    return
-  }
-
-  tbody.innerHTML = quotas.map(quota => {
-    const socio = quota.utilizadores
-      ? `${quota.utilizadores.nome || ''} ${quota.utilizadores.apelido || ''}`.trim() || quota.utilizadores.email
-      : '-'
-
-    return `
-      <tr>
-        <td>${socio}</td>
-        <td>${quota.ano}</td>
-        <td>${api.formatarMoeda(quota.valor)}</td>
-        <td><span class="badge ${quota.estado === 'pago' ? 'badge-pago' : 'badge-pendente'}">${estadoQuotaLabel(quota.estado)}</span></td>
-        <td>
-          <button class="btn btn-small btn-primary" data-admin-action="validar-quota" data-id="${quota.id}">Validar</button>
-        </td>
-      </tr>
-    `
-  }).join('')
-
-  tbody.querySelectorAll('[data-admin-action="validar-quota"]').forEach(button => {
-    button.addEventListener('click', async function () {
-      await api.atualizarQuota(this.dataset.id, {
-        estado: 'pago',
-        data_pagamento: new Date().toISOString().slice(0, 10)
-      })
-      await carregarAdminQuotas(api)
-    })
-  })
+  // Guarda de acesso: garante que so administradores acedem a esta pagina.
+  // O preenchimento do painel (pedidos, inscricoes, quotas) e feito pelo
+  // script inline em admin.html, que usa os ids reais tbl-pedidos /
+  // tbl-inscricoes / tbl-quotas.
+  await api.requireAdmin()
 }
 
 function configurarLogout(api) {
@@ -1065,7 +931,7 @@ async function configurarListaEventos(api) {
     noFuture.style.display = 'block'
   } else {
     noFuture.style.display = 'none'
-    futureWrap.innerHTML = futuros.map(ev => renderCardEvento(ev)).join('')
+    futureWrap.innerHTML = futuros.map(ev => renderCardEvento(ev, 'evento-futuro.html')).join('')
   }
 
   if (errP) {
@@ -1075,16 +941,17 @@ async function configurarListaEventos(api) {
     noPast.style.display = 'block'
   } else {
     noPast.style.display = 'none'
-    pastWrap.innerHTML = passados.map(ev => renderCardEvento(ev)).join('')
+    pastWrap.innerHTML = passados.map(ev => renderCardEvento(ev, 'evento-passado.html')).join('')
   }
 }
 
-function renderCardEvento(ev) {
+function renderCardEvento(ev, destino) {
   const imagem = ev.imagem_url || ''
   const dataFmt = ev.data_evento ? new Date(ev.data_evento).toLocaleDateString('pt-PT', { day:'2-digit', month:'short', year:'numeric' }) : ''
   const slug = ev.slug || ''
+  const pagina = destino || 'evento-futuro.html'
   return `
-    <a href="evento-futuro.html?evento=${encodeURIComponent(slug)}" class="project-card">
+    <a href="${pagina}?evento=${encodeURIComponent(slug)}" class="project-card">
       <div class="project-image" style="background-image: url('${imagem}');"></div>
       <div class="project-body">
         <h3>${ev.titulo || ''}</h3>
