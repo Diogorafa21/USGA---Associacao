@@ -901,7 +901,7 @@ body.home-page .nav-link.active {
     border: none;
     cursor: pointer;
     padding: 4px;
-    z-index: 1100;
+    z-index: 2100;
 }
 
 @media (max-width: 768px) {
@@ -938,44 +938,51 @@ body:not(.home-page) .nav-toggle span {
         display: block;
         position: fixed;
         top: 0;
-        right: -100%;
+        left: 0;
         width: 75%;
         max-width: 300px;
         height: 100vh;
         background-color: #fff;
         z-index: 2000;
         padding: 80px 30px 30px;
-        box-shadow: -4px 0 20px rgba(0,0,0,0.15);
-        transition: right 0.3s ease;
+        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
+        transition: transform 0.3s ease;
+        transform: translateX(-100%);
         overflow-y: auto;
         pointer-events: none;
     }
 
     .nav.open {
-        right: 0;
+        transform: translateX(0);
         pointer-events: auto;
     }
 
     .nav-list {
         flex-direction: column;
-        align-items: flex-start;
+        align-items: stretch;
         gap: 0;
+        margin-top: 20px;
     }
 
     .nav-list li {
         width: 100%;
         border-bottom: 1px solid var(--border-color);
+        position: relative;
     }
 
     .nav-link {
         display: block;
         width: 100%;
-        padding: 16px 0 !important;
+        padding: 18px 15px !important;
         font-size: 16px;
         color: var(--primary-color) !important;
         text-shadow: none !important;
         background: none !important;
         pointer-events: auto;
+        position: relative;
+        z-index: 2001;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: transparent;
     }
 
     .nav-link:hover, .nav-link.active {

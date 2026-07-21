@@ -50,7 +50,6 @@ document.addEventListener('DOMContentLoaded', async function () {
       }
 
       link.addEventListener('click', handleLinkClick)
-      link.addEventListener('touchend', handleLinkClick)
     })
 
     // Fechar com ESC e ao redimensionar/orientacao (melhora UX mobile)
