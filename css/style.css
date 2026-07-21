@@ -943,7 +943,7 @@ body:not(.home-page) .nav-toggle span {
         max-width: 300px;
         height: 100vh;
         background-color: #fff;
-        z-index: 1050;
+        z-index: 2000;
         padding: 80px 30px 30px;
         box-shadow: -4px 0 20px rgba(0,0,0,0.15);
         transition: right 0.3s ease;
@@ -969,11 +969,13 @@ body:not(.home-page) .nav-toggle span {
 
     .nav-link {
         display: block;
+        width: 100%;
         padding: 16px 0 !important;
         font-size: 16px;
         color: var(--primary-color) !important;
         text-shadow: none !important;
         background: none !important;
+        pointer-events: auto;
     }
 
     .nav-link:hover, .nav-link.active {
@@ -988,7 +990,7 @@ body:not(.home-page) .nav-toggle span {
         position: fixed;
         inset: 0;
         background: rgba(0,0,0,0.5);
-        z-index: 1040;
+        z-index: 1990;
         pointer-events: none;
     }
 

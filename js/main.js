@@ -42,17 +42,15 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Fechar ao clicar num link do menu e garantir navegação em mobile
     // Attach to all anchor tags inside the nav to avoid missing links
     nav.querySelectorAll('a').forEach(link => {
-      link.addEventListener('click', function (event) {
-        const href = this.getAttribute('href')
-        const target = this.getAttribute('target')
-        // If no href, an in-page anchor, or opening in new tab, leave default behaviour
+      const handleLinkClick = () => {
+        const href = link.getAttribute('href')
+        const target = link.getAttribute('target')
         if (!href || href.startsWith('#') || target === '_blank') return
-        event.preventDefault()
         fecharMenu()
-        setTimeout(() => {
-          window.location.href = href
-        }, 10)
-      })
+      }
+
+      link.addEventListener('click', handleLinkClick)
+      link.addEventListener('touchend', handleLinkClick)
     })
 
     // Fechar com ESC e ao redimensionar/orientacao (melhora UX mobile)
