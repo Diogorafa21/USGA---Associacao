@@ -745,43 +745,57 @@ async function configurarPagamentoEvento(api) {
 
     if (referenciaEl) referenciaEl.textContent = `${nome} + ${titulo}`
 
-    // Wire comprovativo form to upload a comprovativo as a payment record (best-effort)
+    // Wire comprovativo form: upload the file to storage, then link it to the existing payment via its public token
     if (comprovativoForm) {
       comprovativoForm.addEventListener('submit', async function (e) {
         e.preventDefault()
-        // simple client-side validation
         const fileInput = document.getElementById('ficheiroComprovativo')
+        const referenciaInput = document.getElementById('referenciaPagamento')
+        const btnEnviar = document.getElementById('btnEnviarComprovativo')
+
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
           mostrarMensagem(comprovativoForm, 'Por favor selecione um ficheiro de comprovativo.', 'erro')
           return
         }
 
-        // create a payment record and upload the file (if backend supports it)
-        bloquearBotao(document.getElementById('btnEnviarComprovativo'), true, 'A enviar comprovativo...')
+        const file = fileInput.files[0]
+
+        // basic size guard so nobody accidentally uploads a huge file (not a type restriction)
+        const LIMITE_MB = 15
+        if (file.size > LIMITE_MB * 1024 * 1024) {
+          mostrarMensagem(comprovativoForm, `O ficheiro é demasiado grande (máx. ${LIMITE_MB}MB).`, 'erro')
+          return
+        }
+
+        bloquearBotao(btnEnviar, true, 'A enviar comprovativo...')
 
         try {
-          // create payment record linked to inscription using criarPagamento
-          const inscricaoId = dataToUse.inscricao_id || sessionStorage.getItem('usga_inscricao_evento_id')
-          const payload = {
-            inscricao_id: inscricaoId,
-            metodo: 'transferencia',
-            valor: valor || null
-          }
-          const { data: pagamento, error: payErr } = await api.criarPagamento(payload)
-          if (payErr || !pagamento) {
-            mostrarMensagem(comprovativoForm, 'Erro ao criar o registo de pagamento. Tente novamente.', 'erro')
-            bloquearBotao(document.getElementById('btnEnviarComprovativo'), false, 'Enviar Comprovativo')
+          // 1) upload the file itself to the private "comprovativos" bucket
+          const { data: uploadData, error: uploadErr } = await api.uploadComprovativo(token, file)
+          if (uploadErr || !uploadData) {
+            console.error('Erro ao enviar ficheiro:', uploadErr)
+            mostrarMensagem(comprovativoForm, 'Erro ao enviar o ficheiro. Tente novamente.', 'erro')
+            bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
             return
           }
 
-          // upload file: if project supports storage upload we would upload and then atualizar pagamento with file url
-          // For now show success message and inform team to validate manually
+          // 2) link the uploaded file to the existing payment record and move it to "em_validacao"
+          const referencia = referenciaInput ? referenciaInput.value.trim() : null
+          const { error: submitErr } = await api.submeterComprovativoPagamento(token, uploadData.path, referencia)
+          if (submitErr) {
+            console.error('Erro ao submeter comprovativo:', submitErr)
+            mostrarMensagem(comprovativoForm, 'Erro ao registar o comprovativo. Tente novamente.', 'erro')
+            bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
+            return
+          }
+
           mostrarMensagem(comprovativoForm, 'Comprovativo enviado com sucesso. Aguarde validação da equipa.', 'sucesso')
-          bloquearBotao(document.getElementById('btnEnviarComprovativo'), false, 'Enviar Comprovativo')
+          if (estadoEl) estadoEl.textContent = 'Em validação'
+          bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
         } catch (err) {
           console.error(err)
           mostrarMensagem(comprovativoForm, 'Ocorreu um erro. Tente novamente mais tarde.', 'erro')
-          bloquearBotao(document.getElementById('btnEnviarComprovativo'), false, 'Enviar Comprovativo')
+          bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
         }
       })
     }
