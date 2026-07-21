@@ -1006,10 +1006,12 @@ body:not(.home-page) .nav-toggle span {
         box-shadow: -4px 0 20px rgba(0,0,0,0.15);
         transition: right 0.3s ease;
         overflow-y: auto;
+        pointer-events: none;
     }
 
     .nav.open {
         right: 0;
+        pointer-events: auto;
     }
 
     .nav-list {
@@ -1045,9 +1047,11 @@ body:not(.home-page) .nav-toggle span {
         inset: 0;
         background: rgba(0,0,0,0.5);
         z-index: 1040;
+        pointer-events: none;
     }
 
     .nav-overlay.open {
         display: block;
+        pointer-events: auto;
     }
 }
