@@ -577,26 +577,16 @@
                 const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
                 const path = `eventos/${fileName}`
 
-                // Quick check: ensure the 'eventos' bucket exists before attempting upload so we can show a clearer error
-                try {
-                    const { data: listTest, error: listErr } = await supabase.storage.from('eventos').list('', { limit: 1 })
-                    if (listErr) {
-                        console.error('Storage bucket check failed', listErr)
-                        alert('Bucket "eventos" not found in Supabase Storage. Please create it in the Supabase dashboard: Storage → New bucket → name "eventos" and set it to Public. After creating the bucket, try the upload again.')
-                        return
-                    }
-                } catch (err) {
-                    console.error('Error checking storage bucket:', err)
-                    alert('Erro ao verificar o bucket de armazenamento. Verifique a consola para mais detalhes.')
-                    return
-                }
-
                 try {
                     // Use upsert:true to avoid "already exists" failures and simplify flow
                     const { data: uploadData, error: uploadErr } = await supabase.storage.from('eventos').upload(path, file, { cacheControl: '3600', upsert: true })
                     if (uploadErr) {
                         console.error('Upload error', uploadErr)
-                        alert('Erro ao enviar a imagem: ' + (uploadErr.message || JSON.stringify(uploadErr)))
+                        if (/bucket not found/i.test(uploadErr.message || '')) {
+                            alert('Bucket "eventos" not found in Supabase Storage. Please create it in the Supabase dashboard: Storage → New bucket → name "eventos" and set it to Public. After creating the bucket, try the upload again.')
+                        } else {
+                            alert('Erro ao enviar a imagem: ' + (uploadErr.message || JSON.stringify(uploadErr)))
+                        }
                         return
                     }
 
