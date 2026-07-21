@@ -552,17 +552,25 @@ create policy "audit_logs_admin_insert" on public.audit_logs for insert with che
 
 grant usage on schema public to anon, authenticated;
 
--- Por omissao o Postgres concede EXECUTE a PUBLIC (isto é, a anon e authenticated)
--- em toda a funcao nova. As funcoes abaixo nao se destinam a ser chamadas
--- livremente (sao triggers, helpers internos, ou acoes exclusivas de admin
--- que ja se auto-protegem com is_admin()), por isso essa concessao por
--- omissao e explicitamente revogada.
-revoke execute on function public.set_updated_at()                                                  from public;
-revoke execute on function public.is_admin()                                                        from public;
-revoke execute on function public.handle_new_user()                                                 from public;
-revoke execute on function public.atualizar_meu_perfil(text,text,text,date,text,text,text,text)      from public;
-revoke execute on function public.validar_pagamento(uuid,text,text)                                  from public;
-revoke execute on function public.rejeitar_pagamento(uuid,text)                                      from public;
+-- Supabase concede EXECUTE a anon e authenticated diretamente (via default
+-- privileges), nao atraves de PUBLIC -- por isso "revoke ... from public"
+-- nao e suficiente aqui; e preciso revogar explicitamente de cada papel.
+--
+-- is_admin() fica de fora desta lista de propósito: é usada dentro de mais
+-- de 20 políticas de RLS noutras tabelas (utilizadores, eventos, quotas,
+-- inscricoes_evento, pagamentos, audit_logs, ...). Se anon/authenticated
+-- perderem o EXECUTE nessa função, qualquer leitura normal dessas tabelas
+-- passa a falhar com "permission denied for function is_admin", mesmo para
+-- utilizadores comuns. O aviso do linter para is_admin() é esperado e deve
+-- ser ignorado -- revogar aqui parte o site.
+revoke execute on function public.set_updated_at()   from anon, authenticated;
+revoke execute on function public.handle_new_user()  from anon, authenticated;
+
+-- Estas quatro precisam de continuar acessiveis a authenticated (utilizadores
+-- reais têm de as poder chamar), mas nunca a anon.
+revoke execute on function public.atualizar_meu_perfil(text,text,text,date,text,text,text,text) from anon;
+revoke execute on function public.validar_pagamento(uuid,text,text)                              from anon;
+revoke execute on function public.rejeitar_pagamento(uuid,text)                                  from anon;
 
 grant select on public.eventos            to anon, authenticated;
 grant select on public.inscritos_publicos to anon, authenticated;
