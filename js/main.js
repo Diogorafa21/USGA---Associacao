@@ -543,7 +543,8 @@ async function configurarInscricaoEvento(api) {
       telefone: form.telefone.value.trim(),
       email: form.email.value.trim(),
       bi: form.bi.value.trim(),
-      nif: form.nif.value.trim()
+      nif: form.nif.value.trim(),
+      tamanho_tshirt: form.tamanho_tshirt.value || null
     }
 
     const { data, error } = await api.criarInscricaoEvento(dados)
