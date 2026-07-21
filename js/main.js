@@ -10,12 +10,21 @@ document.addEventListener('DOMContentLoaded', async function () {
 
   const nav = document.querySelector('.nav')
   const headerContainer = document.querySelector('.header-container')
+  const header = document.querySelector('.header')
 
-  if (nav && headerContainer) {
+  if (nav && headerContainer && header) {
     // Inserir botão antes do botão de login
     const loginBtn = headerContainer.querySelector('.btn-primary')
     headerContainer.insertBefore(navToggle, loginBtn)
-    document.body.appendChild(navOverlay)
+
+    // IMPORTANTE: o overlay tem de ficar dentro do .header (mesmo "contexto
+    // de empilhamento" do .nav). O .header tem position + z-index, o que cria
+    // um novo contexto de empilhamento para tudo lá dentro (incluindo o .nav).
+    // Se o overlay for anexado diretamente ao <body>, o seu z-index passa a
+    // competir com o z-index do .header como um todo (mais baixo), e por isso
+    // o overlay acaba visualmente por cima do menu, bloqueando os cliques nos
+    // links (o menu parece "um botão só" que apenas fecha, sem navegar).
+    header.appendChild(navOverlay)
 
     function abrirMenu() {
       nav.classList.add('open')
