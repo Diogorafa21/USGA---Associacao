@@ -214,6 +214,28 @@ export async function criarPagamento(dados) {
   return { data, error }
 }
 
+// Envia o ficheiro de comprovativo para o bucket privado "comprovativos".
+// Aceita qualquer tipo de ficheiro (PDF, imagem, etc.) -- a validacao de tipo fica a cargo do utilizador.
+export async function uploadComprovativo(pagamentoToken, file) {
+  const nomeFicheiro = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+  const caminho = `${pagamentoToken}/${nomeFicheiro}`
+  const { error } = await supabase.storage
+    .from('comprovativos')
+    .upload(caminho, file, { cacheControl: '3600', upsert: false })
+  if (error) return { data: null, error }
+  return { data: { path: caminho }, error: null }
+}
+
+// Liga o ficheiro ja enviado ao pagamento existente (via token publico) e passa o estado a "em_validacao".
+export async function submeterComprovativoPagamento(pagamentoToken, comprovativoUrl, referencia = null) {
+  const { data, error } = await supabase.rpc('submeter_comprovativo_pagamento', {
+    p_pagamento_token: pagamentoToken,
+    p_comprovativo_url: comprovativoUrl,
+    p_referencia: referencia
+  })
+  return { data, error }
+}
+
 // Usa o RPC transacional (corrigido)
 export async function validarPagamento(pagamentoId, dorsal = null, observacoes = null) {
   const { data, error } = await supabase.rpc('validar_pagamento', {
