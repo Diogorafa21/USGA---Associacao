@@ -140,6 +140,7 @@ document.addEventListener('DOMContentLoaded', async function () {
   configurarAdmin(api)
   configurarLogout(api)
   configurarPreviewFoto()
+  configurarSuporte(api)
 
   // Populate public events listing when on eventos.html
   configurarListaEventos(api)
@@ -258,7 +259,10 @@ function configurarRegisto(api) {
 function configurarPedidoSocio(api) {
   if (!isPagina('registo-socio.html') || !api) return
 
-  const form = document.querySelector('form[action="pagamento-quota.html"]')
+  // Prefer selecting the form by its action attribute, but fall back to the known id
+  // (the form's action attribute was removed in favour of id="registoSocioForm").
+  let form = document.querySelector('form[action="pagamento-quota.html"]')
+  if (!form) form = document.getElementById('registoSocioForm')
   if (!form) return
 
   form.addEventListener('submit', async function (event) {
@@ -289,6 +293,39 @@ function configurarPedidoSocio(api) {
 
     sessionStorage.setItem('usga_pedido_socio_id', data.id)
     window.location.href = `pagamento-quota.html?pedido=${encodeURIComponent(data.id)}`
+  })
+}
+
+function configurarSuporte(api) {
+  if (!isPagina('suporte.html') || !api) return
+
+  const form = document.getElementById('suporteForm')
+  if (!form) return
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault()
+
+    const submitBtn = form.querySelector('button[type="submit"]')
+    bloquearBotao(submitBtn, true, 'A enviar...')
+
+    const dados = {
+      nome: form.nome.value.trim(),
+      email: form.email.value.trim(),
+      assunto: form.assunto.value,
+      mensagem: form.mensagem.value.trim()
+    }
+
+    const { error } = await api.criarMensagemSuporte(dados)
+
+    bloquearBotao(submitBtn, false, 'Enviar Mensagem')
+
+    if (error) {
+      mostrarMensagem(form, 'Nao foi possivel enviar a mensagem. Tente novamente.', 'erro')
+      return
+    }
+
+    mostrarMensagem(form, 'Mensagem enviada com sucesso. Entraremos em contacto brevemente.', 'sucesso')
+    form.reset()
   })
 }
 
@@ -323,7 +360,86 @@ async function configurarPerfil(api, sessao) {
 
   if (perfil.role === 'admin') adicionarLinkAdminPerfil()
 
+  configurarEdicaoPerfil(api, sessao, perfil)
+
   await carregarQuotasPerfil(api, sessao.user.id)
+}
+
+function configurarEdicaoPerfil(api, sessao, perfil) {
+  const form = document.getElementById('formDados')
+  const btnEditar = document.getElementById('btnEditar')
+  const btnCancelar = document.getElementById('btnCancelar')
+  const botoesEdicao = document.getElementById('botoesEdicao')
+  const inputNome = document.getElementById('inputNome')
+  const inputTelefone = document.getElementById('inputTelefone')
+  const inputNif = document.getElementById('inputNif')
+
+  if (!form || !btnEditar || !botoesEdicao) return
+
+  // O email nao e editavel por este formulario (a alteracao de email exige
+  // um fluxo proprio de verificacao no Supabase Auth), por isso fica sempre desativado.
+  const editaveis = [inputNome, inputTelefone, inputNif].filter(Boolean)
+
+  function entrarModoEdicao() {
+    editaveis.forEach(input => { input.disabled = false })
+    botoesEdicao.style.display = 'flex'
+    btnEditar.style.display = 'none'
+    if (editaveis[0]) editaveis[0].focus()
+  }
+
+  function sairModoEdicao() {
+    editaveis.forEach(input => { input.disabled = true })
+    botoesEdicao.style.display = 'none'
+    btnEditar.style.display = ''
+  }
+
+  function repor() {
+    const nomeCompleto = [perfil.nome, perfil.apelido].filter(Boolean).join(' ')
+    if (inputNome) inputNome.value = nomeCompleto
+    if (inputTelefone) inputTelefone.value = perfil.telefone || ''
+    if (inputNif) inputNif.value = perfil.nif || ''
+  }
+
+  btnEditar.addEventListener('click', entrarModoEdicao)
+
+  if (btnCancelar) {
+    btnCancelar.addEventListener('click', () => {
+      repor()
+      sairModoEdicao()
+    })
+  }
+
+  form.addEventListener('submit', async function (event) {
+    event.preventDefault()
+
+    const submitBtn = form.querySelector('button[type="submit"]')
+    bloquearBotao(submitBtn, true, 'A guardar...')
+
+    const partesNome = (inputNome?.value || '').trim().split(/\s+/).filter(Boolean)
+    const dados = {
+      nome: partesNome[0] || perfil.nome,
+      apelido: partesNome.slice(1).join(' ') || null,
+      telefone: inputTelefone?.value.trim() || null,
+      nif: inputNif?.value.trim() || null
+    }
+
+    const { error } = await api.atualizarPerfil(sessao.user.id, dados)
+
+    bloquearBotao(submitBtn, false, 'Guardar')
+
+    if (error) {
+      mostrarMensagem(form, 'Nao foi possivel guardar as alteracoes. Tente novamente.', 'erro')
+      return
+    }
+
+    perfil.nome = dados.nome
+    perfil.apelido = dados.apelido
+    perfil.telefone = dados.telefone
+    perfil.nif = dados.nif
+
+    mostrarMensagem(form, 'Perfil atualizado com sucesso.', 'sucesso')
+    sairModoEdicao()
+  })
 }
 
 async function carregarQuotasPerfil(api, utilizadorId) {
