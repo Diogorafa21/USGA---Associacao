@@ -154,8 +154,8 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-inscricoes"><tr><td colspan="7" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Localidade</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-inscricoes"><tr><td colspan="8" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -205,8 +205,8 @@
                         <h2 style="margin-bottom:20px;">Pedidos de Sócio</h2>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Nome</th><th>Email</th><th>NIF</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-pedidos"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <thead><tr><th>Nome</th><th>Email</th><th>NIF</th><th>Sexo</th><th>Localidade</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-pedidos"><tr><td colspan="8" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -655,7 +655,7 @@
             }
             window._inscricoes = data || []
             const tbody = document.getElementById('tbl-inscricoes')
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
 
             tbody.innerHTML = ''
             data.forEach(i => {
@@ -667,6 +667,7 @@
                     <td>${i.eventos?.titulo || '-'}</td>
                     <td>${i.nome}</td>
                     <td style="font-size:12px;">${i.email}</td>
+                    <td>${i.localidade || '-'}</td>
                     <td>${estadoInscricao}<br>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
                     <td>
                         <div style="display:flex;gap:4px;align-items:center;">
@@ -729,8 +730,8 @@
         window.exportarInscricoes = function() {
             const data = window._inscricoes || []
             if (!data.length) return alert('Sem dados para exportar.')
-            const header = 'Evento,Nome,Email,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
-            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pagamento_estado}","${i.dorsal || ''}","${i.tamanho_tshirt || ''}","${i.data_inscricao}"`)
+            const header = 'Evento,Nome,Email,País,Localidade,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
+            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pais || ''}","${i.localidade || ''}","${i.pagamento_estado}","${i.dorsal || ''}","${i.tamanho_tshirt || ''}","${i.data_inscricao}"`)
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
@@ -908,14 +909,15 @@
             const { data } = await getAdminPedidosSocio()
             const tbody = document.getElementById('tbl-pedidos')
             document.getElementById('sb-pedidos').textContent = data?.filter(p => p.estado === 'pendente').length || 0
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem pedidos.</td></tr>'; return }
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">Sem pedidos.</td></tr>'; return }
+            const sexoLabel = { F: 'Feminino', M: 'Masculino', Outro: 'Outro' }
             tbody.innerHTML = ''
             data.forEach(p => {
                 const badge = p.estado === 'pendente' ? '<span class="badge badge-pendente">Pendente</span>'
                     : p.estado === 'aprovado' ? '<span class="badge badge-pago">Aprovado</span>'
                     : '<span class="badge badge-nao-socio">Rejeitado</span>'
                 const tr = document.createElement('tr')
-                tr.innerHTML = `<td>${p.nome} ${p.apelido}</td><td style="font-size:12px;">${p.email}</td><td>${p.nif || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
+                tr.innerHTML = `<td>${p.nome} ${p.apelido}</td><td style="font-size:12px;">${p.email}</td><td>${p.nif || '-'}</td><td>${sexoLabel[p.sexo] || '-'}</td><td>${p.localidade || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
                 const td = tr.querySelector('td:last-child')
                 if (p.estado === 'pendente') {
                     td.appendChild(btnAprovar('Aprovar', async () => { await atualizarPedidoSocio(p.id, { estado:'aprovado' }); carregarPedidos() }))
