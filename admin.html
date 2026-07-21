@@ -989,6 +989,18 @@
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
+                if (p.comprovativo_url) {
+                    td.appendChild(btnAcao('Ver Comprovativo', 'normal', async () => {
+                        const { data: signed, error: signErr } = await supabase.storage
+                            .from('comprovativos')
+                            .createSignedUrl(p.comprovativo_url, 60)
+                        if (signErr || !signed?.signedUrl) {
+                            alert('Não foi possível abrir o comprovativo: ' + (signErr?.message || 'ficheiro não encontrado'))
+                            return
+                        }
+                        window.open(signed.signedUrl, '_blank')
+                    }))
+                }
                 if (p.estado === 'pendente' || p.estado === 'em_validacao') {
                     td.appendChild(btnAprovar('Validar', async () => {
                         await supabase.from('pagamentos').update({ estado:'validado', validado_por: auth.sessao.user.id, validado_em: new Date().toISOString() }).eq('id', p.id)
