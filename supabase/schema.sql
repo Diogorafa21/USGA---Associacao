@@ -9,7 +9,7 @@ create extension if not exists "pgcrypto";
 -- ── Helpers ──────────────────────────────────────────────────
 
 create or replace function public.set_updated_at()
-returns trigger language plpgsql as $$
+returns trigger language plpgsql set search_path = public as $$
 begin new.updated_at = now(); return new; end; $$;
 
 -- ── Utilizadores ─────────────────────────────────────────────
@@ -551,6 +551,18 @@ create policy "audit_logs_admin_insert" on public.audit_logs for insert with che
 -- ── Grants ───────────────────────────────────────────────────
 
 grant usage on schema public to anon, authenticated;
+
+-- Por omissao o Postgres concede EXECUTE a PUBLIC (isto é, a anon e authenticated)
+-- em toda a funcao nova. As funcoes abaixo nao se destinam a ser chamadas
+-- livremente (sao triggers, helpers internos, ou acoes exclusivas de admin
+-- que ja se auto-protegem com is_admin()), por isso essa concessao por
+-- omissao e explicitamente revogada.
+revoke execute on function public.set_updated_at()                                                  from public;
+revoke execute on function public.is_admin()                                                        from public;
+revoke execute on function public.handle_new_user()                                                 from public;
+revoke execute on function public.atualizar_meu_perfil(text,text,text,date,text,text,text,text)      from public;
+revoke execute on function public.validar_pagamento(uuid,text,text)                                  from public;
+revoke execute on function public.rejeitar_pagamento(uuid,text)                                      from public;
 
 grant select on public.eventos            to anon, authenticated;
 grant select on public.inscritos_publicos to anon, authenticated;
