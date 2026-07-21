@@ -45,13 +45,11 @@ document.addEventListener('DOMContentLoaded', async function () {
       link.addEventListener('click', function (e) {
         const href = this.getAttribute('href')
         const target = this.getAttribute('target')
-        // Close menu for visual feedback in all cases
-        fecharMenu()
         // If no href, or an in-page anchor, or opening in new tab, leave default behaviour
         if (!href || href.startsWith('#') || target === '_blank') return
-        // Prevent default and delay navigation to allow close animation
         e.preventDefault()
-        setTimeout(() => { window.location.href = href }, 220)
+        fecharMenu()
+        window.location.href = href
       })
     })
 

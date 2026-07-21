@@ -765,7 +765,7 @@ body.home-page .nav-link.active {
 
     /* Ajustes Navegação Mobile */
     .nav {
-        display: none;
+        display: flex;
         position: fixed;
         top: 0;
         right: 0;
@@ -778,12 +778,13 @@ body.home-page .nav-link.active {
         transition: transform 0.25s ease, opacity 0.25s ease;
         transform: translateX(100%);
         opacity: 0;
+        pointer-events: none;
     }
 
     .nav.open {
-        display: flex;
         transform: translateX(0);
         opacity: 1;
+        pointer-events: auto;
     }
 
     .nav-list {
@@ -811,11 +812,13 @@ body.home-page .nav-link.active {
         opacity: 0;
         visibility: hidden;
         transition: opacity 0.25s ease;
+        pointer-events: none;
     }
 
     .nav-overlay.open {
         opacity: 1;
         visibility: visible;
+        pointer-events: auto;
     }
 
     .projects-grid {
@@ -957,6 +960,12 @@ body.home-page .nav-link.active {
     cursor: pointer;
     padding: 4px;
     z-index: 1100;
+}
+
+@media (max-width: 768px) {
+    .nav-toggle {
+        display: flex;
+    }
 }
 
 .nav-toggle span {
