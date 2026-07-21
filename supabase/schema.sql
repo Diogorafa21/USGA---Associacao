@@ -202,6 +202,23 @@ select i.evento_id, i.nome, coalesce(i.pais,'Portugal') as pais,
 from public.inscricoes_evento i
 where i.estado = 'confirmada' and i.pagamento_estado = 'validado';
 
+-- Lista pública de inscritos (pendentes e confirmados) para a página do evento
+create or replace view public.lista_inscritos_evento as
+select
+  i.evento_id,
+  i.nome,
+  coalesce(i.pais, 'Portugal') as pais,
+  i.equipa,
+  i.dorsal,
+  i.data_inscricao,
+  i.data_confirmacao,
+  case
+    when i.estado = 'confirmada' and i.pagamento_estado = 'validado' then 'confirmada'
+    else 'pendente'
+  end as estado_inscricao
+from public.inscricoes_evento i
+where i.estado not in ('rejeitada', 'cancelada');
+
 -- ── Funções públicas ─────────────────────────────────────────
 
 create or replace function public.get_estado_inscricao(token uuid)
@@ -462,6 +479,22 @@ begin
   return jsonb_build_object('ok', true);
 end; $$;
 
+-- ── RPC: eliminar inscrição (admin) ──────────────────────────
+
+create or replace function public.eliminar_inscricao_evento(p_inscricao_id uuid)
+returns jsonb language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_admin() then raise exception 'Sem permissão'; end if;
+
+  delete from public.inscricoes_evento where id = p_inscricao_id;
+  if not found then raise exception 'Inscrição não encontrada'; end if;
+
+  insert into public.audit_logs (actor_id, acao, tabela, registo_id)
+  values (auth.uid(), 'eliminar_inscricao', 'inscricoes_evento', p_inscricao_id);
+
+  return jsonb_build_object('ok', true);
+end; $$;
+
 -- ── RLS ──────────────────────────────────────────────────────
 
 alter table public.utilizadores       enable row level security;
@@ -511,6 +544,8 @@ create policy "inscricoes_select_own_or_admin" on public.inscricoes_evento for s
   using (utilizador_id = auth.uid() or public.is_admin());
 create policy "inscricoes_admin_update" on public.inscricoes_evento for update
   using (public.is_admin()) with check (public.is_admin());
+create policy "inscricoes_admin_delete" on public.inscricoes_evento for delete
+  using (public.is_admin());
 
 -- pagamentos
 create policy "pagamentos_insert_own_or_public" on public.pagamentos for insert
@@ -552,6 +587,7 @@ grant usage on schema public to anon, authenticated;
 
 grant select on public.eventos            to anon, authenticated;
 grant select on public.inscritos_publicos to anon, authenticated;
+grant select on public.lista_inscritos_evento to anon, authenticated;
 
 grant execute on function public.get_estado_inscricao(uuid)                                         to anon, authenticated;
 grant execute on function public.criar_pedido_socio(text,text,text,text,text,text,date,text)         to anon, authenticated;
@@ -561,13 +597,14 @@ grant execute on function public.submeter_comprovativo_pagamento(uuid,text,text)
 grant execute on function public.atualizar_meu_perfil(text,text,text,date,text,text,text,text)      to authenticated;
 grant execute on function public.validar_pagamento(uuid,text,text)                                  to authenticated;
 grant execute on function public.rejeitar_pagamento(uuid,text)                                      to authenticated;
+grant execute on function public.eliminar_inscricao_evento(uuid)                                  to authenticated;
 
 grant select, update on public.utilizadores      to authenticated;
 grant insert         on public.pedidos_socio     to anon, authenticated;
 grant select, update on public.pedidos_socio     to authenticated;
 grant select, insert, update on public.quotas    to authenticated;
 grant insert         on public.inscricoes_evento to anon, authenticated;
-grant select, update on public.inscricoes_evento to authenticated;
+grant select, update, delete on public.inscricoes_evento to authenticated;
 grant insert         on public.pagamentos        to anon, authenticated;
 grant select, update on public.pagamentos        to authenticated;
 grant insert         on public.mensagens_suporte to anon, authenticated;
