@@ -901,13 +901,6 @@ body.home-page .nav-link.active {
     border: none;
     cursor: pointer;
     padding: 4px;
-    z-index: 2100;
-}
-
-@media (max-width: 768px) {
-    .nav-toggle {
-        display: flex;
-    }
 }
 
 .nav-toggle span {
@@ -934,84 +927,83 @@ body:not(.home-page) .nav-toggle span {
         display: flex;
     }
 
+    /* O <nav> original de desktop já não é reaproveitado em mobile.
+       O menu mobile é um painel novo e independente (ver classes
+       .mobile-nav-overlay / .mobile-nav-panel mais abaixo), construído
+       em JS e anexado diretamente ao <body>, para nunca poder ficar
+       "preso" atrás de outra camada da página. */
     .nav {
-        display: block;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 75%;
-        max-width: 300px;
-        height: 100vh;
-        background-color: #fff;
-        z-index: 2000;
-        padding: 80px 30px 30px;
-        box-shadow: 4px 0 20px rgba(0,0,0,0.15);
-        transition: transform 0.3s ease;
-        transform: translateX(-100%);
-        overflow-y: auto;
-        pointer-events: none;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
+        display: none !important;
     }
+}
 
-    .nav.open {
-        transform: translateX(0);
-        pointer-events: auto;
-    }
+/* --- PAINEL DO MENU MOBILE (independente do .header) --- */
+.mobile-nav-overlay {
+    position: fixed;
+    top: var(--header-h, 72px);
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: 9998;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+}
 
-    .nav-list {
-        flex-direction: column;
-        align-items: stretch;
-        gap: 0;
-        margin-top: 20px;
-    }
+.mobile-nav-overlay.open {
+    opacity: 1;
+    visibility: visible;
+}
 
-    .nav-list li {
-        width: 100%;
-        border-bottom: 1px solid var(--border-color);
-        position: relative;
-    }
+.mobile-nav-panel {
+    position: fixed;
+    top: var(--header-h, 72px);
+    left: 0;
+    width: 80%;
+    max-width: 300px;
+    height: calc(100vh - var(--header-h, 72px));
+    background-color: #fff;
+    z-index: 9999;
+    padding: 20px;
+    box-shadow: 4px 0 20px rgba(0, 0, 0, 0.15);
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    overflow-y: auto;
+}
 
-    .nav-link {
-        display: block;
-        width: 100%;
-        padding: 18px 15px !important;
-        font-size: 16px;
-        color: var(--primary-color) !important;
-        text-shadow: none !important;
-        background: none !important;
-        pointer-events: auto;
-        position: relative;
-        z-index: 2001;
-        touch-action: manipulation;
-        -webkit-tap-highlight-color: transparent;
-        -webkit-user-select: none;
-        -moz-user-select: none;
-        -ms-user-select: none;
-        user-select: none;
-    }
+.mobile-nav-panel.open {
+    transform: translateX(0);
+}
 
-    .nav-link:hover, .nav-link.active {
-        color: var(--accent-color) !important;
-        font-weight: 700;
-        background: none !important;
-    }
+.mobile-nav-list {
+    display: flex;
+    flex-direction: column;
+}
 
-    /* Overlay escuro atrás do menu */
-    .nav-overlay {
-        display: none;
-        position: fixed;
-        inset: 0;
-        background: rgba(0,0,0,0.5);
-        z-index: 1990;
-        pointer-events: none;
-    }
+.mobile-nav-list li {
+    width: 100%;
+    border-bottom: 1px solid var(--border-color);
+}
 
-    .nav-overlay.open {
-        display: block;
-        pointer-events: auto;
+.mobile-nav-list a {
+    display: block;
+    width: 100%;
+    padding: 18px 10px;
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--primary-color);
+}
+
+.mobile-nav-list a:hover,
+.mobile-nav-list a.active {
+    color: var(--accent-color);
+    font-weight: 700;
+}
+
+@media (min-width: 769px) {
+    .mobile-nav-overlay,
+    .mobile-nav-panel {
+        display: none !important;
     }
 }

@@ -1,56 +1,87 @@
 document.addEventListener('DOMContentLoaded', async function () {
-  // ── Navbar Mobile (Hamburguer) ─────────────────────────────────
-  const navToggle = document.createElement('button')
-  navToggle.className = 'nav-toggle'
-  navToggle.setAttribute('aria-label', 'Abrir menu')
-  navToggle.innerHTML = '<span></span><span></span><span></span>'
+  // ── Navbar Mobile (Hamburguer) — reconstruído de raiz ───────────
+  // O <nav> original (usado no desktop) deixa de ser reaproveitado em
+  // mobile. Em vez disso, é criado um painel novo e totalmente
+  // independente, anexado diretamente ao <body>. Isto evita de vez
+  // qualquer problema de "contexto de empilhamento" do CSS: um
+  // elemento colocado dentro do .header fica sempre limitado ao
+  // z-index do .header como um todo, não havendo forma fiável de o
+  // pôr por cima de outra camada só ajustando o seu próprio z-index.
+  // Construindo o painel do zero, fora do .header, este problema
+  // deixa de poder acontecer.
+  ;(function construirMenuMobile() {
+    const header = document.querySelector('.header')
+    const headerContainer = document.querySelector('.header-container')
+    const navOriginal = document.querySelector('.nav')
+    if (!header || !headerContainer || !navOriginal) return
 
-  const navOverlay = document.createElement('div')
-  navOverlay.className = 'nav-overlay'
-
-  const nav = document.querySelector('.nav')
-  const headerContainer = document.querySelector('.header-container')
-  const header = document.querySelector('.header')
-
-  if (nav && headerContainer && header) {
-    // Inserir botão antes do botão de login
+    // Botão hamburguer (mantido no header, junto ao botão de login)
+    const navToggle = document.createElement('button')
+    navToggle.type = 'button'
+    navToggle.className = 'nav-toggle'
+    navToggle.setAttribute('aria-label', 'Abrir menu')
+    navToggle.setAttribute('aria-expanded', 'false')
+    navToggle.innerHTML = '<span></span><span></span><span></span>'
     const loginBtn = headerContainer.querySelector('.btn-primary')
     headerContainer.insertBefore(navToggle, loginBtn)
 
-    // IMPORTANTE: o overlay tem de ficar dentro do .header (mesmo "contexto
-    // de empilhamento" do .nav). O .header tem position + z-index, o que cria
-    // um novo contexto de empilhamento para tudo lá dentro (incluindo o .nav).
-    // Se o overlay for anexado diretamente ao <body>, o seu z-index passa a
-    // competir com o z-index do .header como um todo (mais baixo), e por isso
-    // o overlay acaba visualmente por cima do menu, bloqueando os cliques nos
-    // links (o menu parece "um botão só" que apenas fecha, sem navegar).
-    header.appendChild(navOverlay)
+    // Overlay + painel novos, anexados diretamente ao <body>
+    const overlay = document.createElement('div')
+    overlay.className = 'mobile-nav-overlay'
+
+    const panel = document.createElement('nav')
+    panel.className = 'mobile-nav-panel'
+    panel.setAttribute('aria-hidden', 'true')
+
+    const list = document.createElement('ul')
+    list.className = 'mobile-nav-list'
+
+    // Copia os links a partir do <nav> de desktop (mesmo texto, mesmo href)
+    navOriginal.querySelectorAll('a').forEach(originalLink => {
+      const item = document.createElement('li')
+      item.appendChild(originalLink.cloneNode(true))
+      list.appendChild(item)
+    })
+
+    panel.appendChild(list)
+    document.body.appendChild(overlay)
+    document.body.appendChild(panel)
+
+    // O painel começa mesmo por baixo do cabeçalho, para que o botão
+    // hamburguer nunca fique tapado pelo overlay/painel.
+    function ajustarAlturaHeader() {
+      document.documentElement.style.setProperty('--header-h', header.offsetHeight + 'px')
+    }
+    ajustarAlturaHeader()
+    window.addEventListener('resize', ajustarAlturaHeader)
 
     function abrirMenu() {
-      nav.classList.add('open')
+      overlay.classList.add('open')
+      panel.classList.add('open')
       navToggle.classList.add('open')
-      navOverlay.classList.add('open')
       navToggle.setAttribute('aria-label', 'Fechar menu')
+      navToggle.setAttribute('aria-expanded', 'true')
+      panel.setAttribute('aria-hidden', 'false')
       document.body.style.overflow = 'hidden'
     }
 
     function fecharMenu() {
-      nav.classList.remove('open')
+      overlay.classList.remove('open')
+      panel.classList.remove('open')
       navToggle.classList.remove('open')
-      navOverlay.classList.remove('open')
       navToggle.setAttribute('aria-label', 'Abrir menu')
+      navToggle.setAttribute('aria-expanded', 'false')
+      panel.setAttribute('aria-hidden', 'true')
       document.body.style.overflow = ''
     }
 
     navToggle.addEventListener('click', () => {
-      nav.classList.contains('open') ? fecharMenu() : abrirMenu()
+      panel.classList.contains('open') ? fecharMenu() : abrirMenu()
     })
 
-    navOverlay.addEventListener('click', fecharMenu)
+    overlay.addEventListener('click', fecharMenu)
 
-    // Fechar ao clicar num link do menu e garantir navegação em mobile
-    // Attach to all anchor tags inside the nav to avoid missing links
-    nav.querySelectorAll('a').forEach(link => {
+    list.querySelectorAll('a').forEach(link => {
       link.addEventListener('click', function (event) {
         const href = this.getAttribute('href')
         const target = this.getAttribute('target')
@@ -63,17 +94,16 @@ document.addEventListener('DOMContentLoaded', async function () {
           return
         }
 
-        setTimeout(() => {
-          fecharMenu()
-        }, 50)
+        // Não faz preventDefault: a navegação segue o seu curso normal,
+        // apenas fechamos visualmente o painel.
+        fecharMenu()
       })
     })
 
-    // Fechar com ESC e ao redimensionar/orientacao (melhora UX mobile)
     window.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') fecharMenu() })
-    window.addEventListener('resize', () => { if (window.innerWidth > 768 && nav.classList.contains('open')) fecharMenu() })
+    window.addEventListener('resize', () => { if (window.innerWidth > 768 && panel.classList.contains('open')) fecharMenu() })
     window.addEventListener('orientationchange', fecharMenu)
-  }
+  })()
   // ────────────────────────────────────────────────────────────────
 
 
