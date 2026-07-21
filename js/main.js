@@ -45,13 +45,18 @@ document.addEventListener('DOMContentLoaded', async function () {
       link.addEventListener('click', function (event) {
         const href = this.getAttribute('href')
         const target = this.getAttribute('target')
-        if (!href || href.startsWith('#') || target === '_blank') return
 
-        event.preventDefault()
-        fecharMenu()
+        if (!href || target === '_blank') return
+
+        if (href.startsWith('#')) {
+          event.preventDefault()
+          fecharMenu()
+          return
+        }
+
         setTimeout(() => {
-          window.location.href = href
-        }, 180)
+          fecharMenu()
+        }, 50)
       })
     })
 
