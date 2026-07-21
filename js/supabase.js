@@ -1,4 +1,4 @@
-﻿// USGA - cliente Supabase e funcoes de dados.
+// USGA - cliente Supabase e funcoes de dados.
 // Este ficheiro deve ser importado em scripts type="module".
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -280,6 +280,31 @@ export async function atualizarInscricaoEvento(id, dados) {
     .select()
     .single()
   return { data, error }
+}
+
+export async function eliminarInscricaoEvento(id) {
+  const { data, error } = await supabase.rpc('eliminar_inscricao_evento', {
+    p_inscricao_id: id
+  })
+
+  if (error && (error.code === 'PGRST202' || /function.*does not exist/i.test(error.message || ''))) {
+    return supabase.from('inscricoes_evento').delete().eq('id', id)
+  }
+
+  return { data, error }
+}
+
+export function subscreverInscricoesAdmin(callback) {
+  const channel = supabase
+    .channel('admin-inscricoes')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'inscricoes_evento' },
+      callback
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
 }
 
 export async function getAdminQuotas() {
