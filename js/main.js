@@ -437,9 +437,10 @@ async function configurarInscricaoEvento(api) {
     }
 
     // Prefer redirecting to the payment page using the pagamento_token returned by the RPC.
-    const pagamentoToken = data.pagamento_token || data.pagamento_token || data.public_token
+    const pagamentoToken = data.pagamento_token || data.public_token
 
-    sessionStorage.setItem('usga_inscricao_evento_id', data.id)
+    // A RPC devolve o id da inscrição em "inscricao_id" (não em "id").
+    sessionStorage.setItem('usga_inscricao_evento_id', data.inscricao_id)
     // keep the legacy key but store the pagamento token so pagamento-evento.html can read it
     sessionStorage.setItem('usga_inscricao_evento_token', pagamentoToken)
     // also store explicit pagamento keys for clarity
@@ -447,7 +448,7 @@ async function configurarInscricaoEvento(api) {
     sessionStorage.setItem('usga_pagamento_token', pagamentoToken)
 
     const params = new URLSearchParams({
-      inscricao: data.id,
+      inscricao: data.inscricao_id,
       token: pagamentoToken
     })
 
@@ -573,10 +574,9 @@ async function configurarPagamentoEvento(api) {
       if (inscricaoId) {
         const { data: inscricao, error: insErr } = await api.getInscricaoById(inscricaoId)
         if (!insErr && inscricao) {
-          // Prefer event.preco_nao_socio (legacy field). Use it as the single price.
           const ev = inscricao.eventos || inscricao.evento || null
           if (ev) {
-            valor = ev.preco_nao_socio ?? ev.preco_socio ?? null
+            valor = ev.preco ?? null
             if (!titulo && ev.titulo) dataToUse.evento_titulo = ev.titulo
             if (!nome && inscricao.nome) dataToUse.nome = inscricao.nome
           }
@@ -642,7 +642,7 @@ async function configurarPagamentoEvento(api) {
 
         try {
           // create payment record linked to inscription using criarPagamento
-          const inscricaoId = data.id || data.inscricao_id
+          const inscricaoId = dataToUse.inscricao_id || sessionStorage.getItem('usga_inscricao_evento_id')
           const payload = {
             inscricao_id: inscricaoId,
             metodo: 'transferencia',
@@ -1008,7 +1008,7 @@ async function configurarDetalheEvento(api) {
   if (imagem) imagem.style.backgroundImage = evento.imagem_url ? `url('${evento.imagem_url}')` : ''
   if (dataEl) dataEl.textContent = api.formatarData(evento.data_evento)
   if (localEl) localEl.textContent = evento.local || '-'
-  if (precoEl) precoEl.textContent = typeof api.formatarMoeda === 'function' ? api.formatarMoeda(evento.preco_nao_socio || 0) : (evento.preco_nao_socio || '-')
+  if (precoEl) precoEl.textContent = typeof api.formatarMoeda === 'function' ? api.formatarMoeda(evento.preco || 0) : (evento.preco || '-')
 
   if (btnReg) {
     if (evento.regulamento_url) {

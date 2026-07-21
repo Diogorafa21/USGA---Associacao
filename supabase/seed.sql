@@ -11,8 +11,7 @@ insert into public.eventos (
   data_evento,
   data_fim_inscricoes,
   local,
-  preco_socio,
-  preco_nao_socio,
+  preco,
   estado
 ) values
 (
@@ -25,7 +24,6 @@ insert into public.eventos (
   '2026-03-15 09:00:00+00',
   '2026-03-13 23:59:00+00',
   'Sede da USGA',
-  0,
   5,
   'aberto'
 ),
@@ -40,7 +38,6 @@ insert into public.eventos (
   '2026-03-30 23:59:00+00',
   'Pavilhao Gimnodesportivo',
   0,
-  0,
   'aberto'
 ),
 (
@@ -54,7 +51,6 @@ insert into public.eventos (
   '2026-05-18 23:59:00+00',
   'Sede da USGA',
   0,
-  0,
   'aberto'
 )
 on conflict (slug) do update set
@@ -66,6 +62,5 @@ on conflict (slug) do update set
   data_evento = excluded.data_evento,
   data_fim_inscricoes = excluded.data_fim_inscricoes,
   local = excluded.local,
-  preco_socio = excluded.preco_socio,
-  preco_nao_socio = excluded.preco_nao_socio,
+  preco = excluded.preco,
   estado = excluded.estado;

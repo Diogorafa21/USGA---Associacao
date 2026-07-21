@@ -275,8 +275,7 @@
                 <div class="form-group"><label>Fim inscrições</label><input type="datetime-local" id="ev-fim-inscricoes"></div>
                 <div class="form-group"><label>Local</label><input type="text" id="ev-local"></div>
                 <div class="form-group"><label>Vagas</label><input type="number" id="ev-vagas" min="0"></div>
-                <div class="form-group"><label>Preço sócio (€)</label><input type="number" id="ev-preco-socio" min="0" step="0.01" value="0"></div>
-                <div class="form-group"><label>Preço não sócio (€)</label><input type="number" id="ev-preco-nao-socio" min="0" step="0.01" value="0"></div>
+                <div class="form-group"><label>Preço (€)</label><input type="number" id="ev-preco" min="0" step="0.01" value="0"></div>
             </div>
             <div class="form-group"><label>Estado</label>
                 <select id="ev-estado">
@@ -512,8 +511,7 @@
             document.getElementById('ev-fim-inscricoes').value = ev?.data_fim_inscricoes ? ev.data_fim_inscricoes.slice(0,16) : ''
             document.getElementById('ev-local').value      = ev?.local || ''
             document.getElementById('ev-vagas').value      = ev?.vagas || ''
-            document.getElementById('ev-preco-socio').value = ev?.preco_socio ?? 0
-            document.getElementById('ev-preco-nao-socio').value = ev?.preco_nao_socio ?? 0
+            document.getElementById('ev-preco').value = ev?.preco ?? 0
             document.getElementById('ev-estado').value     = ev?.estado || 'rascunho'
             // set hidden imagem url field and preview
             document.getElementById('ev-imagem').value     = ev?.imagem_url || ''
@@ -546,8 +544,7 @@
                 data_fim_inscricoes: document.getElementById('ev-fim-inscricoes').value || null,
                 local:            document.getElementById('ev-local').value.trim() || null,
                 vagas:            parseInt(document.getElementById('ev-vagas').value) || null,
-                preco_socio:      parseFloat(document.getElementById('ev-preco-socio').value) || 0,
-                preco_nao_socio:  parseFloat(document.getElementById('ev-preco-nao-socio').value) || 0,
+                preco:            parseFloat(document.getElementById('ev-preco').value) || 0,
                 estado:           document.getElementById('ev-estado').value,
                 regulamento_url:  document.getElementById('ev-regulamento').value.trim() || null
             }

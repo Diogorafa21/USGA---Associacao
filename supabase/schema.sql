@@ -95,8 +95,7 @@ create table if not exists public.eventos (
   data_evento          timestamptz not null,
   data_fim_inscricoes  timestamptz,
   local                text,
-  preco_socio          numeric(10,2) default 0,
-  preco_nao_socio      numeric(10,2) default 0,
+  preco                numeric(10,2) not null default 0,
   vagas                integer,
   estado               text not null default 'rascunho' check (estado in ('rascunho','aberto','fechado','concluido','cancelado')),
   regulamento_url      text,
@@ -274,12 +273,7 @@ begin
   if not found then raise exception 'Evento não encontrado'; end if;
   if v_evento.estado != 'aberto' then raise exception 'Inscrições fechadas'; end if;
 
-  v_valor := v_evento.preco_nao_socio;
-  if auth.uid() is not null then
-    if exists (select 1 from public.utilizadores where id = auth.uid() and estado = 'ativo') then
-      v_valor := v_evento.preco_socio;
-    end if;
-  end if;
+  v_valor := v_evento.preco;
 
   insert into public.inscricoes_evento
     (evento_id, utilizador_id, nome, email, telefone, nif, bi, data_nascimento, sexo, pais, equipa)
