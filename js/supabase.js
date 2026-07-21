@@ -287,11 +287,34 @@ export async function eliminarInscricaoEvento(id) {
     p_inscricao_id: id
   })
 
-  if (error && (error.code === 'PGRST202' || /function.*does not exist/i.test(error.message || ''))) {
-    return supabase.from('inscricoes_evento').delete().eq('id', id)
+  const rpcFuncaoInexistente = error && (
+    error.code === 'PGRST202' ||
+    /function.*does not exist/i.test(error.message || '')
+  )
+
+  if (!rpcFuncaoInexistente) {
+    return { data, error }
   }
 
-  return { data, error }
+  // A RPC ainda nao existe nesta base de dados (falta correr migration_inscricoes_fix.sql).
+  // Fallback: apagar diretamente e confirmar que a linha foi mesmo removida -- o RLS pode
+  // bloquear um delete silenciosamente, devolvendo "sem erro" mas 0 linhas afetadas.
+  const resultado = await supabase
+    .from('inscricoes_evento')
+    .delete()
+    .eq('id', id)
+    .select()
+
+  if (!resultado.error && (!resultado.data || resultado.data.length === 0)) {
+    return {
+      data: null,
+      error: {
+        message: 'Nao foi possivel eliminar a inscricao (sem permissao). Execute migration_inscricoes_fix.sql no SQL Editor do Supabase para criar a funcao e a politica de eliminacao.'
+      }
+    }
+  }
+
+  return resultado
 }
 
 export function subscreverInscricoesAdmin(callback) {
