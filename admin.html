@@ -154,7 +154,7 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Pagamento</th><th>Dorsal</th><th>Ações</th></tr></thead>
+                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Estado</th><th>Dorsal</th><th>Ações</th></tr></thead>
                                 <tbody id="tbl-inscricoes"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
@@ -355,7 +355,8 @@
         import {
             requireAdmin, supabase,
             getAdminPedidosSocio, atualizarPedidoSocio,
-            getAdminInscricoesEvento, atualizarInscricaoEvento,
+            getAdminInscricoesEvento, atualizarInscricaoEvento, eliminarInscricaoEvento,
+            subscreverInscricoesAdmin,
             getAdminQuotas, atualizarQuota,
             formatarData, formatarMoeda
         } from './js/supabase.js'
@@ -622,13 +623,27 @@
         })
 
         // ── INSCRIÇÕES ───────────────────────────────────────────────────
+        let cancelarSubscricaoInscricoes = null
+
+        function iniciarSubscricaoInscricoes() {
+            if (cancelarSubscricaoInscricoes) return
+            cancelarSubscricaoInscricoes = subscreverInscricoesAdmin(() => {
+                carregarInscricoes()
+                carregarDashboard()
+            })
+        }
+
         window.carregarInscricoes = async function() {
             const eventoFiltro   = document.getElementById('filtroEvento').value
             const pagFiltro      = document.getElementById('filtroPagamento').value
             let query = supabase.from('inscricoes_evento').select('*, eventos(titulo)').order('data_inscricao', { ascending: false })
             if (eventoFiltro)  query = query.eq('evento_id', eventoFiltro)
             if (pagFiltro)     query = query.eq('pagamento_estado', pagFiltro)
-            const { data } = await query
+            const { data, error } = await query
+            if (error) {
+                alert('Erro ao carregar inscrições: ' + error.message)
+                return
+            }
             window._inscricoes = data || []
             const tbody = document.getElementById('tbl-inscricoes')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
@@ -636,32 +651,41 @@
             tbody.innerHTML = ''
             data.forEach(i => {
                 const tr = document.createElement('tr')
+                const estadoInscricao = (i.estado === 'confirmada' && i.pagamento_estado === 'validado')
+                    ? '<span class="badge badge-pago">Confirmada</span>'
+                    : '<span class="badge badge-pendente">Pendente</span>'
                 tr.innerHTML = `
                     <td>${i.eventos?.titulo || '-'}</td>
                     <td>${i.nome}</td>
                     <td style="font-size:12px;">${i.email}</td>
-                    <td>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
+                    <td>${estadoInscricao}<br>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
                     <td><input type="text" value="${i.dorsal || ''}" id="d_${i.id}" style="width:55px;padding:4px;border:1px solid #ddd;border-radius:4px;font-size:13px;"></td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
                 if (i.pagamento_estado !== 'validado') {
                     td.appendChild(btnAprovar('Confirmar', async () => {
                         const dorsal = document.getElementById(`d_${i.id}`).value.trim() || null
-                        await atualizarInscricaoEvento(i.id, { pagamento_estado:'validado', estado:'confirmada', dorsal, data_confirmacao: new Date().toISOString() })
+                        const { error: errConfirm } = await atualizarInscricaoEvento(i.id, { pagamento_estado:'validado', estado:'confirmada', dorsal, data_confirmacao: new Date().toISOString() })
+                        if (errConfirm) { alert('Erro ao confirmar: ' + errConfirm.message); return }
                         carregarInscricoes()
                     }))
                 }
                 if (i.estado !== 'rejeitada' && i.estado !== 'cancelada') {
                     td.appendChild(btnAcao('Rejeitar', 'danger', async () => {
-                        await atualizarInscricaoEvento(i.id, { pagamento_estado:'rejeitado', estado:'rejeitada' })
+                        const { error: errReject } = await atualizarInscricaoEvento(i.id, { pagamento_estado:'rejeitado', estado:'rejeitada' })
+                        if (errReject) { alert('Erro ao rejeitar: ' + errReject.message); return }
                         carregarInscricoes()
                     }))
                 }
                 td.appendChild(btnAcao('Eliminar', 'danger', async () => {
-                    if (confirm('Eliminar esta inscrição?')) {
-                        await supabase.from('inscricoes_evento').delete().eq('id', i.id)
-                        carregarInscricoes()
+                    if (!confirm('Eliminar esta inscrição? Esta ação é permanente.')) return
+                    const { error: errDelete } = await eliminarInscricaoEvento(i.id)
+                    if (errDelete) {
+                        alert('Erro ao eliminar: ' + errDelete.message)
+                        return
                     }
+                    carregarInscricoes()
+                    carregarDashboard()
                 }))
                 tbody.appendChild(tr)
             })
@@ -992,7 +1016,7 @@
             secCarregadas.add(sec)
             if (sec === 'dashboard')  await carregarDashboard()
             if (sec === 'eventos')    await carregarEventos()
-            if (sec === 'inscricoes') { await carregarEventos(); await carregarInscricoes() }
+            if (sec === 'inscricoes') { await carregarEventos(); await carregarInscricoes(); iniciarSubscricaoInscricoes() }
             if (sec === 'socios')     await carregarSocios()
             if (sec === 'utilizadores') await carregarUtilizadores()
             if (sec === 'pedidos')    await carregarPedidos()
