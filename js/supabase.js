@@ -1,4 +1,4 @@
-// USGA - cliente Supabase e funcoes de dados.
+﻿// USGA - cliente Supabase e funcoes de dados.
 // Este ficheiro deve ser importado em scripts type="module".
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -348,6 +348,19 @@ export function subscreverInscricoesAdmin(callback) {
     .on(
       'postgres_changes',
       { event: '*', schema: 'public', table: 'inscricoes_evento' },
+      callback
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
+export function subscreverUtilizadoresAdmin(callback) {
+  const channel = supabase
+    .channel('admin-utilizadores')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'utilizadores' },
       callback
     )
     .subscribe()

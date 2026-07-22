@@ -547,7 +547,8 @@ async function configurarInscricaoEvento(api) {
       email: form.email.value.trim(),
       bi: form.bi.value.trim(),
       nif: form.nif.value.trim(),
-      tamanho_tshirt: form.tamanho_tshirt.value || null
+      tamanho_tshirt: form.tamanho_tshirt.value || null,
+      pedido_fatura: form.pedido_fatura.checked
     }
 
     const { data, error } = await api.criarInscricaoEvento(dados)
@@ -842,6 +843,8 @@ async function configurarEstadoInscricao(api) {
     return
   }
 
+  const faturaUrl = data.fatura_url ? api.getFaturaUrl(data.fatura_url) : null
+
   resultBox.innerHTML = `
     <div class="participants-table-wrapper">
       <table class="participants-table">
@@ -852,6 +855,7 @@ async function configurarEstadoInscricao(api) {
           <tr><th>Pagamento</th><td><span class="badge ${data.pagamento_estado === 'validado' ? 'badge-pago' : 'badge-pendente'}">${estadoPagamentoLabel(data.pagamento_estado)}</span></td></tr>
           <tr><th>Dorsal</th><td>${data.dorsal || '-'}</td></tr>
           <tr><th>Data</th><td>${api.formatarData(data.data_inscricao)}</td></tr>
+          ${faturaUrl ? `<tr><th>Fatura</th><td><a href="${faturaUrl}" target="_blank" rel="noopener" style="color: var(--accent-color);">Descarregar</a></td></tr>` : ''}
         </tbody>
       </table>
     </div>

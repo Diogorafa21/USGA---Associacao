@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
@@ -42,6 +42,16 @@
         .tag-rascunho { background:#f3f4f6; color:#6b7280; }
         .tag-concluido { background:#dbeafe; color:#1d4ed8; }
         .tag-cancelado { background:#fef3c7; color:#92400e; }
+        .socios-layout { display: grid; grid-template-columns: 1fr 300px; gap: 24px; align-items: start; }
+        .aniversarios-card { background: #fff; border: 1px solid #eee; border-radius: 8px; padding: 20px; }
+        .aniversarios-card h3 { font-size: 15px; margin-bottom: 14px; display: flex; align-items: center; gap: 6px; }
+        .aniversario-item { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 8px 0; border-bottom: 1px solid #f5f5f5; font-size: 13px; }
+        .aniversario-item:last-child { border-bottom: none; }
+        .aniversario-dias { font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 99px; background: #fff3e0; color: #ef6c00; white-space: nowrap; }
+        .aniversario-dias.hoje { background: #dcfce7; color: #166534; }
+        @media (max-width: 900px) {
+            .socios-layout { grid-template-columns: 1fr; }
+        }
     </style>
 </head>
 <body class="home-page">
@@ -163,20 +173,28 @@
                     <!-- SÓCIOS -->
                     <div class="admin-section" id="sec-socios">
                         <h2 style="margin-bottom:20px;">Sócios</h2>
-                        <div class="form-inline">
-                            <input type="text" id="searchSocios" placeholder="Pesquisar por nome ou email..." oninput="filtrarSocios()">
-                            <select id="filtroEstadoSocio" onchange="filtrarSocios()">
-                                <option value="">Todos</option>
-                                <option value="ativo">Ativos</option>
-                                <option value="inativo">Inativos</option>
-                                <option value="bloqueado">Bloqueados</option>
-                            </select>
-                        </div>
-                        <div class="participants-table-wrapper">
-                            <table class="participants-table">
-                                <thead><tr><th>Nº Sócio</th><th>Nome</th><th>Email</th><th>Estado</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-socios"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
-                            </table>
+                        <div class="socios-layout">
+                            <div>
+                                <div class="form-inline">
+                                    <input type="text" id="searchSocios" placeholder="Pesquisar por nome ou email..." oninput="filtrarSocios()">
+                                    <select id="filtroEstadoSocio" onchange="filtrarSocios()">
+                                        <option value="">Todos</option>
+                                        <option value="ativo">Ativos</option>
+                                        <option value="inativo">Inativos</option>
+                                        <option value="bloqueado">Bloqueados</option>
+                                    </select>
+                                </div>
+                                <div class="participants-table-wrapper">
+                                    <table class="participants-table">
+                                        <thead><tr><th>Nº Sócio</th><th>Nome</th><th>Email</th><th>Estado</th><th>Ações</th></tr></thead>
+                                        <tbody id="tbl-socios"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                    </table>
+                                </div>
+                            </div>
+                            <aside class="aniversarios-card">
+                                <h3>🎂 Próximos Aniversários</h3>
+                                <div id="lista-aniversarios" style="color:#999;font-size:13px;">A carregar...</div>
+                            </aside>
                         </div>
                     </div>
 
@@ -357,6 +375,7 @@
             getAdminPedidosSocio, atualizarPedidoSocio,
             getAdminInscricoesEvento, atualizarInscricaoEvento, eliminarInscricaoEvento,
             subscreverInscricoesAdmin,
+            subscreverUtilizadoresAdmin,
             getAdminQuotas, atualizarQuota,
             formatarData, formatarMoeda
         } from './js/supabase.js'
@@ -751,6 +770,7 @@
                 .order('created_at', { ascending: false })
             todosSocios = data || []
             renderSocios(todosSocios)
+            renderAniversarios(todosSocios)
         }
 
         function renderSocios(data) {
@@ -782,7 +802,68 @@
             })
         }
 
-        let todosUtilizadores = []
+        // ── ANIVERSÁRIOS (widget na secção Sócios) ─────────────────────────
+        const DIAS_JANELA_ANIVERSARIOS = 30
+
+        function calcularProximoAniversario(dataNascimentoISO) {
+            if (!dataNascimentoISO) return null
+            const nascimento = new Date(dataNascimentoISO)
+            if (isNaN(nascimento.getTime())) return null
+            const hoje = new Date()
+            hoje.setHours(0, 0, 0, 0)
+            let proximo = new Date(hoje.getFullYear(), nascimento.getMonth(), nascimento.getDate())
+            proximo.setHours(0, 0, 0, 0)
+            if (proximo < hoje) {
+                proximo = new Date(hoje.getFullYear() + 1, nascimento.getMonth(), nascimento.getDate())
+            }
+            const diasRestantes = Math.round((proximo - hoje) / (24 * 60 * 60 * 1000))
+            const idade = proximo.getFullYear() - nascimento.getFullYear()
+            return { proximo, diasRestantes, idade }
+        }
+
+        // Recalcula sempre a partir da data de hoje, por isso atualiza-se sozinha
+        // dia após dia -- e é chamada sempre que a lista de sócios é recarregada
+        // (ao abrir a secção, ao gravar um sócio, ou via subscrição em tempo real),
+        // por isso reflete também novos sócios assim que são adicionados.
+        function renderAniversarios(socios) {
+            const div = document.getElementById('lista-aniversarios')
+            if (!div) return
+
+            const proximos = (socios || [])
+                .filter(s => s.estado === 'ativo')
+                .map(s => ({ socio: s, ...calcularProximoAniversario(s.data_nascimento) }))
+                .filter(item => item.proximo && item.diasRestantes <= DIAS_JANELA_ANIVERSARIOS)
+                .sort((a, b) => a.diasRestantes - b.diasRestantes)
+
+            if (!proximos.length) {
+                div.innerHTML = '<p style="color:#999;font-size:13px;">Sem aniversários nos próximos 30 dias.</p>'
+                return
+            }
+
+            div.innerHTML = proximos.map(({ socio, diasRestantes, idade }) => {
+                const nome = `${socio.nome || ''} ${socio.apelido || ''}`.trim()
+                const dataFmt = new Date(socio.data_nascimento).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
+                const rotulo = diasRestantes === 0 ? 'Hoje!' : diasRestantes === 1 ? 'Amanhã' : `em ${diasRestantes} dias`
+                return `
+                    <div class="aniversario-item">
+                        <span>${nome}<br><small style="color:#999;">${dataFmt} · faz ${idade} anos</small></span>
+                        <span class="aniversario-dias ${diasRestantes === 0 ? 'hoje' : ''}">${rotulo}</span>
+                    </div>`
+            }).join('')
+        }
+
+        let cancelarSubscricaoSocios = null
+
+        function iniciarSubscricaoSocios() {
+            if (cancelarSubscricaoSocios) return
+            cancelarSubscricaoSocios = subscreverUtilizadoresAdmin(() => {
+                carregarSocios()
+            })
+            // Garante que o widget avança sozinho para o dia seguinte mesmo que
+            // ninguém mexa em nada e a aba fique aberta (recalcula a partir da
+            // mesma lista já carregada, sem precisar de ir à base de dados).
+            setInterval(() => renderAniversarios(todosSocios), 60 * 60 * 1000)
+        }
 
         async function carregarUtilizadores() {
             const { data } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
@@ -1071,7 +1152,7 @@
             if (sec === 'dashboard')  await carregarDashboard()
             if (sec === 'eventos')    await carregarEventos()
             if (sec === 'inscricoes') { await carregarEventos(); await carregarInscricoes(); iniciarSubscricaoInscricoes() }
-            if (sec === 'socios')     await carregarSocios()
+            if (sec === 'socios')     { await carregarSocios(); iniciarSubscricaoSocios() }
             if (sec === 'utilizadores') await carregarUtilizadores()
             if (sec === 'pedidos')    await carregarPedidos()
             if (sec === 'quotas')     await carregarQuotas()
