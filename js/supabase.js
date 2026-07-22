@@ -251,12 +251,24 @@ export async function uploadComprovativo(pagamentoToken, file) {
 }
 
 // Liga o ficheiro ja enviado ao pagamento existente (via token publico) e passa o estado a "em_validacao".
-export async function submeterComprovativoPagamento(pagamentoToken, comprovativoUrl, referencia = null) {
+export async function submeterComprovativoPagamento(pagamentoToken, comprovativoUrl, referencia = null, metodo = null, telefoneMbway = null) {
   const { data, error } = await supabase.rpc('submeter_comprovativo_pagamento', {
     p_pagamento_token: pagamentoToken,
     p_comprovativo_url: comprovativoUrl,
-    p_referencia: referencia
+    p_referencia: referencia,
+    p_metodo: metodo,
+    p_telefone_mbway: telefoneMbway
   })
+  return { data, error }
+}
+
+// Devolve (ou cria, se ainda não existir) o pagamento ligado a uma quota,
+// para a página de pagamento de quota poder usar o mesmo fluxo de
+// comprovativo + MB WAY já usado nos eventos.
+export async function obterPagamentoQuota(quotaId) {
+  const { data, error } = await supabase
+    .rpc('obter_pagamento_quota', { p_quota_id: quotaId })
+    .maybeSingle()
   return { data, error }
 }
 

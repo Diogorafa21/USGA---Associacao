@@ -35,23 +35,31 @@
             <div class="container hero-container">
                 <div class="hero-content">
                     <span class="subtitle">BEM-VINDO À FAMÍLIA</span>
-                    <h1>Pedido Recebido!</h1>
-                    <p>Para finalizar o processo e receber o seu <strong>Cartão de Sócio</strong>, por favor proceda ao pagamento da primeira anuidade.</p>
+                    <h1>Pagamento de Quota</h1>
+                    <p>Para regularizar a sua quota de sócio, proceda ao pagamento e carregue o comprovativo abaixo.</p>
                 </div>
             </div>
         </section>
 
         <section class="contact-section">
             <div class="container" style="max-width: 600px; text-align: center;">
-                
-                <div class="payment-box" style="background: #fff; border: 1px solid var(--primary-color); padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+
+                <div class="payment-box" style="background: #fff; border: 1px solid var(--primary-color); padding: 30px; border-radius: 8px; margin-bottom: 20px;">
                     <span style="display: block; font-size: 14px; text-transform: uppercase; color: #888; margin-bottom: 10px; font-weight: 700;">Transferência Bancária (IBAN)</span>
                     <p style="font-size: 24px; font-weight: 700; color: var(--primary-color); letter-spacing: 1px; margin-bottom: 5px;">PT50 0000 0000 0000 0000 0000 0</p>
                     <p style="font-size: 14px; color: #666;">Titular: Unidos por São Gens Ativo</p>
-                    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+                </div>
+
+                <div class="payment-box" style="background: #fff; border: 1px solid var(--primary-color); padding: 30px; border-radius: 8px; margin-bottom: 30px;">
+                    <span style="display: block; font-size: 14px; text-transform: uppercase; color: #888; margin-bottom: 10px; font-weight: 700;">MB WAY</span>
+                    <p style="font-size: 28px; font-weight: 700; color: var(--primary-color); letter-spacing: 1px; margin-bottom: 5px;">912 345 678</p>
+                    <p style="font-size: 14px; color: #666;">Envie o valor através da app MB WAY para este número</p>
+                </div>
+
+                <div class="payment-box" style="background: #fff; border: 1px solid var(--primary-color); padding: 30px; border-radius: 8px; margin-bottom: 30px;">
                     <div style="display: flex; justify-content: space-between;">
-                        <span id="labelQuota">Quota Anual 2026:</span>
-                        <span id="valorQuota" style="font-weight: 700;">12,00 €</span>
+                        <span id="labelQuota">Quota Anual:</span>
+                        <span id="valorQuota" style="font-weight: 700;">A carregar...</span>
                     </div>
                     <div style="display: flex; justify-content: space-between; margin-top: 10px;">
                         <span>Nome:</span>
@@ -64,9 +72,34 @@
                 </div>
 
                 <div class="instructions" style="background: var(--bg-light); padding: 20px; border-radius: 8px; font-size: 14px; text-align: left;">
-                    <p><strong>Próximo passo:</strong></p>
-                    <p>Envie o comprovativo para <a href="mailto:socios@usga.pt" style="color: var(--accent-color); font-weight: 700;">socios@usga.pt</a> indicando o seu <strong>NIF</strong> na descrição da transferência.</p>
+                    <p><strong>Importante:</strong></p>
+                    <p>Carregue o comprovativo nesta página para que a equipa possa validar a quota no back-office.</p>
+                    <p style="margin-top: 10px;">Na descrição da transferência indique o seu <strong id="referenciaQuota">Nome + NIF</strong>.</p>
                 </div>
+
+                <form id="comprovativoQuotaForm" class="contact-form" style="margin-top: 20px; text-align: left; display:none;">
+                    <div id="mensagemComprovativoQuota" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
+                    <div class="form-group">
+                        <label for="metodoPagamentoQuota">Método de pagamento utilizado</label>
+                        <select id="metodoPagamentoQuota" name="metodoPagamentoQuota" required>
+                            <option value="transferencia">Transferência Bancária</option>
+                            <option value="mbway">MB WAY</option>
+                        </select>
+                    </div>
+                    <div class="form-group" id="grupoTelefoneMbwayQuota" style="display:none;">
+                        <label for="telefoneMbwayQuota">Telemóvel usado no MB WAY</label>
+                        <input type="tel" id="telefoneMbwayQuota" name="telefoneMbwayQuota" placeholder="9XX XXX XXX">
+                    </div>
+                    <div class="form-group">
+                        <label for="referenciaPagamentoQuota">Referência usada na transferência</label>
+                        <input type="text" id="referenciaPagamentoQuota" name="referenciaPagamentoQuota" placeholder="Ex: Nome + NIF">
+                    </div>
+                    <div class="form-group">
+                        <label for="ficheiroComprovativoQuota">Comprovativo</label>
+                        <input type="file" id="ficheiroComprovativoQuota" name="ficheiroComprovativoQuota" required>
+                    </div>
+                    <button type="submit" id="btnEnviarComprovativoQuota" class="btn btn-primary" style="width: 100%;">Enviar Comprovativo</button>
+                </form>
 
                 <a href="index.html" class="btn btn-primary" style="margin-top: 40px;">Voltar à Página Inicial</a>
             </div>
@@ -81,31 +114,110 @@
 
     <script src="js/main.js"></script>
     <script type="module">
-        import { getSessao, getPerfil, getMinhasQuotas, formatarMoeda } from './js/supabase.js'
+        import {
+            getSessao, getPerfil, getMinhasQuotas, formatarMoeda,
+            obterPagamentoQuota, uploadComprovativo, submeterComprovativoPagamento
+        } from './js/supabase.js'
 
         const sessao = await getSessao()
 
-        if (sessao) {
-            const { data: perfil } = await getPerfil(sessao.user.id)
+        if (!sessao) {
+            window.location.href = 'login.html?redirect=' + encodeURIComponent('pagamento-quota.html' + window.location.search)
+            throw new Error('redirecionando para login')
+        }
 
-            if (perfil) {
-                const nomeCompleto = [perfil.nome, perfil.apelido].filter(Boolean).join(' ')
-                document.getElementById('nomeSocio').textContent = nomeCompleto
-                document.getElementById('nifSocio').textContent  = perfil.nif || '-'
-            }
+        const { data: perfil } = await getPerfil(sessao.user.id)
+        let nomeCompleto = ''
+        if (perfil) {
+            nomeCompleto = [perfil.nome, perfil.apelido].filter(Boolean).join(' ')
+            document.getElementById('nomeSocio').textContent = nomeCompleto
+            document.getElementById('nifSocio').textContent  = perfil.nif || '-'
+        }
 
-            // Se veio de um botão "Pagar" específico (perfil.html), usa essa quota;
-            // caso contrário, mostra a quota pendente mais antiga (comportamento anterior).
-            const { data: quotas } = await getMinhasQuotas(sessao.user.id)
-            const quotaIdPedida = new URLSearchParams(window.location.search).get('quota')
-            const quotaPendente = (quotaIdPedida && quotas?.find(q => q.id === quotaIdPedida))
-                || quotas?.find(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao')
+        // Se veio de um botão "Pagar" específico (perfil.html), usa essa quota;
+        // caso contrário, mostra a quota pendente mais antiga (comportamento anterior).
+        const { data: quotas } = await getMinhasQuotas(sessao.user.id)
+        const quotaIdPedida = new URLSearchParams(window.location.search).get('quota')
+        const quotaPendente = (quotaIdPedida && quotas?.find(q => q.id === quotaIdPedida))
+            || quotas?.find(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao')
 
-            if (quotaPendente) {
-                document.getElementById('labelQuota').textContent =
-                    `Quota Anual ${quotaPendente.ano}:`
-                document.getElementById('valorQuota').textContent =
-                    formatarMoeda(quotaPendente.valor)
+        const form = document.getElementById('comprovativoQuotaForm')
+
+        if (!quotaPendente) {
+            // nada por pagar -- não há formulário de comprovativo para mostrar
+            document.getElementById('labelQuota').textContent = 'Quota:'
+            document.getElementById('valorQuota').textContent = 'Sem quota pendente'
+        } else {
+            document.getElementById('labelQuota').textContent = `Quota Anual ${quotaPendente.ano}:`
+            document.getElementById('valorQuota').textContent = formatarMoeda(quotaPendente.valor)
+            document.getElementById('referenciaQuota').textContent = `${nomeCompleto} + ${perfil?.nif || ''}`
+
+            // obtém (ou cria) o pagamento ligado a esta quota, para termos um token público
+            const { data: pagamento, error: pagErr } = await obterPagamentoQuota(quotaPendente.id)
+
+            if (!pagErr && pagamento?.pagamento_token) {
+                form.style.display = 'block'
+
+                const metodoSelect = document.getElementById('metodoPagamentoQuota')
+                const grupoTelefone = document.getElementById('grupoTelefoneMbwayQuota')
+                metodoSelect.addEventListener('change', () => {
+                    grupoTelefone.style.display = metodoSelect.value === 'mbway' ? 'block' : 'none'
+                })
+
+                form.addEventListener('submit', async function (e) {
+                    e.preventDefault()
+                    const fileInput = document.getElementById('ficheiroComprovativoQuota')
+                    const referenciaInput = document.getElementById('referenciaPagamentoQuota')
+                    const telefoneInput = document.getElementById('telefoneMbwayQuota')
+                    const btnEnviar = document.getElementById('btnEnviarComprovativoQuota')
+                    const mensagemBox = document.getElementById('mensagemComprovativoQuota')
+                    const metodo = metodoSelect.value
+
+                    function mostrarMsg(texto, tipo) {
+                        mensagemBox.style.display = 'block'
+                        mensagemBox.style.background = tipo === 'erro' ? '#fee2e2' : '#dcfce7'
+                        mensagemBox.style.color = tipo === 'erro' ? '#991b1b' : '#166534'
+                        mensagemBox.textContent = texto
+                    }
+
+                    if (!fileInput.files || fileInput.files.length === 0) {
+                        mostrarMsg('Por favor selecione um ficheiro de comprovativo.', 'erro')
+                        return
+                    }
+                    if (metodo === 'mbway' && !telefoneInput.value.trim()) {
+                        mostrarMsg('Indique o telemóvel usado no MB WAY.', 'erro')
+                        return
+                    }
+                    const file = fileInput.files[0]
+                    if (file.size > 15 * 1024 * 1024) {
+                        mostrarMsg('O ficheiro é demasiado grande (máx. 15MB).', 'erro')
+                        return
+                    }
+
+                    btnEnviar.disabled = true
+                    btnEnviar.textContent = 'A enviar...'
+
+                    const { data: uploadData, error: uploadErr } = await uploadComprovativo(pagamento.pagamento_token, file)
+                    if (uploadErr || !uploadData) {
+                        mostrarMsg('Erro ao enviar o ficheiro. Tente novamente.', 'erro')
+                        btnEnviar.disabled = false
+                        btnEnviar.textContent = 'Enviar Comprovativo'
+                        return
+                    }
+
+                    const referencia = referenciaInput.value.trim()
+                    const telefoneMbway = metodo === 'mbway' ? telefoneInput.value.trim() : null
+                    const { error: submitErr } = await submeterComprovativoPagamento(pagamento.pagamento_token, uploadData.path, referencia, metodo, telefoneMbway)
+                    if (submitErr) {
+                        mostrarMsg('Erro ao registar o comprovativo. Tente novamente.', 'erro')
+                        btnEnviar.disabled = false
+                        btnEnviar.textContent = 'Enviar Comprovativo'
+                        return
+                    }
+
+                    mostrarMsg('Comprovativo enviado com sucesso. Aguarde validação da equipa.', 'sucesso')
+                    btnEnviar.textContent = 'Enviado ✓'
+                })
             }
         }
     </script>

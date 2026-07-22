@@ -784,6 +784,15 @@ async function configurarPagamentoEvento(api) {
 
     if (referenciaEl) referenciaEl.textContent = `${nome} + ${titulo}`
 
+    // Alterna a exibição do campo de telemóvel consoante o método escolhido
+    const metodoSelect = document.getElementById('metodoPagamento')
+    const grupoTelefoneMbway = document.getElementById('grupoTelefoneMbway')
+    if (metodoSelect && grupoTelefoneMbway) {
+      metodoSelect.addEventListener('change', () => {
+        grupoTelefoneMbway.style.display = metodoSelect.value === 'mbway' ? 'block' : 'none'
+      })
+    }
+
     // Wire comprovativo form: upload the file to storage, then link it to the existing payment via its public token
     if (comprovativoForm) {
       comprovativoForm.addEventListener('submit', async function (e) {
@@ -791,9 +800,16 @@ async function configurarPagamentoEvento(api) {
         const fileInput = document.getElementById('ficheiroComprovativo')
         const referenciaInput = document.getElementById('referenciaPagamento')
         const btnEnviar = document.getElementById('btnEnviarComprovativo')
+        const metodo = metodoSelect ? metodoSelect.value : 'transferencia'
+        const telefoneMbwayInput = document.getElementById('telefoneMbway')
 
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
           mostrarMensagem(comprovativoForm, 'Por favor selecione um ficheiro de comprovativo.', 'erro')
+          return
+        }
+
+        if (metodo === 'mbway' && (!telefoneMbwayInput || !telefoneMbwayInput.value.trim())) {
+          mostrarMensagem(comprovativoForm, 'Indique o telemóvel usado no MB WAY.', 'erro')
           return
         }
 
@@ -820,7 +836,8 @@ async function configurarPagamentoEvento(api) {
 
           // 2) link the uploaded file to the existing payment record and move it to "em_validacao"
           const referencia = referenciaInput ? referenciaInput.value.trim() : null
-          const { error: submitErr } = await api.submeterComprovativoPagamento(token, uploadData.path, referencia)
+          const telefoneMbway = metodo === 'mbway' && telefoneMbwayInput ? telefoneMbwayInput.value.trim() : null
+          const { error: submitErr } = await api.submeterComprovativoPagamento(token, uploadData.path, referencia, metodo, telefoneMbway)
           if (submitErr) {
             console.error('Erro ao submeter comprovativo:', submitErr)
             mostrarMensagem(comprovativoForm, 'Erro ao registar o comprovativo. Tente novamente.', 'erro')

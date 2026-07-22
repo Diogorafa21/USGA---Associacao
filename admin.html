@@ -1357,7 +1357,7 @@
                     <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span>${p.pedido_fatura ? ' <span class="badge" style="background:#ede9fe;color:#5b21b6;" title="Fatura pedida">🧾 Fatura</span>' : ''}</td>
                     <td>${nome}<br><small style="color:#999;">${u?.email || ''}</small></td>
                     <td>${formatarMoeda(p.valor)}</td>
-                    <td>${p.metodo || '-'}</td>
+                    <td>${p.metodo === 'mbway' ? `MB WAY${p.telefone_mbway ? '<br><small style="color:#999;">' + p.telefone_mbway + '</small>' : ''}` : (p.metodo || '-')}</td>
                     <td>${pagBadge[p.estado] || p.estado}</td>
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
