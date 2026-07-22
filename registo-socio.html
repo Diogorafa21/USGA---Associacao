@@ -49,33 +49,34 @@
 
                     <!-- Mensagem de feedback -->
                     <div id="mensagem" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
-                    
+                    <p style="font-size: 13px; color: #777; margin-bottom: 15px;">* Campos de preenchimento obrigatório</p>
+
                     <form id="registoSocioForm">
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="nome">Nome Próprio</label>
+                                <label for="nome">Nome Próprio *</label>
                                 <input type="text" id="nome" name="nome" required>
                             </div>
                             <div class="form-group">
-                                <label for="apelido">Apelido</label>
+                                <label for="apelido">Apelido *</label>
                                 <input type="text" id="apelido" name="apelido" required>
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="nascimento">Data de Nascimento</label>
+                                <label for="nascimento">Data de Nascimento *</label>
                                 <input type="date" id="nascimento" name="nascimento" required>
                             </div>
                             <div class="form-group">
-                                <label for="cidade">Cidade</label>
+                                <label for="cidade">Cidade *</label>
                                 <input type="text" id="cidade" name="cidade" required>
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="sexo">Sexo</label>
+                                <label for="sexo">Sexo *</label>
                                 <select id="sexo" name="sexo" required>
                                     <option value="" disabled selected>Selecione...</option>
                                     <option value="F">Feminino</option>
@@ -83,31 +84,38 @@
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="localidade">Localidade</label>
+                                <label for="localidade">Localidade *</label>
                                 <input type="text" id="localidade" name="localidade" placeholder="Ex: São Gens" required>
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="cc">Nº Cartão de Cidadão</label>
+                                <label for="cc">Nº Cartão de Cidadão *</label>
                                 <input type="text" id="cc" name="cc" placeholder="00000000 0 ZZ0" required>
                             </div>
                             <div class="form-group">
-                                <label for="nif">NIF</label>
+                                <label for="nif">NIF *</label>
                                 <input type="number" id="nif" name="nif" placeholder="000 000 000" required>
                             </div>
                         </div>
 
                         <div class="form-grid">
                             <div class="form-group">
-                                <label for="telefone">Telefone / Telemóvel</label>
+                                <label for="telefone">Telefone / Telemóvel *</label>
                                 <input type="tel" id="telefone" name="telefone" required>
                             </div>
                             <div class="form-group">
-                                <label for="email">Email</label>
+                                <label for="email">Email *</label>
                                 <input type="email" id="email" name="email" required>
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label style="display: flex; align-items: start; gap: 10px; font-weight: 400; font-size: 14px;">
+                                <input type="checkbox" id="consentimento" name="consentimento" style="width: auto; margin-top: 4px;" required>
+                                Eu/nós consentimos o armazenamento e processamento dos dados pessoais contidos neste formulário pela organização de acordo com a <a href="https://sousoestrail2026.statusmarathon.run/index/privacidade" target="_blank" rel="noopener">Política de Privacidade</a>.
+                            </label>
                         </div>
 
                         <button type="submit" id="btnSocio" class="btn btn-primary" style="width: 100%; margin-top: 20px;">Tornar-me Sócio</button>
