@@ -368,6 +368,19 @@ export function subscreverUtilizadoresAdmin(callback) {
   return () => supabase.removeChannel(channel)
 }
 
+export function subscreverSuporteAdmin(callback) {
+  const channel = supabase
+    .channel('admin-suporte')
+    .on(
+      'postgres_changes',
+      { event: '*', schema: 'public', table: 'mensagens_suporte' },
+      callback
+    )
+    .subscribe()
+
+  return () => supabase.removeChannel(channel)
+}
+
 export async function getAdminQuotas() {
   const { data, error } = await supabase
     .from('quotas')

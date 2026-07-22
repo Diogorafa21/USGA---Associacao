@@ -376,6 +376,7 @@
             getAdminInscricoesEvento, atualizarInscricaoEvento, eliminarInscricaoEvento,
             subscreverInscricoesAdmin,
             subscreverUtilizadoresAdmin,
+            subscreverSuporteAdmin,
             getAdminQuotas, atualizarQuota,
             formatarData, formatarMoeda
         } from './js/supabase.js'
@@ -451,7 +452,7 @@
             supabase.from('pedidos_socio').select('*', { count:'exact', head:true }).eq('estado','pendente'),
             supabase.from('inscricoes_evento').select('*', { count:'exact', head:true }).eq('pagamento_estado','pendente'),
             supabase.from('quotas').select('*', { count:'exact', head:true }).eq('estado','por_pagar'),
-            supabase.from('mensagens_suporte').select('*', { count:'exact', head:true }).eq('estado','novo'),
+            supabase.from('mensagens_suporte').select('*', { count:'exact', head:true }).eq('resolvido', false),
             supabase.from('eventos').select('*', { count:'exact', head:true }).eq('estado','aberto')
             ])
             document.getElementById('ds-socios').textContent    = socios ?? 0
@@ -1106,20 +1107,34 @@
         // ── SUPORTE ──────────────────────────────────────────────────────
         async function carregarSuporte() {
             const { data } = await supabase.from('mensagens_suporte').select('*').order('created_at', { ascending: false })
-            document.getElementById('sb-suporte').textContent = data?.filter(m => m.estado === 'novo').length || 0
+            document.getElementById('sb-suporte').textContent = data?.filter(m => !m.resolvido).length || 0
             const tbody = document.getElementById('tbl-suporte')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem mensagens.</td></tr>'; return }
-            const estadoBadgeMsg = {
-                novo:        '<span class="badge badge-pendente">Novo</span>',
-                em_analise:  '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em análise</span>',
-                respondido:  '<span class="badge badge-pago">Respondido</span>',
-                arquivado:   '<span class="badge" style="background:#f0f0f0;color:#888;">Arquivado</span>'
-            }
             tbody.innerHTML = ''
             data.forEach(m => {
                 const tr = document.createElement('tr')
-                tr.innerHTML = `<td>${m.nome}</td><td style="font-size:12px;">${m.email}</td><td>${m.assunto}</td><td style="font-size:12px;">${formatarData(m.created_at)}</td><td>${estadoBadgeMsg[m.estado] || m.estado}</td><td></td>`
+                const badgeEstado = m.resolvido
+                    ? '<span class="badge badge-pago">Resolvido</span>'
+                    : '<span class="badge badge-pendente">Pendente</span>'
+                tr.innerHTML = `<td>${m.nome}</td><td style="font-size:12px;">${m.email}</td><td>${m.assunto}</td><td style="font-size:12px;">${formatarData(m.created_at)}</td><td>${badgeEstado}</td><td></td>`
                 const td = tr.querySelector('td:last-child')
+
+                async function alternarResolvido(novoValor) {
+                    await supabase.from('mensagens_suporte').update({ resolvido: novoValor }).eq('id', m.id)
+                    carregarSuporte()
+                }
+
+                // Checklist: clicar diretamente na linha marca/desmarca como resolvido, sem precisar de abrir nada.
+                const labelResolvido = document.createElement('label')
+                labelResolvido.style.cssText = 'display:inline-flex;align-items:center;gap:6px;margin-right:8px;font-size:13px;cursor:pointer;'
+                const checkbox = document.createElement('input')
+                checkbox.type = 'checkbox'
+                checkbox.checked = !!m.resolvido
+                checkbox.addEventListener('change', () => alternarResolvido(checkbox.checked))
+                labelResolvido.appendChild(checkbox)
+                labelResolvido.append(' Resolvido')
+                td.appendChild(labelResolvido)
+
                 td.appendChild(btnAprovar('Ver', () => {
                     document.getElementById('modalSuporteTitulo').textContent = m.assunto
                     document.getElementById('modalSuporteConteudo').innerHTML = `
@@ -1127,20 +1142,25 @@
                         <p><strong>Data:</strong> ${formatarData(m.created_at)}</p>
                         <hr style="margin:12px 0;border:0;border-top:1px solid #eee;">
                         <p style="white-space:pre-wrap;">${m.mensagem}</p>`
-                    document.getElementById('btnResponderSuporte').onclick = async () => {
-                        await supabase.from('mensagens_suporte').update({ estado:'respondido' }).eq('id', m.id)
+                    const btnModal = document.getElementById('btnResponderSuporte')
+                    btnModal.textContent = m.resolvido ? 'Reabrir' : 'Marcar como Resolvido'
+                    btnModal.onclick = async () => {
+                        await alternarResolvido(!m.resolvido)
                         fecharModal('modalSuporte')
-                        carregarSuporte()
                     }
                     document.getElementById('modalSuporte').classList.add('open')
                 }))
-                if (m.estado !== 'arquivado') {
-                    td.appendChild(btnAcao('Arquivar', 'normal', async () => {
-                        await supabase.from('mensagens_suporte').update({ estado:'arquivado' }).eq('id', m.id)
-                        carregarSuporte()
-                    }))
-                }
                 tbody.appendChild(tr)
+            })
+        }
+
+        let cancelarSubscricaoSuporte = null
+
+        function iniciarSubscricaoSuporte() {
+            if (cancelarSubscricaoSuporte) return
+            cancelarSubscricaoSuporte = subscreverSuporteAdmin(() => {
+                carregarSuporte()
+                carregarDashboard()
             })
         }
 
@@ -1157,7 +1177,7 @@
             if (sec === 'pedidos')    await carregarPedidos()
             if (sec === 'quotas')     await carregarQuotas()
             if (sec === 'pagamentos') await carregarPagamentos()
-            if (sec === 'suporte')    await carregarSuporte()
+            if (sec === 'suporte')    { await carregarSuporte(); iniciarSubscricaoSuporte() }
         }
 
         // Carregar dashboard inicial
