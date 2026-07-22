@@ -661,7 +661,7 @@ body.home-page .nav-link.active {
     border: 1px solid var(--border-color);
     border-radius: 4px;
     font-family: inherit;
-    font-size: 15px;
+    font-size: 16px;
     color: var(--secondary-color);
     background-color: #fff;
     transition: border-color 0.3s;
@@ -779,6 +779,48 @@ body.home-page .nav-link.active {
     
     .hero-search-wrapper {
         max-width: 100%;
+    }
+
+    /* Elementos ficavam com o mesmo tamanho/espaçamento do desktop em ecrãs
+       pequenos, dando sensação de estar tudo "colado"/ampliado demais. */
+    .hero-bg-slideshow {
+        padding-top: 100px;
+        padding-bottom: 60px;
+    }
+
+    .hero-content h1 {
+        font-size: 30px;
+    }
+
+    .hero-content p {
+        font-size: 15px;
+    }
+
+    .hero,
+    .features,
+    .story-section {
+        padding: 40px 0;
+    }
+
+    .cta-section {
+        padding: 50px 0;
+    }
+
+    .contact-section {
+        padding-top: 40px;
+        padding-bottom: 50px;
+    }
+
+    .dashboard-section {
+        padding: 30px 0;
+    }
+
+    .event-content {
+        padding-bottom: 30px;
+    }
+
+    .container {
+        padding: 0 16px;
     }
 }
 

@@ -17,6 +17,14 @@
         .admin-sidebar .sidebar-section { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: .08em; padding: 16px 20px 6px; }
         .admin-sidebar .badge-count { margin-left: auto; background: var(--accent-color); color: #fff; border-radius: 99px; font-size: 11px; padding: 1px 7px; font-weight: 700; }
         .admin-main { flex: 1; padding: 30px; min-width: 0; }
+        .admin-sidebar-toggle { display: none; align-items: center; gap: 10px; width: 100%; padding: 14px 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; font-size: 15px; font-weight: 700; color: var(--primary-color); cursor: pointer; }
+        @media (max-width: 900px) {
+            .admin-layout { flex-direction: column; }
+            .admin-sidebar-toggle { display: flex; }
+            .admin-sidebar { display: none; width: 100%; border-right: none; border-bottom: 1px solid #eee; }
+            .admin-sidebar.mobile-open { display: block; }
+            .admin-main { padding: 16px; }
+        }
         .admin-section { display: none; }
         .admin-section.active { display: block; }
         .stat-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 16px; margin-bottom: 30px; }
@@ -24,7 +32,7 @@
         .stat-card .num { font-size: 32px; font-weight: 700; color: var(--primary-color); }
         .stat-card .lbl { font-size: 13px; color: #888; margin-top: 4px; }
         .form-inline { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 20px; }
-        .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; }
+        .form-inline input, .form-inline select { padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
         .form-inline input { flex: 1; min-width: 180px; }
         .modal-overlay { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; background: rgba(0,0,0,0.4); z-index: 1000; align-items: center; justify-content: center; }
         .modal-overlay.open { display: flex; }
@@ -32,7 +40,7 @@
         .modal-box h3 { margin-bottom: 20px; }
         .modal-box .form-group { margin-bottom: 14px; }
         .modal-box label { display: block; font-size: 13px; font-weight: 700; margin-bottom: 5px; }
-        .modal-box input, .modal-box select, .modal-box textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
+        .modal-box input, .modal-box select, .modal-box textarea { width: 100%; padding: 8px 12px; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; box-sizing: border-box; }
         .modal-box textarea { resize: vertical; min-height: 80px; }
         .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
         .btn-danger { background: #fee2e2; color: #991b1b; border: none; padding: 7px 14px; border-radius: 6px; cursor: pointer; font-size: 13px; font-weight: 700; }
@@ -89,6 +97,10 @@
 
         <section style="padding: 0;">
             <div class="admin-layout">
+
+                <button type="button" class="admin-sidebar-toggle" id="adminSidebarToggle">
+                    <span id="adminSidebarToggleIcon">☰</span> Menu
+                </button>
 
                 <!-- SIDEBAR -->
                 <aside class="admin-sidebar">
@@ -442,8 +454,24 @@
         }
 
         document.querySelectorAll('.admin-sidebar a[data-sec]').forEach(a => {
-            a.addEventListener('click', e => { e.preventDefault(); navegarPara(a.dataset.sec) })
+            a.addEventListener('click', e => {
+                e.preventDefault()
+                navegarPara(a.dataset.sec)
+                // fecha o menu mobile assim que se escolhe uma secção, para libertar o espaço no ecrã
+                document.querySelector('.admin-sidebar')?.classList.remove('mobile-open')
+                const icon = document.getElementById('adminSidebarToggleIcon')
+                if (icon) icon.textContent = '☰'
+            })
         })
+
+        const sidebarToggleBtn = document.getElementById('adminSidebarToggle')
+        const sidebarEl = document.querySelector('.admin-sidebar')
+        if (sidebarToggleBtn && sidebarEl) {
+            sidebarToggleBtn.addEventListener('click', () => {
+                const aberto = sidebarEl.classList.toggle('mobile-open')
+                document.getElementById('adminSidebarToggleIcon').textContent = aberto ? '✕' : '☰'
+            })
+        }
 
         // ── Modais ───────────────────────────────────────────────────────
         window.fecharModal = id => document.getElementById(id).classList.remove('open')
