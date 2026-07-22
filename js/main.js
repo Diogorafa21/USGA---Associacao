@@ -458,12 +458,12 @@ async function carregarQuotasPerfil(api, utilizadorId) {
   const { data: quotas, error } = await api.getMinhasQuotas(utilizadorId)
 
   if (error) {
-    tbody.innerHTML = '<tr><td colspan="5">Nao foi possivel carregar as quotas.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="8">Nao foi possivel carregar as quotas.</td></tr>'
     return
   }
 
   if (!quotas || quotas.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5">Ainda nao existem quotas registadas.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="8">Ainda nao existem quotas registadas.</td></tr>'
     if (badgeEstado) {
       badgeEstado.textContent = 'Sem quotas'
       badgeEstado.className = 'badge badge-pendente'
@@ -481,19 +481,39 @@ async function carregarQuotasPerfil(api, utilizadorId) {
   tbody.innerHTML = quotas.map(quota => {
     const pago = quota.estado === 'pago' || quota.estado === 'isento'
     const estadoLabel = estadoQuotaLabel(quota.estado)
-    const fatura = quota.fatura_url
-      ? `<a href="${quota.fatura_url}" style="color: var(--accent-color);">Download</a>`
+    const faturaUrl = quota.fatura_url ? api.getFaturaUrl(quota.fatura_url) : null
+    const fatura = faturaUrl
+      ? `<a href="${faturaUrl}" target="_blank" rel="noopener" style="color: var(--accent-color);">Download</a>`
       : quota.associados_app_url
-        ? `<a href="${quota.associados_app_url}" style="color: var(--accent-color);">Abrir</a>`
+        ? `<a href="${quota.associados_app_url}" target="_blank" rel="noopener" style="color: var(--accent-color);">Abrir</a>`
         : '-'
+
+    const validade = api.calcularValidadeQuota(quota)
+    let validadeCelula = '-'
+    if (validade) {
+      if (validade.diasRestantes < 0) {
+        validadeCelula = '<span class="badge badge-nao-socio">Expirada</span>'
+      } else if (validade.diasRestantes <= 30) {
+        validadeCelula = `<span class="badge badge-pendente">Expira em ${validade.diasRestantes} dia(s)</span>`
+      } else {
+        validadeCelula = api.formatarData(validade.dataExpiracao.toISOString())
+      }
+    }
+
+    const acao = quota.estado === 'por_pagar' || quota.estado === 'pendente_validacao'
+      ? `<a href="pagamento-quota.html?quota=${encodeURIComponent(quota.id)}" class="btn btn-small btn-primary">Pagar</a>`
+      : '-'
 
     return `
       <tr>
         <td><strong>${quota.ano}</strong></td>
+        <td>${quota.data_limite ? api.formatarData(quota.data_limite) : '-'}</td>
         <td>${api.formatarMoeda(quota.valor)}</td>
+        <td>${validadeCelula}</td>
         <td>${quota.data_pagamento ? api.formatarData(quota.data_pagamento) : '-'}</td>
         <td><span class="badge ${pago ? 'badge-pago' : 'badge-pendente'}">${estadoLabel}</span></td>
         <td>${fatura}</td>
+        <td>${acao}</td>
       </tr>
     `
   }).join('')
@@ -885,7 +905,7 @@ function configurarLogout(api) {
 function estadoQuotaLabel(estado) {
   const labels = {
     por_pagar: 'Por Pagar',
-    pendente_validacao: 'Em Validacao',
+    pendente_validacao: 'Pendente',
     pago: 'Pago',
     isento: 'Isento',
     cancelado: 'Cancelado'

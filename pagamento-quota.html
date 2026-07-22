@@ -94,11 +94,12 @@
                 document.getElementById('nifSocio').textContent  = perfil.nif || '-'
             }
 
-            // Carregar quota pendente mais recente
+            // Se veio de um botão "Pagar" específico (perfil.html), usa essa quota;
+            // caso contrário, mostra a quota pendente mais antiga (comportamento anterior).
             const { data: quotas } = await getMinhasQuotas(sessao.user.id)
-            const quotaPendente = quotas?.find(q =>
-                q.estado === 'por_pagar' || q.estado === 'pendente_validacao'
-            )
+            const quotaIdPedida = new URLSearchParams(window.location.search).get('quota')
+            const quotaPendente = (quotaIdPedida && quotas?.find(q => q.id === quotaIdPedida))
+                || quotas?.find(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao')
 
             if (quotaPendente) {
                 document.getElementById('labelQuota').textContent =

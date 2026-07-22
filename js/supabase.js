@@ -135,7 +135,8 @@ export async function criarInscricaoEvento(dados) {
     p_pais:            dados.pais            ?? 'Portugal',
     p_equipa:          dados.equipa          ?? null,
     p_tamanho_tshirt:  dados.tamanho_tshirt  ?? null,
-    p_localidade:      dados.localidade      ?? null
+    p_localidade:      dados.localidade      ?? null,
+    p_pedido_fatura:   dados.pedido_fatura   ?? false
   })
   return { data, error }
 }
@@ -236,6 +237,14 @@ export async function submeterComprovativoPagamento(pagamentoToken, comprovativo
     p_referencia: referencia
   })
   return { data, error }
+}
+
+// O bucket "faturas" e publico -- basta construir o URL direto a partir do
+// caminho guardado em "fatura_url" (nao precisa de signed URL nem de sessao).
+export function getFaturaUrl(path) {
+  if (!path) return null
+  const { data } = supabase.storage.from('faturas').getPublicUrl(path)
+  return data?.publicUrl || null
 }
 
 // Usa o RPC transacional (corrigido)
@@ -430,6 +439,20 @@ export function formatarData(dataISO) {
     month: 'long',
     year: 'numeric'
   })
+}
+
+// Quotas de sócio são válidas por 1 ano a partir da data de pagamento.
+// Partilhada entre admin.html e a página de perfil para não haver duas
+// implementações a divergir uma da outra.
+export const DIAS_VALIDADE_QUOTA = 365
+
+export function calcularValidadeQuota(quota) {
+  if (quota.estado !== 'pago' || !quota.data_pagamento) return null
+  const dataExpiracao = new Date(quota.data_pagamento)
+  dataExpiracao.setDate(dataExpiracao.getDate() + DIAS_VALIDADE_QUOTA)
+  const hoje = new Date()
+  const diasRestantes = Math.ceil((dataExpiracao - hoje) / (24 * 60 * 60 * 1000))
+  return { dataExpiracao, diasRestantes }
 }
 
 export function formatarMoeda(valor) {

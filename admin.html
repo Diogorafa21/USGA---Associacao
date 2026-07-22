@@ -125,10 +125,20 @@
                             <div class="stat-card"><div class="num" id="ds-quotas">-</div><div class="lbl">Quotas por pagar</div></div>
                             <div class="stat-card"><div class="num" id="ds-suporte">-</div><div class="lbl">Mensagens novas</div></div>
                             <div class="stat-card"><div class="num" id="ds-eventos">-</div><div class="lbl">Eventos abertos</div></div>
+                            <div class="stat-card"><div class="num" id="ds-total-quotas">-</div><div class="lbl">Total Quotas Arrecadado</div></div>
                         </div>
                         <div class="content-box">
                             <div class="box-header"><h3>Atividade recente</h3></div>
                             <div id="ds-atividade" style="color:#999; font-size:14px;">A carregar...</div>
+                        </div>
+                        <div class="content-box" style="margin-top:20px;">
+                            <div class="box-header"><h3>Resumo Financeiro por Evento</h3></div>
+                            <div class="participants-table-wrapper">
+                                <table class="participants-table">
+                                    <thead><tr><th>Evento</th><th>Pagamentos Validados</th><th>Total Arrecadado</th></tr></thead>
+                                    <tbody id="tbl-resumo-eventos"><tr><td colspan="3" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                </table>
+                            </div>
                         </div>
                     </div>
 
@@ -232,6 +242,10 @@
                     <!-- QUOTAS -->
                     <div class="admin-section" id="sec-quotas">
                         <h2 style="margin-bottom:20px;">Quotas</h2>
+                        <div class="stat-cards" style="margin-bottom:20px;">
+                            <div class="stat-card"><div class="num" id="kpi-quotas-pagas">-</div><div class="lbl">Sócios em dia</div></div>
+                            <div class="stat-card"><div class="num" id="kpi-quotas-pendentes">-</div><div class="lbl">Por Pagar</div></div>
+                        </div>
                         <div class="form-inline">
                             <select id="filtroEstadoQuota" onchange="carregarQuotas()">
                                 <option value="">Todos os estados</option>
@@ -244,8 +258,8 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Sócio</th><th>Ano</th><th>Valor</th><th>Estado</th><th>Data Pag.</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-quotas"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <thead><tr><th>Sócio</th><th>Nº Sócio</th><th>Ano</th><th>Data Limite</th><th>Valor</th><th>Validade</th><th>Data Pag.</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-quotas"><tr><td colspan="9" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -378,7 +392,7 @@
             subscreverUtilizadoresAdmin,
             subscreverSuporteAdmin,
             getAdminQuotas, atualizarQuota,
-            formatarData, formatarMoeda
+            formatarData, formatarMoeda, calcularValidadeQuota
         } from './js/supabase.js'
 
         const auth = await requireAdmin()
@@ -418,6 +432,66 @@
             return b
         }
 
+        // Botão(ões) para anexar/ver a fatura de um pagamento ou de uma quota.
+        // "tabela" indica em que tabela gravar o fatura_url ('pagamentos' ou 'quotas'),
+        // e "recarregar" é a função a chamar depois de guardar (carregarPagamentos / carregarQuotas).
+        function botaoFatura(record, tabela, recarregar) {
+            const wrap = document.createElement('span')
+            wrap.style.cssText = 'display:inline-flex;gap:4px;'
+
+            if (record.fatura_url) {
+                const { data: pub } = supabase.storage.from('faturas').getPublicUrl(record.fatura_url)
+                if (pub?.publicUrl) {
+                    const link = document.createElement('a')
+                    link.href = pub.publicUrl
+                    link.target = '_blank'
+                    link.rel = 'noopener'
+                    link.className = 'btn btn-small'
+                    link.style.cssText = 'background:#f0f0f0;color:#444;margin-right:4px;'
+                    link.textContent = 'Ver Fatura'
+                    wrap.appendChild(link)
+                }
+            }
+
+            const btn = document.createElement('button')
+            btn.type = 'button'
+            btn.className = 'btn btn-small'
+            btn.style.cssText = 'background:#f0f0f0;color:#444;margin-right:4px;'
+            btn.textContent = record.fatura_url ? 'Substituir Fatura' : 'Enviar Fatura'
+            btn.addEventListener('click', () => {
+                const input = document.createElement('input')
+                input.type = 'file'
+                input.accept = 'application/pdf,image/*'
+                input.addEventListener('change', async () => {
+                    const file = input.files[0]
+                    if (!file) return
+                    const textoOriginal = btn.textContent
+                    btn.disabled = true
+                    btn.textContent = 'A enviar...'
+                    const nomeFicheiro = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`
+                    const caminho = `${record.id}/${nomeFicheiro}`
+                    const { error: uploadErr } = await supabase.storage.from('faturas').upload(caminho, file, { cacheControl: '3600', upsert: false })
+                    if (uploadErr) {
+                        alert('Erro ao enviar a fatura: ' + uploadErr.message)
+                        btn.disabled = false
+                        btn.textContent = textoOriginal
+                        return
+                    }
+                    const { error: updErr } = await supabase.from(tabela).update({ fatura_url: caminho }).eq('id', record.id)
+                    if (updErr) {
+                        alert('Erro ao guardar a fatura: ' + updErr.message)
+                        btn.disabled = false
+                        btn.textContent = textoOriginal
+                        return
+                    }
+                    recarregar()
+                })
+                input.click()
+            })
+            wrap.appendChild(btn)
+            return wrap
+        }
+
         const pagBadge = {
             pendente:     '<span class="badge badge-pendente">Pendente</span>',
             em_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validação</span>',
@@ -426,7 +500,7 @@
         }
         const quotaBadge = {
             por_pagar:         '<span class="badge badge-pendente">Por Pagar</span>',
-            pendente_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Em Validação</span>',
+            pendente_validacao: '<span class="badge" style="background:#dbeafe;color:#1d4ed8;">Pendente</span>',
             pago:              '<span class="badge badge-pago">Pago</span>',
             isento:            '<span class="badge badge-pago">Isento</span>',
             cancelado:         '<span class="badge badge-nao-socio">Cancelado</span>'
@@ -467,6 +541,8 @@
             document.getElementById('sb-quotas').textContent   = quotas ?? 0
             document.getElementById('sb-suporte').textContent  = suporteMsg ?? 0
 
+            await carregarResumoFinanceiro()
+
             const { data: recente } = await supabase
                 .from('inscricoes_evento')
                 .select('nome, data_inscricao, eventos(titulo)')
@@ -480,6 +556,56 @@
                     <strong>${r.nome}</strong> inscrito em <em>${r.eventos?.titulo || '-'}</em>
                     <span style="float:right;color:#999;font-size:12px;">${formatarData(r.data_inscricao)}</span>
                 </div>`).join('')
+        }
+
+        // ── RESUMO FINANCEIRO ────────────────────────────────────────────
+        async function carregarResumoFinanceiro() {
+            // Total de quotas: soma simples do lado do cliente (nº de sócios é pequeno,
+            // não compensa criar uma view/RPC só para esta soma).
+            const { data: quotasPagas } = await supabase
+                .from('quotas')
+                .select('valor')
+                .eq('estado', 'pago')
+            const totalQuotas = (quotasPagas || []).reduce((soma, q) => soma + Number(q.valor || 0), 0)
+            document.getElementById('ds-total-quotas').textContent = formatarMoeda(totalQuotas)
+
+            // Total por evento: pagamentos de evento validados, agrupados por evento do lado do cliente.
+            const { data: pagamentosEvento, error } = await supabase
+                .from('pagamentos')
+                .select('valor, inscricoes_evento(evento_id, eventos(titulo, data_evento))')
+                .eq('tipo', 'evento')
+                .eq('estado', 'validado')
+
+            const tbody = document.getElementById('tbl-resumo-eventos')
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#c00;">Erro ao carregar resumo financeiro.</td></tr>'
+                return
+            }
+
+            const porEvento = new Map()
+            for (const p of (pagamentosEvento || [])) {
+                const ev = p.inscricoes_evento?.eventos
+                const eventoId = p.inscricoes_evento?.evento_id
+                if (!eventoId) continue
+                if (!porEvento.has(eventoId)) {
+                    porEvento.set(eventoId, { titulo: ev?.titulo || 'Evento', data_evento: ev?.data_evento, total: 0, contagem: 0 })
+                }
+                const entrada = porEvento.get(eventoId)
+                entrada.total += Number(p.valor || 0)
+                entrada.contagem += 1
+            }
+
+            const linhas = Array.from(porEvento.values()).sort((a, b) => (b.data_evento || '').localeCompare(a.data_evento || ''))
+            if (!linhas.length) {
+                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">Sem pagamentos validados ainda.</td></tr>'
+                return
+            }
+            tbody.innerHTML = linhas.map(l => `
+                <tr>
+                    <td>${l.titulo}</td>
+                    <td>${l.contagem}</td>
+                    <td>${formatarMoeda(l.total)}</td>
+                </tr>`).join('')
         }
 
         // ── EVENTOS ──────────────────────────────────────────────────────
@@ -1012,21 +1138,60 @@
         // ── QUOTAS ───────────────────────────────────────────────────────
         let todasQuotas = []
 
+        // Quotas de sócio são válidas por 1 ano (ver calcularValidadeQuota em js/supabase.js).
+        const DIAS_AVISO_EXPIRACAO = 30
+
         window.carregarQuotas = async function() {
             const filtro = document.getElementById('filtroEstadoQuota').value
             const { data } = await getAdminQuotas()
             todasQuotas = data || []
             const filtrado = filtro ? data?.filter(q => q.estado === filtro) : data
             document.getElementById('sb-quotas').textContent = data?.filter(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao').length || 0
+
+            // KPI: quantos sócios estão em dia (pago/isento) vs quantos ainda têm de pagar
+            document.getElementById('kpi-quotas-pagas').textContent = data?.filter(q => q.estado === 'pago' || q.estado === 'isento').length || 0
+            document.getElementById('kpi-quotas-pendentes').textContent = data?.filter(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao').length || 0
+
             const tbody = document.getElementById('tbl-quotas')
-            if (!filtrado?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem quotas.</td></tr>'; return }
+            if (!filtrado?.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Sem quotas.</td></tr>'; return }
             tbody.innerHTML = ''
             filtrado.forEach(q => {
                 const socio = q.utilizadores
                 const nome = socio ? `${socio.nome || ''} ${socio.apelido || ''}`.trim() : '-'
+                const validade = calcularValidadeQuota(q)
+                let validadeCelula = '-'
+                if (validade) {
+                    if (validade.diasRestantes < 0) {
+                        validadeCelula = '<span class="badge badge-nao-socio">Expirada</span>'
+                    } else if (validade.diasRestantes <= DIAS_AVISO_EXPIRACAO) {
+                        validadeCelula = `<span class="badge badge-pendente">Expira em ${validade.diasRestantes} dia(s)</span>`
+                    } else {
+                        validadeCelula = `<span style="color:#999;font-size:12px;">até ${formatarData(validade.dataExpiracao.toISOString())}</span>`
+                    }
+                }
                 const tr = document.createElement('tr')
-                tr.innerHTML = `<td>${nome}<br><small style="color:#999;">${socio?.email || ''}</small></td><td>${q.ano}</td><td>${formatarMoeda(q.valor)}</td><td>${quotaBadge[q.estado] || q.estado}</td><td style="font-size:12px;">${q.data_pagamento ? formatarData(q.data_pagamento) : '-'}</td><td></td>`
+                tr.innerHTML = `
+                    <td>${nome}<br><small style="color:#999;">${socio?.email || ''}</small></td>
+                    <td>${socio?.numero_socio || '-'}</td>
+                    <td>${q.ano}</td>
+                    <td style="font-size:12px;">${q.data_limite ? formatarData(q.data_limite) : '-'}</td>
+                    <td>${formatarMoeda(q.valor)}</td>
+                    <td style="font-size:12px;">${validadeCelula}</td>
+                    <td style="font-size:12px;">${q.data_pagamento ? formatarData(q.data_pagamento) : '-'}</td>
+                    <td>${quotaBadge[q.estado] || q.estado}</td>
+                    <td></td>`
                 const td = tr.querySelector('td:last-child')
+                td.appendChild(botaoFatura(q, 'quotas', carregarQuotas))
+                if (validade && validade.diasRestantes >= 0 && validade.diasRestantes <= DIAS_AVISO_EXPIRACAO) {
+                    td.appendChild(btnAcao(q.lembrete_expiracao_enviado_em ? 'Reenviar Lembrete' : 'Enviar Lembrete', 'normal', () => {
+                        const email = socio?.email
+                        if (!email) { alert('Este sócio não tem email associado.'); return }
+                        const assunto = 'A sua quota USGA está prestes a expirar'
+                        const corpo = `Olá ${socio?.nome || ''},\n\nA sua quota de sócio na Unidos por São Gens Ativo (USGA) está ativa, mas vai expirar em ${formatarData(validade.dataExpiracao.toISOString())}. Para continuar a beneficiar das vantagens de sócio sem interrupção, por favor renove o pagamento da sua quota.\n\nObrigado,\nUSGA`
+                        window.location.href = `mailto:${encodeURIComponent(email)}?subject=${encodeURIComponent(assunto)}&body=${encodeURIComponent(corpo)}`
+                        supabase.from('quotas').update({ lembrete_expiracao_enviado_em: new Date().toISOString() }).eq('id', q.id).then(() => carregarQuotas())
+                    }))
+                }
                 if (q.estado !== 'pago' && q.estado !== 'isento') {
                     td.appendChild(btnAprovar('Validar', async () => { await atualizarQuota(q.id, { estado:'pago', data_pagamento: new Date().toISOString().split('T')[0] }); carregarQuotas() }))
                     td.appendChild(btnAcao('Isentar', 'normal', async () => { await atualizarQuota(q.id, { estado:'isento' }); carregarQuotas() }))
@@ -1039,10 +1204,10 @@
         window.exportarQuotas = function() {
             const data = todasQuotas
             if (!data.length) return alert('Sem dados para exportar.')
-            const header = 'Nome,Email,Ano,Valor,Estado,Data Pagamento'
+            const header = 'Nome,Email,Nº Sócio,Ano,Data Limite,Valor,Estado,Data Pagamento'
             const rows = data.map(q => {
                 const s = q.utilizadores
-                return `"${s?.nome || ''} ${s?.apelido || ''}","${s?.email || ''}","${q.ano}","${q.valor}","${q.estado}","${q.data_pagamento || ''}"`
+                return `"${s?.nome || ''} ${s?.apelido || ''}","${s?.email || ''}","${s?.numero_socio || ''}","${q.ano}","${q.data_limite || ''}","${q.valor}","${q.estado}","${q.data_pagamento || ''}"`
             })
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
@@ -1070,7 +1235,7 @@
                 const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : '-'
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
-                    <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span></td>
+                    <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span>${p.pedido_fatura ? ' <span class="badge" style="background:#ede9fe;color:#5b21b6;" title="Fatura pedida">🧾 Fatura</span>' : ''}</td>
                     <td>${nome}<br><small style="color:#999;">${u?.email || ''}</small></td>
                     <td>${formatarMoeda(p.valor)}</td>
                     <td>${p.metodo || '-'}</td>
@@ -1078,6 +1243,7 @@
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
+                td.appendChild(botaoFatura(p, 'pagamentos', carregarPagamentos))
                 if (p.comprovativo_url) {
                     td.appendChild(btnAcao('Ver Comprovativo', 'normal', async () => {
                         const { data: signed, error: signErr } = await supabase.storage
