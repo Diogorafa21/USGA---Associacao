@@ -162,9 +162,10 @@ export async function getInscricaoEvento(utilizadorId, eventoId) {
 export async function getInscritosConfirmados(eventoId) {
   const { data, error } = await supabase
     .from('inscritos_publicos')
-    .select('nome, pais, equipa, dorsal, data_confirmacao')
+    .select('nome, pais, equipa, dorsal, data_confirmacao, data_inscricao, estado_publico')
     .eq('evento_id', eventoId)
-    .order('data_confirmacao', { ascending: true })
+    .order('data_confirmacao', { ascending: true, nullsFirst: false })
+    .order('data_inscricao', { ascending: true })
   return { data, error }
 }
 
