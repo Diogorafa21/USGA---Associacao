@@ -2,7 +2,7 @@
 <html lang="pt-pt">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=0.75">
     <title>Back-office - USGA</title>
     <link rel="stylesheet" href="css/style.css">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1140,7 +1140,13 @@
         }
 
         async function carregarUtilizadores() {
-            const { data } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
+            const { data, error } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
+            if (error) {
+                console.error('Erro ao carregar utilizadores:', error)
+                const tbody = document.getElementById('tbl-utilizadores')
+                if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c00;">Erro ao carregar utilizadores: ' + error.message + '</td></tr>'
+                return
+            }
             todosUtilizadores = data || []
             renderUtilizadores(todosUtilizadores)
         }
