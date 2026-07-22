@@ -1039,6 +1039,27 @@ async function configurarDetalheEvento(api) {
     }
   }
 
+  // Informação adicional: lista de links (percurso, fotos, resultados, documentos...),
+  // distinta da descrição do evento. Visível para todos (anónimos e autenticados),
+  // já que a tabela "eventos" já é de leitura pública.
+  const infoBox = document.getElementById('infoAdicionalBox')
+  const infoLista = document.getElementById('listaInfoAdicional')
+  if (infoBox && infoLista) {
+    const links = Array.isArray(evento.links_adicionais) ? evento.links_adicionais.filter(l => l?.url) : []
+    if (links.length > 0) {
+      infoLista.innerHTML = links.map(l => `
+        <li style="margin-bottom:10px;">
+          <a href="${l.url}" target="_blank" rel="noopener" style="color: var(--accent-color); font-weight:600; display:flex; align-items:center; gap:8px;">
+            🔗 ${l.titulo || l.url}
+          </a>
+        </li>
+      `).join('')
+      infoBox.style.display = 'block'
+    } else {
+      infoBox.style.display = 'none'
+    }
+  }
+
   // If future event page: add inscription button if estado is 'aberto'
   if (isPagina('evento-futuro.html') && areaInscricao) {
     if (evento.estado === 'aberto') {

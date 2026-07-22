@@ -323,7 +323,18 @@
                 <input type="hidden" id="ev-imagem">
                 <div id="ev-imagem-preview" style="margin-top:8px; display:none;"><img id="ev-imagem-preview-img" src="data:image/svg+xml,%3Csvg%20xmlns%3D%27http%3A//www.w3.org/2000/svg%27%20width%3D%271%27%20height%3D%271%27%3E%3C/svg%3E" alt="Preview" style="max-width:100%; max-height:240px; object-fit: contain; border-radius:6px; border:1px solid #eee;"></div>
             </div>
-            <div class="form-group"><label>URL do regulamento</label><input type="url" id="ev-regulamento"></div>
+            <div class="form-group"><label>Regulamento (PDF)</label>
+                <input type="file" id="ev-regulamento-file" accept="application/pdf">
+                <input type="hidden" id="ev-regulamento">
+                <div id="ev-regulamento-atual" style="margin-top:8px; display:none; font-size:13px;">
+                    <a id="ev-regulamento-link" href="#" target="_blank" rel="noopener" style="color: var(--accent-color);">📄 Ver regulamento atual</a>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Informação Adicional <small style="font-weight:400;color:#888;">(percurso, fotos, resultados, documentos... distinto da descrição)</small></label>
+                <div id="ev-links-lista" style="display:flex; flex-direction:column; gap:8px; margin-bottom:8px;"></div>
+                <button type="button" class="btn btn-small" style="background:#f0f0f0;color:#444;" onclick="adicionarLinhaLinkEvento()">+ Adicionar Link</button>
+            </div>
             <div class="modal-actions">
                 <button class="btn-secondary" onclick="fecharModal('modalEvento')">Cancelar</button>
                 <button class="btn btn-primary" onclick="guardarEvento()">Guardar</button>
@@ -664,6 +675,35 @@
             await carregarInscricoes()
         }
 
+        window.adicionarLinhaLinkEvento = function(titulo, url) {
+            const lista = document.getElementById('ev-links-lista')
+            const row = document.createElement('div')
+            row.className = 'link-adicional-row'
+            row.style.cssText = 'display:flex;gap:8px;'
+            const inputTitulo = document.createElement('input')
+            inputTitulo.type = 'text'
+            inputTitulo.className = 'link-titulo'
+            inputTitulo.placeholder = 'Título (ex: Mapa do Percurso)'
+            inputTitulo.value = titulo || ''
+            inputTitulo.style.cssText = 'flex:1;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;'
+            const inputUrl = document.createElement('input')
+            inputUrl.type = 'url'
+            inputUrl.className = 'link-url'
+            inputUrl.placeholder = 'https://...'
+            inputUrl.value = url || ''
+            inputUrl.style.cssText = 'flex:2;padding:8px;border:1px solid #ddd;border-radius:6px;font-size:13px;'
+            const btnRemover = document.createElement('button')
+            btnRemover.type = 'button'
+            btnRemover.className = 'btn-secondary'
+            btnRemover.style.cssText = 'padding:6px 10px;'
+            btnRemover.textContent = '✕'
+            btnRemover.addEventListener('click', () => row.remove())
+            row.appendChild(inputTitulo)
+            row.appendChild(inputUrl)
+            row.appendChild(btnRemover)
+            lista.appendChild(row)
+        }
+
         window.abrirModalEvento = function(ev) {
             document.getElementById('modalEventoTitulo').textContent = ev ? 'Editar Evento' : 'Novo Evento'
             document.getElementById('eventoId').value      = ev?.id || ''
@@ -693,6 +733,20 @@
                 if (preview) preview.style.display = 'none'
             }
             document.getElementById('ev-regulamento').value = ev?.regulamento_url || ''
+            const regulamentoFileInput = document.getElementById('ev-regulamento-file')
+            const regulamentoAtual = document.getElementById('ev-regulamento-atual')
+            const regulamentoLink = document.getElementById('ev-regulamento-link')
+            if (regulamentoFileInput) regulamentoFileInput.value = ''
+            if (ev?.regulamento_url) {
+                if (regulamentoLink) regulamentoLink.href = ev.regulamento_url
+                if (regulamentoAtual) regulamentoAtual.style.display = 'block'
+            } else {
+                if (regulamentoAtual) regulamentoAtual.style.display = 'none'
+            }
+            const listaLinks = document.getElementById('ev-links-lista')
+            listaLinks.innerHTML = ''
+            const linksExistentes = Array.isArray(ev?.links_adicionais) ? ev.links_adicionais : []
+            linksExistentes.forEach(l => adicionarLinhaLinkEvento(l.titulo, l.url))
             document.getElementById('modalEvento').classList.add('open')
         }
 
@@ -712,7 +766,12 @@
                 vagas:            parseInt(document.getElementById('ev-vagas').value) || null,
                 preco:            parseFloat(document.getElementById('ev-preco').value) || 0,
                 estado:           document.getElementById('ev-estado').value,
-                regulamento_url:  document.getElementById('ev-regulamento').value.trim() || null
+                links_adicionais: Array.from(document.querySelectorAll('#ev-links-lista .link-adicional-row'))
+                    .map(row => ({
+                        titulo: row.querySelector('.link-titulo').value.trim(),
+                        url:    row.querySelector('.link-url').value.trim()
+                    }))
+                    .filter(l => l.url)
             }
 
             // handle image upload if a file was selected
@@ -748,6 +807,43 @@
             } else {
                 // no new file — preserve existing URL if present
                 if (existingUrl) payload.imagem_url = existingUrl
+            }
+
+            // handle regulamento PDF upload if a file was selected
+            const regulamentoFileInput = document.getElementById('ev-regulamento-file')
+            const existingRegulamentoUrl = document.getElementById('ev-regulamento').value.trim() || null
+            if (regulamentoFileInput && regulamentoFileInput.files && regulamentoFileInput.files.length > 0) {
+                const file = regulamentoFileInput.files[0]
+                if (file.type !== 'application/pdf') {
+                    alert('O regulamento tem de ser um ficheiro PDF.')
+                    return
+                }
+                const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
+                const path = `regulamentos/${fileName}`
+
+                try {
+                    const { error: uploadErr } = await supabase.storage.from('eventos').upload(path, file, { cacheControl: '3600', upsert: true, contentType: 'application/pdf' })
+                    if (uploadErr) {
+                        console.error('Upload error', uploadErr)
+                        if (/bucket not found/i.test(uploadErr.message || '')) {
+                            alert('Bucket "eventos" not found in Supabase Storage. Please create it in the Supabase dashboard: Storage → New bucket → name "eventos" and set it to Public. After creating the bucket, try the upload again.')
+                        } else {
+                            alert('Erro ao enviar o regulamento: ' + (uploadErr.message || JSON.stringify(uploadErr)))
+                        }
+                        return
+                    }
+
+                    const { data: publicUrlData, error: publicErr } = await supabase.storage.from('eventos').getPublicUrl(path)
+                    if (publicErr) console.error('getPublicUrl error', publicErr)
+                    payload.regulamento_url = publicUrlData?.publicUrl || null
+                } catch (err) {
+                    console.error('Erro ao enviar regulamento:', err)
+                    alert('Erro ao enviar o regulamento. Verifique a consola e tente novamente. Detalhe: ' + (err.message || JSON.stringify(err)))
+                    return
+                }
+            } else {
+                // no new file — preserve existing URL if present
+                if (existingRegulamentoUrl) payload.regulamento_url = existingRegulamentoUrl
             }
 
             if (id) {
