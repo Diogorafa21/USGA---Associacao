@@ -50,6 +50,27 @@ export async function getPerfil(userId) {
   return { data, error }
 }
 
+// Configurações genéricas (ex.: URL do PDF dos estatutos). A leitura já é
+// filtrada pela RLS a "sócio ativo ou admin" -- se a pessoa não tiver
+// permissão, isto devolve simplesmente 0 linhas (não é um erro).
+export async function getConfiguracao(chave) {
+  const { data, error } = await supabase
+    .from('configuracoes')
+    .select('valor')
+    .eq('chave', chave)
+    .maybeSingle()
+  return { data: data?.valor ?? null, error }
+}
+
+export async function definirConfiguracao(chave, valor) {
+  const { data, error } = await supabase
+    .from('configuracoes')
+    .upsert({ chave, valor }, { onConflict: 'chave' })
+    .select()
+    .single()
+  return { data, error }
+}
+
 // Agora inclui p_nif (corrigido)
 export async function atualizarPerfil(userId, dados) {
   const { data, error } = await supabase.rpc('atualizar_meu_perfil', {

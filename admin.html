@@ -110,6 +110,9 @@
 
                     <div class="sidebar-section">Comunicação</div>
                     <a href="#" data-sec="suporte">✉️ Suporte <span class="badge-count" id="sb-suporte">0</span></a>
+
+                    <div class="sidebar-section">Definições</div>
+                    <a href="#" data-sec="estatutos">📜 Estatutos</a>
                 </aside>
 
                 <!-- CONTEÚDO PRINCIPAL -->
@@ -286,6 +289,25 @@
                         </div>
                     </div>
 
+                    <!-- ESTATUTOS -->
+                    <div class="admin-section" id="sec-estatutos">
+                        <h2 style="margin-bottom:20px;">Estatutos</h2>
+                        <div class="content-box" style="max-width:500px;">
+                            <p style="font-size:14px;color:#666;margin-bottom:16px;">
+                                Este documento só fica visível para sócios com sessão iniciada e estado ativo — quem não estiver registado ou não tiver a quota em dia é encaminhado para o registo de sócio.
+                            </p>
+                            <div id="estatutos-atual" style="margin-bottom:16px; display:none; font-size:14px;">
+                                <a id="estatutos-link" href="#" target="_blank" rel="noopener" style="color: var(--accent-color); font-weight:600;">📄 Ver estatutos atuais</a>
+                            </div>
+                            <div class="form-group">
+                                <label>Substituir por novo PDF</label>
+                                <input type="file" id="estatutos-file" accept="application/pdf">
+                            </div>
+                            <button class="btn btn-primary btn-small" onclick="carregarNovoEstatuto()">Carregar Estatutos</button>
+                            <p id="estatutos-msg" style="margin-top:10px;font-size:13px;"></p>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -403,7 +425,8 @@
             subscreverUtilizadoresAdmin,
             subscreverSuporteAdmin,
             getAdminQuotas, atualizarQuota,
-            formatarData, formatarMoeda, calcularValidadeQuota
+            formatarData, formatarMoeda, calcularValidadeQuota,
+            getConfiguracao, definirConfiguracao
         } from './js/supabase.js'
 
         const auth = await requireAdmin()
@@ -1426,6 +1449,54 @@
             })
         }
 
+        // ── ESTATUTOS ────────────────────────────────────────────────────
+        const CHAVE_ESTATUTOS_PDF = 'estatutos_pdf_url'
+
+        async function carregarEstatutos() {
+            const { data: url } = await getConfiguracao(CHAVE_ESTATUTOS_PDF)
+            const atual = document.getElementById('estatutos-atual')
+            const link = document.getElementById('estatutos-link')
+            if (url) {
+                link.href = url
+                atual.style.display = 'block'
+            } else {
+                atual.style.display = 'none'
+            }
+        }
+
+        window.carregarNovoEstatuto = async function() {
+            const fileInput = document.getElementById('estatutos-file')
+            const msg = document.getElementById('estatutos-msg')
+            const file = fileInput?.files?.[0]
+            if (!file) { msg.textContent = 'Escolha um ficheiro PDF primeiro.'; msg.style.color = '#d32f2f'; return }
+            if (file.type !== 'application/pdf') { msg.textContent = 'O ficheiro tem de ser um PDF.'; msg.style.color = '#d32f2f'; return }
+
+            msg.textContent = 'A carregar...'
+            msg.style.color = '#666'
+
+            const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g,'_')}`
+            const path = `estatutos/${fileName}`
+            const { error: uploadErr } = await supabase.storage.from('eventos').upload(path, file, { cacheControl: '3600', upsert: true, contentType: 'application/pdf' })
+            if (uploadErr) {
+                msg.textContent = 'Erro ao enviar o ficheiro: ' + uploadErr.message
+                msg.style.color = '#d32f2f'
+                return
+            }
+
+            const { data: publicUrlData } = supabase.storage.from('eventos').getPublicUrl(path)
+            const { error: gravarErr } = await definirConfiguracao(CHAVE_ESTATUTOS_PDF, publicUrlData?.publicUrl || null)
+            if (gravarErr) {
+                msg.textContent = 'Ficheiro enviado, mas houve um erro ao guardar a referência: ' + gravarErr.message
+                msg.style.color = '#d32f2f'
+                return
+            }
+
+            fileInput.value = ''
+            msg.textContent = 'Estatutos atualizados com sucesso.'
+            msg.style.color = '#2e7d32'
+            carregarEstatutos()
+        }
+
         // ── Carregar secção ──────────────────────────────────────────────
         const secCarregadas = new Set()
         window.carregarSecao = async function(sec) {
@@ -1440,6 +1511,7 @@
             if (sec === 'quotas')     await carregarQuotas()
             if (sec === 'pagamentos') await carregarPagamentos()
             if (sec === 'suporte')    { await carregarSuporte(); iniciarSubscricaoSuporte() }
+            if (sec === 'estatutos') await carregarEstatutos()
         }
 
         // Carregar dashboard inicial

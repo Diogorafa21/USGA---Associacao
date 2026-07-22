@@ -149,5 +149,16 @@
     </footer>
 
     <script src="js/main.js"></script>
+    <script>
+        if (new URLSearchParams(window.location.search).get('motivo') === 'estatutos') {
+            const msg = document.getElementById('mensagem')
+            if (msg) {
+                msg.style.display = 'block'
+                msg.style.background = '#dbeafe'
+                msg.style.color = '#1d4ed8'
+                msg.textContent = 'Para aceder aos estatutos, torne-se sócio da associação preenchendo o formulário abaixo.'
+            }
+        }
+    </script>
 </body>
 </html>

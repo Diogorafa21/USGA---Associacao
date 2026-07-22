@@ -216,7 +216,13 @@ function configurarLogin(api) {
       return
     }
 
-    window.location.href = 'perfil.html'
+    // Se veio de uma página que exige sessão (ex.: estatutos.html), volta para lá;
+    // caso contrário, segue para o perfil como antes. Só aceita caminhos relativos
+    // internos, para evitar redireccionar para um site externo.
+    const params = new URLSearchParams(window.location.search)
+    const redirect = params.get('redirect')
+    const destino = (redirect && !redirect.startsWith('http') && !redirect.startsWith('//')) ? redirect : 'perfil.html'
+    window.location.href = destino
   })
 }
 
