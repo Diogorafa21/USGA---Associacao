@@ -599,22 +599,31 @@ async function configurarEventoPublico(api) {
   }
 
   if (!inscritos || inscritos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4">Ainda nao existem inscricoes confirmadas.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="4">Ainda nao existem inscricoes para este evento.</td></tr>'
   } else {
-    tbody.innerHTML = inscritos.map((inscrito, index) => `
+    tbody.innerHTML = inscritos.map((inscrito, index) => {
+      const confirmado = inscrito.estado_publico === 'confirmada'
+      const badge = confirmado
+        ? '<span class="badge badge-pago">Confirmado</span>'
+        : '<span class="badge badge-pendente">Pendente</span>'
+      const dorsal = confirmado ? (inscrito.dorsal || String(index + 1).padStart(3, '0')) : '-'
+      return `
       <tr>
         <td style="font-weight:bold; color: #666;">${abreviarPais(inscrito.pais)}</td>
         <td>${inscrito.nome}</td>
-        <td><strong>${inscrito.dorsal || String(index + 1).padStart(3, '0')}</strong></td>
-        <td><span class="badge badge-pago">Confirmado</span></td>
+        <td><strong>${dorsal}</strong></td>
+        <td>${badge}</td>
       </tr>
-    `).join('')
+    `
+    }).join('')
   }
 
   if (stats.length >= 3) {
-    stats[0].textContent = inscritos?.length || 0
-    stats[1].textContent = inscritos?.length || 0
-    stats[2].textContent = '-'
+    const confirmados = inscritos?.filter(i => i.estado_publico === 'confirmada').length || 0
+    const total = inscritos?.length || 0
+    stats[0].textContent = total
+    stats[1].textContent = confirmados
+    stats[2].textContent = total - confirmados
   }
 }
 
