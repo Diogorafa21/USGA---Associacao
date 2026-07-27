@@ -11,10 +11,16 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_KEY)
 // Autenticacao ---------------------------------------------------------------
 
 export async function registar(nome, apelido, email, password) {
+  // Aponta o link de confirmação do Supabase para a nossa própria página de
+  // sucesso, em vez de deixar cair na página em branco por omissão.
+  // Calculado dinamicamente a partir do URL atual, para funcionar tanto em
+  // localhost como no GitHub Pages (com o repositório como subcaminho).
+  const redirectTo = new URL('confirmacao-email.html', window.location.href).href
+
   const { data, error } = await supabase.auth.signUp({
     email,
     password,
-    options: { data: { nome, apelido } }
+    options: { data: { nome, apelido }, emailRedirectTo: redirectTo }
   })
   return { data, error }
 }

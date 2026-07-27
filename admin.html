@@ -365,6 +365,15 @@
                             <p id="tpl-confirmada-msg" style="margin-top:10px;font-size:13px;"></p>
                         </div>
 
+                        <div class="content-box" style="max-width:600px;margin-bottom:20px;">
+                            <div class="box-header"><h3>Modelo: Aniversário de Sócio</h3></div>
+                            <div class="form-group"><label>Assunto</label><input type="text" id="tpl-aniversario-assunto"></div>
+                            <div class="form-group"><label>Corpo</label><textarea id="tpl-aniversario-corpo" rows="10"></textarea></div>
+                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{clube}}</p>
+                            <button class="btn btn-primary btn-small" onclick="guardarTemplate('aniversario')">Guardar Modelo</button>
+                            <p id="tpl-aniversario-msg" style="margin-top:10px;font-size:13px;"></p>
+                        </div>
+
                         <div class="content-box" style="max-width:800px;">
                             <div class="box-header"><h3>Registo de Envios</h3></div>
                             <div class="participants-table-wrapper">
@@ -1132,6 +1141,22 @@
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
                 td.appendChild(btnAprovar('Editar', () => abrirModalSocio(s)))
+                td.appendChild(btnAcao('🎉 Aniversário', 'normal', async (ev) => {
+                    const nomeCompleto = `${s.nome || ''} ${s.apelido || ''}`.trim() || 'este sócio'
+                    if (!confirm(`Tem a certeza que quer enviar uma mensagem de aniversário para ${nomeCompleto}?`)) return
+                    const btn = ev.currentTarget
+                    const textoOriginal = btn.textContent
+                    btn.disabled = true
+                    btn.textContent = 'A enviar...'
+                    const { data, error } = await supabase.functions.invoke('enviar-email-aniversario', { body: { utilizador_id: s.id } })
+                    btn.disabled = false
+                    btn.textContent = textoOriginal
+                    if (error || !data?.ok) {
+                        alert('Erro ao enviar o email de aniversário: ' + (data?.error || error?.message || 'erro desconhecido'))
+                        return
+                    }
+                    alert(`Email de aniversário enviado com sucesso para ${nomeCompleto}.`)
+                }))
                 if (s.estado !== 'bloqueado') {
                     td.appendChild(btnAcao('Bloquear', 'danger', async () => {
                         await supabase.from('utilizadores').update({ estado:'bloqueado' }).eq('id', s.id)
@@ -1677,7 +1702,8 @@
             const chaves = [
                 'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_from_email', 'smtp_from_name',
                 'template_pendente_assunto', 'template_pendente_corpo',
-                'template_confirmada_assunto', 'template_confirmada_corpo'
+                'template_confirmada_assunto', 'template_confirmada_corpo',
+                'template_aniversario_assunto', 'template_aniversario_corpo'
             ]
             const { data, error } = await supabase.from('configuracoes').select('chave, valor').in('chave', chaves)
             if (error) { console.error('Erro ao carregar configuração de email:', error); return }
@@ -1695,6 +1721,8 @@
             document.getElementById('tpl-pendente-corpo').value = cfg.template_pendente_corpo || ''
             document.getElementById('tpl-confirmada-assunto').value = cfg.template_confirmada_assunto || ''
             document.getElementById('tpl-confirmada-corpo').value = cfg.template_confirmada_corpo || ''
+            document.getElementById('tpl-aniversario-assunto').value = cfg.template_aniversario_assunto || ''
+            document.getElementById('tpl-aniversario-corpo').value = cfg.template_aniversario_corpo || ''
 
             await carregarLogsEmail()
         }
@@ -1756,7 +1784,7 @@
             tbody.innerHTML = data.map(l => `
                 <tr>
                     <td style="font-size:12px;">${formatarData(l.created_at)}</td>
-                    <td>${l.tipo === 'confirmada' ? 'Confirmada' : 'Pendente'}</td>
+                    <td>${l.tipo === 'confirmada' ? 'Confirmada' : l.tipo === 'aniversario' ? 'Aniversário' : 'Pendente'}</td>
                     <td style="font-size:12px;">${l.destinatario}</td>
                     <td>${l.estado === 'enviado' ? '<span class="badge badge-pago">Enviado</span>' : '<span class="badge badge-nao-socio">Erro</span>'}</td>
                     <td style="font-size:12px;color:#999;">${l.erro_detalhe || '-'}</td>
