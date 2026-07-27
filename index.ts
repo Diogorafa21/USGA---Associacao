@@ -3,13 +3,12 @@
 //
 // Chamada diretamente pelo botão "🎉 Aniversário" na secção Sócios do
 // back-office (admin.html), via supabase.functions.invoke(...). Ao contrário
-// de enviar-email-inscricao (disparada automaticamente por triggers), esta é
-// sempre uma ação manual e explícita do admin.
-//
-// Confirma que quem está a chamar é mesmo um admin autenticado antes de
-// enviar nada (usa o token da sessão de quem chamou para o confirmar), depois
-// usa as mesmas credenciais SMTP e o mesmo mecanismo de templates/logs já
-// usados para os emails de inscrição.
+// de enviar-email-inscricao (disparada automaticamente por triggers, servidor
+// a servidor), esta é chamada diretamente pelo browser -- por isso, e só por
+// isso, precisa de responder a pedidos CORS (incluindo o preflight OPTIONS
+// que o browser envia antes do pedido real). Sem isto, o browser bloqueia o
+// pedido antes sequer de chegar à função, e o supabase-js reporta o erro
+// genérico "Failed to send a request to the Edge Function".
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
@@ -20,11 +19,30 @@ const ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!
 
 const NOME_CLUBE = 'Unidos por São Gens Ativo (USGA)'
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS'
+}
+
+function jsonResponse(body: Record<string, unknown>, status = 200): Response {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  })
+}
+
 function preencherTemplate(texto: string, dados: Record<string, string>): string {
   return texto.replace(/\{\{(\w+)\}\}/g, (match, chave) => dados[chave] ?? match)
 }
 
 Deno.serve(async (req) => {
+  // O browser envia sempre um pedido OPTIONS de "preflight" antes do POST
+  // real, para perguntar se este origin/headers são permitidos.
+  if (req.method === 'OPTIONS') {
+    return new Response('ok', { headers: corsHeaders })
+  }
+
   const authHeader = req.headers.get('Authorization') || ''
   const jwt = authHeader.replace('Bearer ', '')
 
@@ -34,7 +52,7 @@ Deno.serve(async (req) => {
   })
   const { data: userData, error: userErr } = await supabaseAuth.auth.getUser(jwt)
   if (userErr || !userData?.user) {
-    return new Response(JSON.stringify({ ok: false, error: 'Não autenticado' }), { status: 401 })
+    return jsonResponse({ ok: false, error: 'Não autenticado' }, 401)
   }
 
   const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY)
@@ -47,7 +65,7 @@ Deno.serve(async (req) => {
     .single()
 
   if (chamador?.role !== 'admin') {
-    return new Response(JSON.stringify({ ok: false, error: 'Sem permissão' }), { status: 403 })
+    return jsonResponse({ ok: false, error: 'Sem permissão' }, 403)
   }
 
   // 3) lê o sócio alvo
@@ -56,7 +74,7 @@ Deno.serve(async (req) => {
     const body = await req.json()
     utilizadorId = body.utilizador_id
   } catch {
-    return new Response(JSON.stringify({ ok: false, error: 'Pedido inválido' }), { status: 400 })
+    return jsonResponse({ ok: false, error: 'Pedido inválido' }, 400)
   }
 
   async function registarLog(destinatario: string, assunto: string, estado: 'enviado' | 'erro', erroDetalhe: string | null) {
@@ -73,7 +91,7 @@ Deno.serve(async (req) => {
 
   if (membroErr || !membro?.email) {
     await registarLog('desconhecido', '', 'erro', 'Sócio não encontrado ou sem email: ' + (membroErr?.message || ''))
-    return new Response(JSON.stringify({ ok: false, error: 'Sócio não encontrado ou sem email associado' }), { status: 200 })
+    return jsonResponse({ ok: false, error: 'Sócio não encontrado ou sem email associado' })
   }
 
   const dadosTemplate: Record<string, string> = {
@@ -105,7 +123,7 @@ Deno.serve(async (req) => {
 
   if (!smtp.smtp_host || !smtp.smtp_user || !smtp.smtp_password || !smtp.smtp_from_email) {
     await registarLog(membro.email, assunto, 'erro', 'SMTP não configurado (falta host/utilizador/password/remetente em Definições → Email).')
-    return new Response(JSON.stringify({ ok: false, error: 'SMTP não configurado. Vai a Definições → Email para o configurar.' }), { status: 200 })
+    return jsonResponse({ ok: false, error: 'SMTP não configurado. Vai a Definições → Email para o configurar.' })
   }
 
   // 6) envio por SMTP
@@ -131,10 +149,10 @@ Deno.serve(async (req) => {
 
     await client.close()
     await registarLog(membro.email, assunto, 'enviado', null)
-    return new Response(JSON.stringify({ ok: true }), { status: 200 })
+    return jsonResponse({ ok: true })
   } catch (err) {
     console.error('Erro ao enviar email de aniversário via SMTP:', err)
     await registarLog(membro.email, assunto, 'erro', String(err))
-    return new Response(JSON.stringify({ ok: false, error: String(err) }), { status: 200 })
+    return jsonResponse({ ok: false, error: String(err) })
   }
 })
