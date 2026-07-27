@@ -18,6 +18,8 @@
         .admin-sidebar .badge-count { margin-left: auto; background: var(--accent-color); color: #fff; border-radius: 99px; font-size: 11px; padding: 1px 7px; font-weight: 700; }
         .admin-main { flex: 1; padding: 30px; min-width: 0; }
         .admin-sidebar-toggle { display: none; align-items: center; gap: 10px; width: 100%; padding: 14px 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; font-size: 15px; font-weight: 700; color: var(--primary-color); cursor: pointer; }
+        .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ddd; border-top-color: var(--accent-color); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
             .admin-layout { flex-direction: column; }
             .admin-sidebar-toggle { display: flex; }
@@ -239,7 +241,7 @@
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
                                 <thead><tr><th>Nome</th><th>Email</th><th>Nº Sócio</th><th>Estado</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-utilizadores"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <tbody id="tbl-utilizadores"><tr><td colspan="5" style="text-align:center;color:#999;"><span class="spinner"></span>A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -1237,9 +1239,11 @@
 
         async function carregarUtilizadores() {
             const tbody = document.getElementById('tbl-utilizadores')
+            if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;"><span class="spinner"></span>A carregar...</td></tr>'
 
             function mostrarErro(mensagem) {
                 if (!tbody) return
+                secCarregadas.delete('utilizadores')
                 tbody.innerHTML = ''
                 const tr = document.createElement('tr')
                 const td = document.createElement('td')
@@ -1287,7 +1291,7 @@
 
         function renderUtilizadores(data) {
             const tbody = document.getElementById('tbl-utilizadores')
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem utilizadores.</td></tr>'; return }
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Nenhum utilizador encontrado.</td></tr>'; return }
             tbody.innerHTML = ''
             data.forEach(u => {
                 const tr = document.createElement('tr')
