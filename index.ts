@@ -1,3 +1,5 @@
+// @ts-nocheck
+
 // Edge Function: enviar-email-inscricao
 //
 // Chamada pelos triggers de base de dados (ver migration_email_inscricoes.sql)
