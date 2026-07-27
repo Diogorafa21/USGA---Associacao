@@ -125,6 +125,7 @@
 
                     <div class="sidebar-section">Definições</div>
                     <a href="#" data-sec="estatutos">📜 Estatutos</a>
+                    <a href="#" data-sec="email">✉️ Email</a>
                 </aside>
 
                 <!-- CONTEÚDO PRINCIPAL -->
@@ -320,6 +321,61 @@
                         </div>
                     </div>
 
+                    <!-- EMAIL -->
+                    <div class="admin-section" id="sec-email">
+                        <h2 style="margin-bottom:20px;">Email de Inscrições</h2>
+
+                        <div class="content-box" style="max-width:600px;margin-bottom:20px;">
+                            <div class="box-header"><h3>Servidor SMTP</h3></div>
+                            <p style="font-size:13px;color:#666;margin-bottom:16px;">
+                                Credenciais do servidor de email usado para enviar as notificações de inscrição (Gmail, Microsoft 365, SendGrid, Mailgun, Amazon SES, etc.). Sem isto configurado, os emails automáticos não são enviados — mas as inscrições continuam a funcionar normalmente.
+                            </p>
+                            <div style="display:grid;grid-template-columns:2fr 1fr;gap:12px;">
+                                <div class="form-group"><label>Servidor (host)</label><input type="text" id="smtp-host" placeholder="smtp.gmail.com"></div>
+                                <div class="form-group"><label>Porta</label><input type="number" id="smtp-port" placeholder="587"></div>
+                            </div>
+                            <div class="form-group">
+                                <label><input type="checkbox" id="smtp-secure" style="width:auto;"> Ligação segura (TLS/SSL, normalmente porta 465)</label>
+                            </div>
+                            <div class="form-group"><label>Utilizador</label><input type="text" id="smtp-user" placeholder="a-tua-conta@gmail.com"></div>
+                            <div class="form-group"><label>Password</label><input type="password" id="smtp-password" placeholder="Deixa em branco para manter a atual"></div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                <div class="form-group"><label>Email de origem</label><input type="email" id="smtp-from-email" placeholder="geral@usga.pt"></div>
+                                <div class="form-group"><label>Nome de origem</label><input type="text" id="smtp-from-name" placeholder="USGA"></div>
+                            </div>
+                            <button class="btn btn-primary btn-small" onclick="guardarSmtp()">Guardar Configuração SMTP</button>
+                            <p id="smtp-msg" style="margin-top:10px;font-size:13px;"></p>
+                        </div>
+
+                        <div class="content-box" style="max-width:600px;margin-bottom:20px;">
+                            <div class="box-header"><h3>Modelo: Inscrição Pendente de Pagamento</h3></div>
+                            <div class="form-group"><label>Assunto</label><input type="text" id="tpl-pendente-assunto"></div>
+                            <div class="form-group"><label>Corpo</label><textarea id="tpl-pendente-corpo" rows="10"></textarea></div>
+                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}}</p>
+                            <button class="btn btn-primary btn-small" onclick="guardarTemplate('pendente')">Guardar Modelo</button>
+                            <p id="tpl-pendente-msg" style="margin-top:10px;font-size:13px;"></p>
+                        </div>
+
+                        <div class="content-box" style="max-width:600px;margin-bottom:20px;">
+                            <div class="box-header"><h3>Modelo: Inscrição Confirmada</h3></div>
+                            <div class="form-group"><label>Assunto</label><input type="text" id="tpl-confirmada-assunto"></div>
+                            <div class="form-group"><label>Corpo</label><textarea id="tpl-confirmada-corpo" rows="10"></textarea></div>
+                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}} {{dorsal}}</p>
+                            <button class="btn btn-primary btn-small" onclick="guardarTemplate('confirmada')">Guardar Modelo</button>
+                            <p id="tpl-confirmada-msg" style="margin-top:10px;font-size:13px;"></p>
+                        </div>
+
+                        <div class="content-box" style="max-width:800px;">
+                            <div class="box-header"><h3>Registo de Envios</h3></div>
+                            <div class="participants-table-wrapper">
+                                <table class="participants-table">
+                                    <thead><tr><th>Data</th><th>Tipo</th><th>Destinatário</th><th>Estado</th><th>Detalhe</th></tr></thead>
+                                    <tbody id="tbl-logs-email"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
                 </div>
             </div>
         </section>
@@ -409,6 +465,21 @@
         </div>
     </div>
 
+    <!-- MODAL EDITAR DATAS DA QUOTA -->
+    <div class="modal-overlay" id="modalEditarQuota">
+        <div class="modal-box">
+            <h3>Editar Quota</h3>
+            <input type="hidden" id="eq-id">
+            <div class="form-group"><label>Data Limite (prevista para pagamento)</label><input type="date" id="eq-data-limite"></div>
+            <div class="form-group"><label>Data de Pagamento</label><input type="date" id="eq-data-pagamento"></div>
+            <div class="form-group"><label>Data de Expiração (validade)</label><input type="date" id="eq-data-expiracao"></div>
+            <div class="modal-actions">
+                <button class="btn-secondary" onclick="fecharModal('modalEditarQuota')">Cancelar</button>
+                <button class="btn btn-primary" onclick="guardarEdicaoQuota()">Guardar</button>
+            </div>
+        </div>
+    </div>
+
     <!-- MODAL MENSAGEM SUPORTE -->
     <div class="modal-overlay" id="modalSuporte">
         <div class="modal-box">
@@ -437,7 +508,7 @@
             subscreverUtilizadoresAdmin,
             subscreverSuporteAdmin,
             getAdminQuotas, atualizarQuota,
-            formatarData, formatarMoeda, calcularValidadeQuota,
+            formatarData, formatarMoeda, calcularValidadeQuota, DIAS_VALIDADE_QUOTA,
             getConfiguracao, definirConfiguracao
         } from './js/supabase.js'
 
@@ -1384,12 +1455,44 @@
                     }))
                 }
                 if (q.estado !== 'pago' && q.estado !== 'isento') {
-                    td.appendChild(btnAprovar('Validar', async () => { await atualizarQuota(q.id, { estado:'pago', data_pagamento: new Date().toISOString().split('T')[0] }); carregarQuotas() }))
+                    td.appendChild(btnAprovar('Validar', async () => {
+                        const hoje = new Date()
+                        const expiracao = new Date(hoje)
+                        expiracao.setDate(expiracao.getDate() + DIAS_VALIDADE_QUOTA)
+                        await atualizarQuota(q.id, {
+                            estado: 'pago',
+                            data_pagamento: hoje.toISOString().split('T')[0],
+                            data_expiracao: expiracao.toISOString().split('T')[0]
+                        })
+                        carregarQuotas()
+                    }))
                     td.appendChild(btnAcao('Isentar', 'normal', async () => { await atualizarQuota(q.id, { estado:'isento' }); carregarQuotas() }))
                     td.appendChild(btnAcao('Cancelar', 'danger', async () => { await atualizarQuota(q.id, { estado:'cancelado' }); carregarQuotas() }))
                 }
+                td.appendChild(btnAcao('Editar', 'normal', () => abrirModalEditarQuota(q)))
                 tbody.appendChild(tr)
             })
+        }
+
+        window.abrirModalEditarQuota = function(q) {
+            document.getElementById('eq-id').value = q.id
+            document.getElementById('eq-data-limite').value = q.data_limite || ''
+            document.getElementById('eq-data-pagamento').value = q.data_pagamento || ''
+            document.getElementById('eq-data-expiracao').value = q.data_expiracao || ''
+            document.getElementById('modalEditarQuota').classList.add('open')
+        }
+
+        window.guardarEdicaoQuota = async function() {
+            const id = document.getElementById('eq-id').value
+            const payload = {
+                data_limite: document.getElementById('eq-data-limite').value || null,
+                data_pagamento: document.getElementById('eq-data-pagamento').value || null,
+                data_expiracao: document.getElementById('eq-data-expiracao').value || null
+            }
+            const { error } = await atualizarQuota(id, payload)
+            if (error) { alert('Erro ao guardar alterações: ' + error.message); return }
+            fecharModal('modalEditarQuota')
+            carregarQuotas()
         }
 
         window.exportarQuotas = function() {
@@ -1569,6 +1672,97 @@
             carregarEstatutos()
         }
 
+        // ── EMAIL (SMTP + templates + logs) ─────────────────────────────
+        async function carregarEmailConfig() {
+            const chaves = [
+                'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_from_email', 'smtp_from_name',
+                'template_pendente_assunto', 'template_pendente_corpo',
+                'template_confirmada_assunto', 'template_confirmada_corpo'
+            ]
+            const { data, error } = await supabase.from('configuracoes').select('chave, valor').in('chave', chaves)
+            if (error) { console.error('Erro ao carregar configuração de email:', error); return }
+            const cfg = Object.fromEntries((data || []).map(c => [c.chave, c.valor]))
+
+            document.getElementById('smtp-host').value = cfg.smtp_host || ''
+            document.getElementById('smtp-port').value = cfg.smtp_port || '587'
+            document.getElementById('smtp-secure').checked = cfg.smtp_secure === 'true'
+            document.getElementById('smtp-user').value = cfg.smtp_user || ''
+            document.getElementById('smtp-from-email').value = cfg.smtp_from_email || ''
+            document.getElementById('smtp-from-name').value = cfg.smtp_from_name || ''
+            // password nunca é devolvida para preenchimento -- fica sempre em branco (ver placeholder)
+
+            document.getElementById('tpl-pendente-assunto').value = cfg.template_pendente_assunto || ''
+            document.getElementById('tpl-pendente-corpo').value = cfg.template_pendente_corpo || ''
+            document.getElementById('tpl-confirmada-assunto').value = cfg.template_confirmada_assunto || ''
+            document.getElementById('tpl-confirmada-corpo').value = cfg.template_confirmada_corpo || ''
+
+            await carregarLogsEmail()
+        }
+
+        window.guardarSmtp = async function() {
+            const msg = document.getElementById('smtp-msg')
+            msg.textContent = 'A guardar...'
+            msg.style.color = '#666'
+
+            const senhaNova = document.getElementById('smtp-password').value
+            const pares = [
+                ['smtp_host', document.getElementById('smtp-host').value.trim()],
+                ['smtp_port', document.getElementById('smtp-port').value.trim() || '587'],
+                ['smtp_secure', document.getElementById('smtp-secure').checked ? 'true' : 'false'],
+                ['smtp_user', document.getElementById('smtp-user').value.trim()],
+                ['smtp_from_email', document.getElementById('smtp-from-email').value.trim()],
+                ['smtp_from_name', document.getElementById('smtp-from-name').value.trim()]
+            ]
+            // só atualiza a password se o admin escreveu uma nova (evita apagar a atual ao deixar em branco)
+            if (senhaNova) pares.push(['smtp_password', senhaNova])
+
+            for (const [chave, valor] of pares) {
+                const { error } = await definirConfiguracao(chave, valor)
+                if (error) { msg.textContent = 'Erro ao guardar: ' + error.message; msg.style.color = '#d32f2f'; return }
+            }
+            document.getElementById('smtp-password').value = ''
+            msg.textContent = 'Configuração SMTP guardada.'
+            msg.style.color = '#2e7d32'
+        }
+
+        window.guardarTemplate = async function(tipo) {
+            const msg = document.getElementById(`tpl-${tipo}-msg`)
+            msg.textContent = 'A guardar...'
+            msg.style.color = '#666'
+            const assunto = document.getElementById(`tpl-${tipo}-assunto`).value
+            const corpo = document.getElementById(`tpl-${tipo}-corpo`).value
+            const { error: e1 } = await definirConfiguracao(`template_${tipo}_assunto`, assunto)
+            const { error: e2 } = await definirConfiguracao(`template_${tipo}_corpo`, corpo)
+            if (e1 || e2) { msg.textContent = 'Erro ao guardar: ' + (e1 || e2).message; msg.style.color = '#d32f2f'; return }
+            msg.textContent = 'Modelo guardado.'
+            msg.style.color = '#2e7d32'
+        }
+
+        async function carregarLogsEmail() {
+            const tbody = document.getElementById('tbl-logs-email')
+            const { data, error } = await supabase
+                .from('logs_email')
+                .select('*')
+                .order('created_at', { ascending: false })
+                .limit(50)
+            if (error) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c00;">Erro ao carregar registo: ' + error.message + '</td></tr>'
+                return
+            }
+            if (!data?.length) {
+                tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Ainda não foi enviado nenhum email.</td></tr>'
+                return
+            }
+            tbody.innerHTML = data.map(l => `
+                <tr>
+                    <td style="font-size:12px;">${formatarData(l.created_at)}</td>
+                    <td>${l.tipo === 'confirmada' ? 'Confirmada' : 'Pendente'}</td>
+                    <td style="font-size:12px;">${l.destinatario}</td>
+                    <td>${l.estado === 'enviado' ? '<span class="badge badge-pago">Enviado</span>' : '<span class="badge badge-nao-socio">Erro</span>'}</td>
+                    <td style="font-size:12px;color:#999;">${l.erro_detalhe || '-'}</td>
+                </tr>`).join('')
+        }
+
         // ── Carregar secção ──────────────────────────────────────────────
         const secCarregadas = new Set()
         window.carregarSecao = async function(sec) {
@@ -1584,6 +1778,7 @@
             if (sec === 'pagamentos') await carregarPagamentos()
             if (sec === 'suporte')    { await carregarSuporte(); iniciarSubscricaoSuporte() }
             if (sec === 'estatutos') await carregarEstatutos()
+            if (sec === 'email')     await carregarEmailConfig()
         }
 
         // Carregar dashboard inicial

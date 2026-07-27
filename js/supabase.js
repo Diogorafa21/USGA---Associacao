@@ -272,6 +272,14 @@ export async function obterPagamentoQuota(quotaId) {
   return { data, error }
 }
 
+// Garante que o sócio (já com sessão iniciada) tem uma quota do ano
+// corrente -- cria-a na hora se ainda não existir -- para poder pagar
+// imediatamente ao terminar o registo, sem depender da aprovação do admin.
+export async function garantirQuotaAtual() {
+  const { data, error } = await supabase.rpc('garantir_quota_atual').maybeSingle()
+  return { data, error }
+}
+
 // O bucket "faturas" e publico -- basta construir o URL direto a partir do
 // caminho guardado em "fatura_url" (nao precisa de signed URL nem de sessao).
 export function getFaturaUrl(path) {
@@ -480,9 +488,17 @@ export function formatarData(dataISO) {
 export const DIAS_VALIDADE_QUOTA = 365
 
 export function calcularValidadeQuota(quota) {
-  if (quota.estado !== 'pago' || !quota.data_pagamento) return null
-  const dataExpiracao = new Date(quota.data_pagamento)
-  dataExpiracao.setDate(dataExpiracao.getDate() + DIAS_VALIDADE_QUOTA)
+  if (quota.estado !== 'pago') return null
+  let dataExpiracao
+  if (quota.data_expiracao) {
+    // O admin pode ter editado este valor manualmente -- é sempre a fonte de verdade quando existe.
+    dataExpiracao = new Date(quota.data_expiracao)
+  } else if (quota.data_pagamento) {
+    dataExpiracao = new Date(quota.data_pagamento)
+    dataExpiracao.setDate(dataExpiracao.getDate() + DIAS_VALIDADE_QUOTA)
+  } else {
+    return null
+  }
   const hoje = new Date()
   const diasRestantes = Math.ceil((dataExpiracao - hoje) / (24 * 60 * 60 * 1000))
   return { dataExpiracao, diasRestantes }

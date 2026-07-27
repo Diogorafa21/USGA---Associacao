@@ -303,7 +303,24 @@ function configurarPedidoSocio(api) {
     }
 
     sessionStorage.setItem('usga_pedido_socio_id', data.id)
-    window.location.href = `pagamento-quota.html?pedido=${encodeURIComponent(data.id)}`
+
+    // Se quem submeteu já tem sessão iniciada, cria-se logo a quota do ano
+    // corrente e segue-se diretamente para o pagamento -- tal como pedido:
+    // pagar a quota imediatamente no registo, sem esperar pela aprovação do
+    // pedido pelo admin. Sem sessão, não há conta a associar à quota ainda,
+    // por isso o pedido segue o caminho normal de aprovação manual (que já
+    // cria a quota automaticamente ao atribuir o número de sócio).
+    const sessaoAtual = await api.getSessao()
+    if (sessaoAtual) {
+      const { data: quotaData, error: quotaErr } = await api.garantirQuotaAtual()
+      if (!quotaErr && quotaData?.quota_id) {
+        window.location.href = `pagamento-quota.html?quota=${encodeURIComponent(quotaData.quota_id)}`
+        return
+      }
+    }
+
+    mostrarMensagem(form, 'Pedido registado com sucesso. A nossa equipa vai analisar o seu pedido em breve.', 'sucesso')
+    form.reset()
   })
 }
 
