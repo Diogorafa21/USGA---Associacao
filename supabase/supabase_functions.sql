@@ -22,12 +22,14 @@ $$;
 
 -- 2) assign_numero_socio(p_user_id uuid, p_num integer):
 --    atomically assigns p_num to the specified user, clears that number from any other user,
+--    ensures a quota row exists for the current year (so the member shows up in Quotas),
 --    and returns the previous numero_socio of the target user (text) or NULL.
 create or replace function assign_numero_socio(p_user_id uuid, p_num integer)
 returns text language plpgsql set search_path = public as $$
 declare
   current_owner uuid;
   old_num text;
+  v_ano integer := extract(year from now())::int;
 begin
   if p_num is null then
     raise exception 'numero_socio cannot be null';
@@ -53,6 +55,11 @@ begin
 
   -- assign the number to target user (store as text)
   update public.utilizadores set numero_socio = p_num::text, estado = 'ativo' where id = p_user_id;
+
+  -- ensure this member has a quota row for the current year
+  insert into public.quotas (utilizador_id, ano)
+  values (p_user_id, v_ano)
+  on conflict (utilizador_id, ano) do nothing;
 
   return old_num;
 exception when others then

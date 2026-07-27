@@ -1140,11 +1140,49 @@
         }
 
         async function carregarUtilizadores() {
-            const { data, error } = await supabase.from('utilizadores').select('*').order('created_at', { ascending: false })
+            const tbody = document.getElementById('tbl-utilizadores')
+
+            function mostrarErro(mensagem) {
+                if (!tbody) return
+                tbody.innerHTML = ''
+                const tr = document.createElement('tr')
+                const td = document.createElement('td')
+                td.colSpan = 5
+                td.style.textAlign = 'center'
+                td.style.color = '#c00'
+                td.textContent = mensagem + ' '
+                const btnRetry = document.createElement('button')
+                btnRetry.type = 'button'
+                btnRetry.className = 'btn btn-small'
+                btnRetry.style.cssText = 'background:#f0f0f0;color:#444;margin-left:8px;'
+                btnRetry.textContent = 'Tentar novamente'
+                btnRetry.addEventListener('click', () => carregarUtilizadores())
+                td.appendChild(btnRetry)
+                tr.appendChild(td)
+                tbody.appendChild(tr)
+            }
+
+            const LIMITE_MS = 10000
+            const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('TIMEOUT')), LIMITE_MS))
+
+            let resultado
+            try {
+                resultado = await Promise.race([
+                    supabase.from('utilizadores').select('*').order('created_at', { ascending: false }),
+                    timeoutPromise
+                ])
+            } catch (err) {
+                console.error('Erro/timeout ao carregar utilizadores:', err)
+                mostrarErro(err?.message === 'TIMEOUT'
+                    ? 'O pedido demorou demasiado tempo e foi cancelado.'
+                    : 'Erro inesperado ao carregar utilizadores: ' + (err?.message || err))
+                return
+            }
+
+            const { data, error } = resultado
             if (error) {
                 console.error('Erro ao carregar utilizadores:', error)
-                const tbody = document.getElementById('tbl-utilizadores')
-                if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#c00;">Erro ao carregar utilizadores: ' + error.message + '</td></tr>'
+                mostrarErro('Erro ao carregar utilizadores: ' + error.message)
                 return
             }
             todosUtilizadores = data || []
