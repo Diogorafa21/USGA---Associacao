@@ -352,9 +352,14 @@
                             <div class="form-group"><label>Utilizador</label><input type="text" id="smtp-user" placeholder="a-tua-conta@gmail.com"></div>
                             <div class="form-group"><label>Password</label><input type="password" id="smtp-password" placeholder="Deixa em branco para manter a atual"></div>
                             <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
-                                <div class="form-group"><label>Email de origem</label><input type="email" id="smtp-from-email" placeholder="geral@usga.pt"></div>
+                                <div class="form-group"><label>Email de origem</label><input type="email" id="smtp-from-email" placeholder="usga.associacao@gmail.com"></div>
                                 <div class="form-group"><label>Nome de origem</label><input type="text" id="smtp-from-name" placeholder="USGA"></div>
                             </div>
+                            <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+                                <div class="form-group"><label>Email noreply</label><input type="email" id="smtp-noreply-email" placeholder="noreply@usga.pt"></div>
+                                <div class="form-group"><label>Nome noreply</label><input type="text" id="smtp-noreply-name" placeholder="USGA"></div>
+                            </div>
+                            <div class="form-group"><label>Email principal da associação</label><input type="email" id="associacao-email" placeholder="usga.associacao@gmail.com"></div>
                             <button class="btn btn-primary btn-small" onclick="guardarSmtp()">Guardar Configuração SMTP</button>
                             <p id="smtp-msg" style="margin-top:10px;font-size:13px;"></p>
                         </div>
@@ -1239,7 +1244,7 @@
                     const textoOriginal = btn.textContent
                     btn.disabled = true
                     btn.textContent = 'A enviar...'
-                    const { data, error } = await supabase.functions.invoke('enviar-email-aniversario', { body: { utilizador_id: s.id } })
+                    const { data, error } = await supabase.functions.invoke('enviar-email', { body: { categoria: 'aniversario', utilizador_id: s.id } })
                     btn.disabled = false
                     btn.textContent = textoOriginal
                     if (error || !data?.ok) {
@@ -1794,6 +1799,7 @@
         async function carregarEmailConfig() {
             const chaves = [
                 'smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_from_email', 'smtp_from_name',
+                'smtp_noreply_email', 'smtp_noreply_name', 'associacao_email_principal',
                 'template_pendente_assunto', 'template_pendente_corpo',
                 'template_confirmada_assunto', 'template_confirmada_corpo',
                 'template_aniversario_assunto', 'template_aniversario_corpo'
@@ -1808,7 +1814,9 @@
             document.getElementById('smtp-user').value = cfg.smtp_user || ''
             document.getElementById('smtp-from-email').value = cfg.smtp_from_email || ''
             document.getElementById('smtp-from-name').value = cfg.smtp_from_name || ''
-            // password nunca é devolvida para preenchimento -- fica sempre em branco (ver placeholder)
+            document.getElementById('smtp-noreply-email').value = cfg.smtp_noreply_email || ''
+            document.getElementById('smtp-noreply-name').value = cfg.smtp_noreply_name || ''
+            document.getElementById('associacao-email').value = cfg.associacao_email_principal || ''
 
             document.getElementById('tpl-pendente-assunto').value = cfg.template_pendente_assunto || ''
             document.getElementById('tpl-pendente-corpo').value = cfg.template_pendente_corpo || ''
@@ -1832,9 +1840,11 @@
                 ['smtp_secure', document.getElementById('smtp-secure').checked ? 'true' : 'false'],
                 ['smtp_user', document.getElementById('smtp-user').value.trim()],
                 ['smtp_from_email', document.getElementById('smtp-from-email').value.trim()],
-                ['smtp_from_name', document.getElementById('smtp-from-name').value.trim()]
+                ['smtp_from_name', document.getElementById('smtp-from-name').value.trim()],
+                ['smtp_noreply_email', document.getElementById('smtp-noreply-email').value.trim()],
+                ['smtp_noreply_name', document.getElementById('smtp-noreply-name').value.trim()],
+                ['associacao_email_principal', document.getElementById('associacao-email').value.trim()]
             ]
-            // só atualiza a password se o admin escreveu uma nova (evita apagar a atual ao deixar em branco)
             if (senhaNova) pares.push(['smtp_password', senhaNova])
 
             for (const [chave, valor] of pares) {
