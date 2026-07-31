@@ -39,7 +39,12 @@ document.addEventListener('DOMContentLoaded', async function () {
     // Copia os links a partir do <nav> de desktop (mesmo texto, mesmo href)
     navOriginal.querySelectorAll('a').forEach(originalLink => {
       const item = document.createElement('li')
-      item.appendChild(originalLink.cloneNode(true))
+      const linkClone = originalLink.cloneNode(true)
+      const hrefPagina = (linkClone.getAttribute('href') || '').split('?')[0].split('#')[0]
+      if (hrefPagina && isPagina(hrefPagina)) {
+        linkClone.classList.add('active')
+      }
+      item.appendChild(linkClone)
       list.appendChild(item)
     })
 

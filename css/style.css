@@ -1039,7 +1039,7 @@ body:not(.home-page) .nav-toggle span {
     padding: 18px 10px;
     font-size: 16px;
     font-weight: 500;
-    color: var(--primary-color);
+    color: #000;
 }
 
 .mobile-nav-list a:hover,
