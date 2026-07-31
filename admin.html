@@ -19,6 +19,8 @@
         .admin-main { flex: 1; padding: 30px; min-width: 0; }
         .admin-sidebar-toggle { display: none; align-items: center; gap: 10px; width: 100%; padding: 14px 16px; background: #f9f9f9; border: 1px solid #eee; border-radius: 8px; font-size: 15px; font-weight: 700; color: var(--primary-color); cursor: pointer; }
         .spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #ddd; border-top-color: var(--accent-color); border-radius: 50%; animation: spin 0.7s linear infinite; vertical-align: middle; margin-right: 8px; }
+        #tbl-financeiro tr:hover { background: #f9f9f9; }
+        #tbl-financeiro tr.selecionada { background: #fdecea; }
         @keyframes spin { to { transform: rotate(360deg); } }
         @media (max-width: 900px) {
             .admin-layout { flex-direction: column; }
@@ -63,6 +65,7 @@
             .socios-layout { grid-template-columns: 1fr; }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body class="home-page">
 
@@ -121,6 +124,7 @@
                     <div class="sidebar-section">Financeiro</div>
                     <a href="#" data-sec="quotas">💳 Quotas <span class="badge-count" id="sb-quotas">0</span></a>
                     <a href="#" data-sec="pagamentos">💰 Pagamentos</a>
+                    <a href="#" data-sec="financeiro">📈 Visão Financeira</a>
 
                     <div class="sidebar-section">Comunicação</div>
                     <a href="#" data-sec="suporte">✉️ Suporte <span class="badge-count" id="sb-suporte">0</span></a>
@@ -143,20 +147,10 @@
                             <div class="stat-card"><div class="num" id="ds-quotas">-</div><div class="lbl">Quotas por pagar</div></div>
                             <div class="stat-card"><div class="num" id="ds-suporte">-</div><div class="lbl">Mensagens novas</div></div>
                             <div class="stat-card"><div class="num" id="ds-eventos">-</div><div class="lbl">Eventos abertos</div></div>
-                            <div class="stat-card"><div class="num" id="ds-total-quotas">-</div><div class="lbl">Total Quotas Arrecadado</div></div>
                         </div>
                         <div class="content-box">
                             <div class="box-header"><h3>Atividade recente</h3></div>
                             <div id="ds-atividade" style="color:#999; font-size:14px;">A carregar...</div>
-                        </div>
-                        <div class="content-box" style="margin-top:20px;">
-                            <div class="box-header"><h3>Resumo Financeiro por Evento</h3></div>
-                            <div class="participants-table-wrapper">
-                                <table class="participants-table">
-                                    <thead><tr><th>Evento</th><th>Pagamentos Validados</th><th>Total Arrecadado</th></tr></thead>
-                                    <tbody id="tbl-resumo-eventos"><tr><td colspan="3" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
 
@@ -290,6 +284,22 @@
                                 <thead><tr><th>Tipo</th><th>Sócio</th><th>Valor</th><th>Método</th><th>Estado</th><th>Data</th><th>Ações</th></tr></thead>
                                 <tbody id="tbl-pagamentos"><tr><td colspan="7" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
+                        </div>
+                    </div>
+
+                    <!-- VISÃO FINANCEIRA -->
+                    <div class="admin-section" id="sec-financeiro">
+                        <h2 style="margin-bottom:20px;">Visão Financeira</h2>
+                        <p style="font-size:13px;color:#666;margin-bottom:16px;">Selecione uma linha para ver a evolução mensal da receita.</p>
+                        <div class="participants-table-wrapper">
+                            <table class="participants-table">
+                                <thead><tr><th>Nome</th><th>Receita Total</th></tr></thead>
+                                <tbody id="tbl-financeiro"><tr><td colspan="2" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                            </table>
+                        </div>
+                        <div id="financeiro-grafico-box" class="content-box" style="display:none; margin-top:20px;">
+                            <div class="box-header"><h3 id="financeiro-grafico-titulo">Evolução Mensal</h3></div>
+                            <canvas id="financeiro-grafico" height="90"></canvas>
                         </div>
                     </div>
 
@@ -685,8 +695,6 @@
             document.getElementById('sb-quotas').textContent   = quotas ?? 0
             document.getElementById('sb-suporte').textContent  = suporteMsg ?? 0
 
-            await carregarResumoFinanceiro()
-
             const { data: recente } = await supabase
                 .from('inscricoes_evento')
                 .select('nome, data_inscricao, eventos(titulo)')
@@ -702,54 +710,135 @@
                 </div>`).join('')
         }
 
-        // ── RESUMO FINANCEIRO ────────────────────────────────────────────
-        async function carregarResumoFinanceiro() {
-            // Total de quotas: soma simples do lado do cliente (nº de sócios é pequeno,
-            // não compensa criar uma view/RPC só para esta soma).
-            const { data: quotasPagas } = await supabase
-                .from('quotas')
-                .select('valor')
-                .eq('estado', 'pago')
-            const totalQuotas = (quotasPagas || []).reduce((soma, q) => soma + Number(q.valor || 0), 0)
-            document.getElementById('ds-total-quotas').textContent = formatarMoeda(totalQuotas)
+        // ── VISÃO FINANCEIRA ─────────────────────────────────────────────
+        // Ao contrário da maioria das secções, esta NUNCA fica em cache
+        // (ver chamada em carregarSecao) -- números financeiros têm de estar
+        // sempre atualizados quando se visita a página, nunca "presos" a como
+        // estavam da última vez.
 
-            // Total por evento: pagamentos de evento validados, agrupados por evento do lado do cliente.
-            const { data: pagamentosEvento, error } = await supabase
+        let financeiroLinhasQuotas = []
+        let financeiroLinhasEventos = []
+        const MESES_PT = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez']
+
+        function agruparPorMes(linhas, campoData) {
+            const porMes = new Map()
+            linhas.forEach(l => {
+                const data = l[campoData]
+                if (!data) return
+                const chave = data.slice(0, 7) // 'AAAA-MM'
+                porMes.set(chave, (porMes.get(chave) || 0) + Number(l.valor || 0))
+            })
+            return Array.from(porMes.entries())
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([chave, total]) => {
+                    const [ano, mes] = chave.split('-')
+                    return { rotulo: `${MESES_PT[Number(mes) - 1]} ${ano}`, total }
+                })
+        }
+
+        let financeiroChart = null
+
+        function mostrarGraficoFinanceiro(titulo, linhas, campoData) {
+            const box = document.getElementById('financeiro-grafico-box')
+            const canvas = document.getElementById('financeiro-grafico')
+            document.getElementById('financeiro-grafico-titulo').textContent = `Evolução Mensal — ${titulo}`
+            box.style.display = 'block'
+
+            const dadosMensais = agruparPorMes(linhas, campoData)
+
+            if (financeiroChart) financeiroChart.destroy()
+            financeiroChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: dadosMensais.map(d => d.rotulo),
+                    datasets: [{
+                        label: 'Receita (€)',
+                        data: dadosMensais.map(d => d.total),
+                        backgroundColor: '#e63946'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { display: false } },
+                    scales: { y: { beginAtZero: true } }
+                }
+            })
+
+            box.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
+        }
+
+        function selecionarLinhaFinanceiro(tr) {
+            document.querySelectorAll('#tbl-financeiro tr').forEach(r => r.classList.remove('selecionada'))
+            tr.classList.add('selecionada')
+        }
+
+        async function carregarFinanceiro() {
+            const tbody = document.getElementById('tbl-financeiro')
+            tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#999;"><span class="spinner"></span>A carregar...</td></tr>'
+            document.getElementById('financeiro-grafico-box').style.display = 'none'
+
+            // Quotas pagas -- cada quota só é criada e paga uma vez por sócio/ano,
+            // por isso somar estas linhas nunca conta o mesmo pagamento duas vezes.
+            const { data: quotas, error: errQuotas } = await supabase
+                .from('quotas')
+                .select('valor, data_pagamento')
+                .eq('estado', 'pago')
+
+            // Pagamentos de eventos validados, agrupados por evento.
+            const { data: pagamentos, error: errPagamentos } = await supabase
                 .from('pagamentos')
-                .select('valor, inscricoes_evento(evento_id, eventos(titulo, data_evento))')
+                .select('valor, validado_em, inscricoes_evento(evento_id, eventos(titulo))')
                 .eq('tipo', 'evento')
                 .eq('estado', 'validado')
 
-            const tbody = document.getElementById('tbl-resumo-eventos')
-            if (error) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#c00;">Erro ao carregar resumo financeiro.</td></tr>'
+            if (errQuotas || errPagamentos) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#c00;">Erro ao carregar dados financeiros: ' + (errQuotas || errPagamentos).message + '</td></tr>'
                 return
             }
+
+            financeiroLinhasQuotas = (quotas || []).map(q => ({ valor: q.valor, data_pagamento: q.data_pagamento }))
+            const totalQuotas = financeiroLinhasQuotas.reduce((soma, q) => soma + Number(q.valor || 0), 0)
 
             const porEvento = new Map()
-            for (const p of (pagamentosEvento || [])) {
-                const ev = p.inscricoes_evento?.eventos
+            for (const p of (pagamentos || [])) {
                 const eventoId = p.inscricoes_evento?.evento_id
+                const titulo = p.inscricoes_evento?.eventos?.titulo || 'Evento'
                 if (!eventoId) continue
-                if (!porEvento.has(eventoId)) {
-                    porEvento.set(eventoId, { titulo: ev?.titulo || 'Evento', data_evento: ev?.data_evento, total: 0, contagem: 0 })
-                }
+                if (!porEvento.has(eventoId)) porEvento.set(eventoId, { titulo, total: 0, linhas: [] })
                 const entrada = porEvento.get(eventoId)
                 entrada.total += Number(p.valor || 0)
-                entrada.contagem += 1
+                entrada.linhas.push({ valor: p.valor, validado_em: p.validado_em })
             }
+            financeiroLinhasEventos = Array.from(porEvento.values())
 
-            const linhas = Array.from(porEvento.values()).sort((a, b) => (b.data_evento || '').localeCompare(a.data_evento || ''))
-            if (!linhas.length) {
-                tbody.innerHTML = '<tr><td colspan="3" style="text-align:center;color:#999;">Sem pagamentos validados ainda.</td></tr>'
+            if (!financeiroLinhasQuotas.length && !financeiroLinhasEventos.length) {
+                tbody.innerHTML = '<tr><td colspan="2" style="text-align:center;color:#999;">Ainda não há receita registada.</td></tr>'
                 return
             }
-            tbody.innerHTML = linhas.map(l => `
-                <tr>
-                    <td>${l.titulo}</td>
-                    <td>${l.contagem}</td>
-                    <td>${formatarMoeda(l.total)}</td>
-                </tr>`).join('')
+
+            tbody.innerHTML = ''
+
+            const trQuotas = document.createElement('tr')
+            trQuotas.style.cursor = 'pointer'
+            trQuotas.innerHTML = `<td>Quotas de Sócio</td><td>${formatarMoeda(totalQuotas)}</td>`
+            trQuotas.addEventListener('click', () => {
+                selecionarLinhaFinanceiro(trQuotas)
+                mostrarGraficoFinanceiro('Quotas de Sócio', financeiroLinhasQuotas, 'data_pagamento')
+            })
+            tbody.appendChild(trQuotas)
+
+            financeiroLinhasEventos
+                .sort((a, b) => b.total - a.total)
+                .forEach(ev => {
+                    const tr = document.createElement('tr')
+                    tr.style.cursor = 'pointer'
+                    tr.innerHTML = `<td>${ev.titulo}</td><td>${formatarMoeda(ev.total)}</td>`
+                    tr.addEventListener('click', () => {
+                        selecionarLinhaFinanceiro(tr)
+                        mostrarGraficoFinanceiro(ev.titulo, ev.linhas, 'validado_em')
+                    })
+                    tbody.appendChild(tr)
+                })
         }
 
         // ── EVENTOS ──────────────────────────────────────────────────────
@@ -1798,6 +1887,11 @@
         // ── Carregar secção ──────────────────────────────────────────────
         const secCarregadas = new Set()
         window.carregarSecao = async function(sec) {
+            // A Visão Financeira nunca fica em cache -- tem de estar sempre
+            // atualizada (ver nota acima de carregarFinanceiro), por isso
+            // corre sempre, independentemente de já ter sido visitada antes.
+            if (sec === 'financeiro') { await carregarFinanceiro(); return }
+
             if (secCarregadas.has(sec)) return
             secCarregadas.add(sec)
             if (sec === 'dashboard')  await carregarDashboard()
