@@ -533,7 +533,7 @@
             subscreverInscricoesAdmin,
             subscreverUtilizadoresAdmin,
             subscreverSuporteAdmin,
-            getAdminQuotas, atualizarQuota,
+            getAdminQuotas, atualizarQuota, validarPagamento,
             formatarData, formatarMoeda, calcularValidadeQuota, DIAS_VALIDADE_QUOTA,
             getConfiguracao, definirConfiguracao
         } from './js/supabase.js'
@@ -594,7 +594,7 @@
         // Botão(ões) para anexar/ver a fatura de um pagamento ou de uma quota.
         // "tabela" indica em que tabela gravar o fatura_url ('pagamentos' ou 'quotas'),
         // e "recarregar" é a função a chamar depois de guardar (carregarPagamentos / carregarQuotas).
-        function botaoFatura(record, tabela, recarregar) {
+        function botaoFatura(record, tabela, recarregar, destinatarioEmail, destinatarioNome) {
             const wrap = document.createElement('span')
             wrap.style.cssText = 'display:inline-flex;gap:4px;'
 
@@ -642,6 +642,9 @@
                         btn.disabled = false
                         btn.textContent = textoOriginal
                         return
+                    }
+                    if (destinatarioEmail) {
+                        supabase.functions.invoke('enviar-email', { body: { categoria: 'fatura', destinatario_email: destinatarioEmail, destinatario_nome: destinatarioNome || '', fatura_path: caminho } }).catch(() => {})
                     }
                     recarregar()
                 })
@@ -1172,6 +1175,7 @@
                         const dorsal = document.getElementById(`d_${i.id}`).value.trim() || null
                         const { error: errConfirm } = await atualizarInscricaoEvento(i.id, { pagamento_estado:'validado', estado:'confirmada', dorsal, data_confirmacao: new Date().toISOString() })
                         if (errConfirm) { alert('Erro ao confirmar: ' + errConfirm.message); return }
+                        supabase.functions.invoke('enviar-email', { body: { categoria: 'inscricao', tipo: 'confirmada', inscricao_id: i.id } }).catch(() => {})
                         carregarInscricoes()
                     }))
                 }
@@ -1566,7 +1570,7 @@
                     <td>${quotaBadge[q.estado] || q.estado}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
-                td.appendChild(botaoFatura(q, 'quotas', carregarQuotas))
+                td.appendChild(botaoFatura(q, 'quotas', carregarQuotas, socio?.email, nome))
                 if (validade && validade.diasRestantes >= 0 && validade.diasRestantes <= DIAS_AVISO_EXPIRACAO) {
                     td.appendChild(btnAcao(q.lembrete_expiracao_enviado_em ? 'Reenviar Lembrete' : 'Enviar Lembrete', 'normal', () => {
                         const email = socio?.email
@@ -1637,7 +1641,7 @@
         async function carregarPagamentos() {
             const { data, error } = await supabase
         .from('pagamentos')
-        .select('*, utilizadores!utilizador_id(nome, apelido, email)')
+        .select('*, utilizadores!utilizador_id(nome, apelido, email), inscricoes_evento(nome, email)')
         .order('created_at', { ascending: false })
     const tbody = document.getElementById('tbl-pagamentos')
     if (error) {
@@ -1649,18 +1653,20 @@
             tbody.innerHTML = ''
             data.forEach(p => {
                 const u = p.utilizadores
-                const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : '-'
+                const inscricao = p.inscricoes_evento
+                const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : (inscricao?.nome || '-')
+                const email = u?.email || inscricao?.email || ''
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
                     <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span>${p.pedido_fatura ? ' <span class="badge" style="background:#ede9fe;color:#5b21b6;" title="Fatura pedida">🧾 Fatura</span>' : ''}</td>
-                    <td>${nome}<br><small style="color:#999;">${u?.email || ''}</small></td>
+                    <td>${nome}<br><small style="color:#999;">${email}</small></td>
                     <td>${formatarMoeda(p.valor)}</td>
                     <td>${p.metodo === 'mbway' ? `MB WAY${p.telefone_mbway ? '<br><small style="color:#999;">' + p.telefone_mbway + '</small>' : ''}` : (p.metodo || '-')}</td>
                     <td>${pagBadge[p.estado] || p.estado}</td>
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
-                td.appendChild(botaoFatura(p, 'pagamentos', carregarPagamentos))
+                td.appendChild(botaoFatura(p, 'pagamentos', carregarPagamentos, email, nome))
                 if (p.comprovativo_url) {
                     td.appendChild(btnAcao('Ver Comprovativo', 'normal', async () => {
                         const { data: signed, error: signErr } = await supabase.storage
@@ -1675,7 +1681,11 @@
                 }
                 if (p.estado === 'pendente' || p.estado === 'em_validacao') {
                     td.appendChild(btnAprovar('Validar', async () => {
-                        await supabase.from('pagamentos').update({ estado:'validado', validado_por: auth.sessao.user.id, validado_em: new Date().toISOString() }).eq('id', p.id)
+                        const { error: errValidar } = await validarPagamento(p.id)
+                        if (errValidar) { alert('Erro ao validar: ' + errValidar.message); return }
+                        if (p.tipo === 'evento' && p.inscricao_evento_id) {
+                            supabase.functions.invoke('enviar-email', { body: { categoria: 'inscricao', tipo: 'confirmada', inscricao_id: p.inscricao_evento_id } }).catch(() => {})
+                        }
                         carregarPagamentos()
                     }))
                     td.appendChild(btnAcao('Rejeitar', 'danger', async () => {

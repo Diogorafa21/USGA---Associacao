@@ -1,6 +1,6 @@
 // @ts-nocheck
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
+import nodemailer from 'npm:nodemailer@6.9.14'
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!
@@ -42,11 +42,24 @@ function obterRemetente(smtp: Record<string, string>): string {
 }
 
 async function obterConfigSmtp(supabase: ReturnType<typeof createClient>): Promise<Record<string, string>> {
-  const { data } = await supabase
+  const { data, error } = await supabase
     .from('configuracoes')
     .select('chave, valor')
     .in('chave', ['smtp_host', 'smtp_port', 'smtp_secure', 'smtp_user', 'smtp_password', 'smtp_from_email', 'smtp_from_name', 'smtp_noreply_email', 'smtp_noreply_name', 'associacao_email_principal'])
-  return Object.fromEntries((data || []).map((c: { chave: string; valor: string }) => [c.chave, c.valor]))
+
+  if (error) {
+    console.error('Erro ao ler configuracoes:', error)
+  }
+
+  const resultado = Object.fromEntries((data || []).map((c: { chave: string; valor: string }) => [c.chave, c.valor]))
+
+  console.log('Chaves encontradas em configuracoes:', Object.keys(resultado))
+  console.log('smtp_host presente:', !!resultado.smtp_host)
+  console.log('smtp_user presente:', !!resultado.smtp_user)
+  console.log('smtp_password presente:', !!resultado.smtp_password)
+  console.log('smtp_from_email presente:', !!resultado.smtp_from_email)
+
+  return resultado
 }
 
 function smtpConfigurado(smtp: Record<string, string>): boolean {
@@ -54,27 +67,24 @@ function smtpConfigurado(smtp: Record<string, string>): boolean {
 }
 
 async function enviarSmtp(smtp: Record<string, string>, opcoes: { to: string; subject: string; content: string; replyTo?: string }): Promise<void> {
-  const client = new SMTPClient({
-    connection: {
-      hostname: smtp.smtp_host,
-      port: Number(smtp.smtp_port) || 587,
-      tls: smtp.smtp_secure === 'true',
-      auth: {
-        username: smtp.smtp_user,
-        password: smtp.smtp_password
-      }
+  const transport = nodemailer.createTransport({
+    host: smtp.smtp_host,
+    port: Number(smtp.smtp_port) || 465,
+    secure: smtp.smtp_secure === 'true',
+    auth: {
+      user: smtp.smtp_user,
+      pass: smtp.smtp_password
     }
   })
 
   const remetente = obterRemetente(smtp)
-  await client.send({
+  await transport.sendMail({
     from: remetente,
     to: opcoes.to,
     subject: opcoes.subject,
-    content: opcoes.content,
+    text: opcoes.content,
     replyTo: opcoes.replyTo || remetente
   })
-  await client.close()
 }
 
 async function registarLog(supabase: ReturnType<typeof createClient>, tipo: string, destinatario: string, assunto: string, estado: 'enviado' | 'erro', erroDetalhe: string | null, inscricaoId: string | null = null): Promise<void> {
@@ -244,6 +254,58 @@ async function processarAniversario(req: Request, supabase: ReturnType<typeof cr
   }
 }
 
+async function processarFatura(req: Request, supabase: ReturnType<typeof createClient>, body: Record<string, string>): Promise<Response> {
+  const authHeader = req.headers.get('Authorization') || ''
+  const jwt = authHeader.replace('Bearer ', '')
+
+  const supabaseAuth = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } }
+  })
+  const { data: userData, error: userErr } = await supabaseAuth.auth.getUser(jwt)
+  if (userErr || !userData?.user) {
+    return jsonResponse({ ok: false, error: 'Não autenticado' }, 401)
+  }
+
+  const { data: chamador } = await supabase
+    .from('utilizadores')
+    .select('role')
+    .eq('id', userData.user.id)
+    .single()
+
+  if (chamador?.role !== 'admin') {
+    return jsonResponse({ ok: false, error: 'Sem permissão' }, 403)
+  }
+
+  const destinatarioEmail = body.destinatario_email
+  const destinatarioNome = body.destinatario_nome || 'Sócio'
+  const faturaPath = body.fatura_path
+
+  if (!destinatarioEmail || !faturaPath) {
+    return jsonResponse({ ok: false, error: 'Dados em falta' }, 400)
+  }
+
+  const { data: publicUrlData } = supabase.storage.from('faturas').getPublicUrl(faturaPath)
+  const linkFatura = publicUrlData?.publicUrl || ''
+
+  const assunto = 'A sua fatura já está disponível'
+  const corpo = `Olá ${destinatarioNome},\n\nA sua fatura já está disponível para download:\n${linkFatura}\n\nObrigado,\n${NOME_CLUBE}`
+
+  const smtp = await obterConfigSmtp(supabase)
+  if (!smtpConfigurado(smtp)) {
+    await registarLog(supabase, 'fatura', destinatarioEmail, assunto, 'erro', 'SMTP não configurado (falta host/utilizador/password/remetente em Definições → Email).')
+    return jsonResponse({ ok: false, error: 'SMTP não configurado. Vai a Definições → Email para o configurar.' })
+  }
+
+  try {
+    await enviarSmtp(smtp, { to: destinatarioEmail, subject: assunto, content: corpo })
+    await registarLog(supabase, 'fatura', destinatarioEmail, assunto, 'enviado', null)
+    return jsonResponse({ ok: true })
+  } catch (err) {
+    await registarLog(supabase, 'fatura', destinatarioEmail, assunto, 'erro', String(err))
+    return jsonResponse({ ok: false, error: String(err) })
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
@@ -262,6 +324,7 @@ Deno.serve(async (req) => {
   if (categoria === 'inscricao') return processarInscricao(supabase, body)
   if (categoria === 'suporte') return processarSuporte(supabase, body)
   if (categoria === 'aniversario') return processarAniversario(req, supabase, body)
+  if (categoria === 'fatura') return processarFatura(req, supabase, body)
 
   return jsonResponse({ ok: false, error: 'Categoria desconhecida' }, 400)
 })

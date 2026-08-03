@@ -608,7 +608,8 @@ async function configurarInscricaoEvento(api) {
       return
     }
 
-    // Prefer redirecting to the payment page using the pagamento_token returned by the RPC.
+    api.dispararEmailInscricao(data.inscricao_id, 'pendente')
+
     const pagamentoToken = data.pagamento_token || data.public_token
 
     // A RPC devolve o id da inscrição em "inscricao_id" (não em "id").

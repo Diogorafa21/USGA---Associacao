@@ -168,6 +168,10 @@ export async function criarInscricaoEvento(dados) {
   return { data, error }
 }
 
+export function dispararEmailInscricao(inscricaoId, tipo) {
+  supabase.functions.invoke('enviar-email', { body: { categoria: 'inscricao', tipo, inscricao_id: inscricaoId } }).catch(() => {})
+}
+
 export async function getMinhasInscricoes(utilizadorId) {
   const { data, error } = await supabase
     .from('inscricoes_evento')
