@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+Disallow: /admin.html
+Disallow: /perfil.html
+Disallow: /estatutos.html
+Disallow: /pagamento-evento.html
+Disallow: /pagamento-quota.html
+Disallow: /estado-inscricao.html
+Disallow: /confirmacao-email.html
+
+Sitemap: https://usga-associacao.github.io/sitemap.xml
