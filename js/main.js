@@ -1105,8 +1105,12 @@ async function configurarDetalheEvento(api) {
   const heroTitulo = document.getElementById('heroTitulo')
   const heroSub = document.getElementById('heroSubtitulo')
   const heroDesc = document.getElementById('heroDescricao')
+  const descricaoEl = document.getElementById('descricaoEvento')
+  const recomendacoesBox = document.getElementById('recomendacoesBox')
+  const recomendacoesEl = document.getElementById('recomendacoesEvento')
   const imagem = document.getElementById('imagemEvento')
   const dataEl = document.getElementById('dataEvento')
+  const fimInscricoesEl = document.getElementById('fimInscricoesEvento')
   const localEl = document.getElementById('localEvento')
   const precoEl = document.getElementById('precoEvento')
   const btnReg = document.getElementById('btnRegulamento')
@@ -1115,8 +1119,18 @@ async function configurarDetalheEvento(api) {
   if (heroTitulo) heroTitulo.textContent = evento.titulo || ''
   if (heroSub) heroSub.textContent = evento.categoria || ''
   if (heroDesc) heroDesc.textContent = evento.descricao_curta || ''
+  if (descricaoEl) descricaoEl.textContent = evento.descricao || evento.descricao_curta || ''
+  if (recomendacoesBox && recomendacoesEl) {
+    if (evento.recomendacoes) {
+      recomendacoesEl.textContent = evento.recomendacoes
+      recomendacoesBox.style.display = 'block'
+    } else {
+      recomendacoesBox.style.display = 'none'
+    }
+  }
   if (imagem) imagem.style.backgroundImage = evento.imagem_url ? `url('${evento.imagem_url}')` : ''
   if (dataEl) dataEl.textContent = api.formatarData(evento.data_evento)
+  if (fimInscricoesEl) fimInscricoesEl.textContent = evento.data_fim_inscricoes ? api.formatarData(evento.data_fim_inscricoes) : '-'
   if (localEl) localEl.textContent = evento.local || '-'
   if (precoEl) precoEl.textContent = typeof api.formatarMoeda === 'function' ? api.formatarMoeda(evento.preco || 0) : (evento.preco || '-')
 
