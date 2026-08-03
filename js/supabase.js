@@ -30,6 +30,17 @@ export async function login(email, password) {
   return { data, error }
 }
 
+export async function pedirRedefinicaoPassword(email) {
+  const redirectTo = new URL('redefinir-password.html', window.location.href).href
+  const { data, error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo })
+  return { data, error }
+}
+
+export async function atualizarPassword(novaPassword) {
+  const { data, error } = await supabase.auth.updateUser({ password: novaPassword })
+  return { data, error }
+}
+
 export async function logout(redirectTo = 'index.html') {
   await supabase.auth.signOut()
   window.location.href = redirectTo

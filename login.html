@@ -67,10 +67,22 @@
                             <label style="display: flex; align-items: center; gap: 5px; font-weight: 400;">
                                 <input type="checkbox" style="width: auto;"> Lembrar-me
                             </label>
-                            <a href="#" style="color: var(--accent-color);">Esqueceu-se da password?</a>
+                            <a href="#" id="linkEsqueceuPassword" style="color: var(--accent-color);">Esqueceu-se da password?</a>
                         </div>
 
                         <button type="submit" id="btnLogin" class="btn btn-primary" style="width: 100%;">Entrar</button>
+                    </form>
+
+                    <form id="formRecuperarPassword" style="display:none;">
+                        <p style="font-size:14px;color:#666;margin-bottom:20px;">Introduza o seu email. Se estiver associado a uma conta, vai receber um link para definir uma nova password.</p>
+                        <div class="form-group">
+                            <label for="emailRecuperar">Email</label>
+                            <input type="email" id="emailRecuperar" name="emailRecuperar" required>
+                        </div>
+                        <button type="submit" id="btnRecuperar" class="btn btn-primary" style="width: 100%;">Enviar Link de Redefinição</button>
+                        <p style="text-align:center;margin-top:16px;font-size:14px;">
+                            <a href="#" id="linkVoltarLogin" style="color: var(--accent-color);">Voltar ao início de sessão</a>
+                        </p>
                     </form>
                     
                     <p style="text-align: center; margin-top: 20px; font-size: 14px;">

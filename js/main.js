@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     navOriginal.querySelectorAll('a').forEach(originalLink => {
       const item = document.createElement('li')
       const linkClone = originalLink.cloneNode(true)
+      linkClone.className = ''
       const hrefPagina = (linkClone.getAttribute('href') || '').split('?')[0].split('#')[0]
       if (hrefPagina && isPagina(hrefPagina)) {
         linkClone.classList.add('active')
@@ -229,6 +230,49 @@ function configurarLogin(api) {
     const destino = (redirect && !redirect.startsWith('http') && !redirect.startsWith('//')) ? redirect : 'perfil.html'
     window.location.href = destino
   })
+
+  const linkEsqueceu = document.getElementById('linkEsqueceuPassword')
+  const linkVoltar = document.getElementById('linkVoltarLogin')
+  const formRecuperar = document.getElementById('formRecuperarPassword')
+
+  if (linkEsqueceu && formRecuperar) {
+    linkEsqueceu.addEventListener('click', function (event) {
+      event.preventDefault()
+      loginForm.style.display = 'none'
+      formRecuperar.style.display = 'block'
+    })
+  }
+
+  if (linkVoltar && formRecuperar) {
+    linkVoltar.addEventListener('click', function (event) {
+      event.preventDefault()
+      formRecuperar.style.display = 'none'
+      loginForm.style.display = ''
+    })
+  }
+
+  if (formRecuperar) {
+    formRecuperar.addEventListener('submit', async function (event) {
+      event.preventDefault()
+
+      const email = formRecuperar.emailRecuperar.value.trim()
+      const submitBtn = formRecuperar.querySelector('button[type="submit"]')
+
+      if (!email.includes('@')) {
+        mostrarMensagem(formRecuperar, 'Introduza um email válido.', 'erro')
+        return
+      }
+
+      bloquearBotao(submitBtn, true, 'A enviar...')
+
+      await api.pedirRedefinicaoPassword(email)
+
+      bloquearBotao(submitBtn, false, 'Enviar Link de Redefinição')
+
+      mostrarMensagem(formRecuperar, 'Se este email estiver associado a uma conta, vai receber um link para definir uma nova password.', 'sucesso')
+      formRecuperar.reset()
+    })
+  }
 }
 
 function configurarRegisto(api) {
