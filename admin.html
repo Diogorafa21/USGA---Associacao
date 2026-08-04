@@ -1262,7 +1262,7 @@
             if (!data.length) return alert('Sem dados para exportar.')
             const header = 'Evento,Nome,Email,NIF,País,Localidade,Equipa,Seguro,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
             const rows = data.map(i => `"${csvSeguro(i.eventos?.titulo || '')}","${csvSeguro(i.nome)}","${csvSeguro(i.email)}","${csvSeguro(i.nif || '')}","${csvSeguro(i.pais || '')}","${csvSeguro(i.localidade || '')}","${csvSeguro(i.equipa || '')}","${i.seguro ? 'Sim' : 'Não'}","${csvSeguro(i.pagamento_estado)}","${csvSeguro(i.dorsal || '')}","${csvSeguro(i.tamanho_tshirt || '')}","${csvSeguro(i.data_inscricao)}"`)
-            const csv = [header, ...rows].join('\n')
+            const csv = '\ufeff' + [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
             a.download = 'inscricoes.csv'
@@ -1719,7 +1719,7 @@
                 const s = q.utilizadores
                 return `"${csvSeguro(s?.nome || '')} ${csvSeguro(s?.apelido || '')}","${csvSeguro(s?.email || '')}","${csvSeguro(s?.numero_socio || '')}","${q.ano}","${csvSeguro(q.data_limite || '')}","${q.valor}","${q.estado}","${csvSeguro(q.data_pagamento || '')}"`
             })
-            const csv = [header, ...rows].join('\n')
+            const csv = '\ufeff' + [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
             a.download = 'quotas.csv'
