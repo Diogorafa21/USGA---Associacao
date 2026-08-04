@@ -806,18 +806,6 @@ async function configurarPagamentoEvento(api) {
   const token = params.get('token') || sessionStorage.getItem('usga_inscricao_evento_token')
   if (!token) return
 
-  const voltarBtn = document.querySelector('.contact-section .btn.btn-primary')
-  if (!voltarBtn) return
-
-  const estadoLink = document.createElement('a')
-  estadoLink.href = `estado-inscricao.html?token=${encodeURIComponent(token)}`
-  estadoLink.className = 'btn-outline'
-  estadoLink.style.marginTop = '15px'
-  estadoLink.textContent = 'Ver estado da inscricao'
-
-  voltarBtn.insertAdjacentElement('afterend', estadoLink)
-
-  // Populate payment information using the public token
   const valorEl = document.getElementById('valorPagar')
   const eventoEl = document.getElementById('nomeEvento')
   const inscritoEl = document.getElementById('nomeInscrito')
@@ -826,10 +814,7 @@ async function configurarPagamentoEvento(api) {
   const comprovativoForm = document.getElementById('comprovativoForm')
   const mensagemBox = document.getElementById('mensagemComprovativo')
 
-  // show temporary loading (already present in markup)
-
   try {
-    // Prefer fetching a public payment record first (contains the valor)
     const { data: pagamentoData, error: pagamentoError } = await api.getPagamentoPublico(token)
 
     let dataToUse = null
@@ -847,7 +832,6 @@ async function configurarPagamentoEvento(api) {
         if (estadoEl) estadoEl.textContent = '-'
         if (referenciaEl) referenciaEl.textContent = '-'
 
-        // disable comprovativo form
         if (comprovativoForm) {
           comprovativoForm.querySelectorAll('input, button').forEach(i => i.disabled = true)
           if (mensagemBox) {
@@ -863,14 +847,12 @@ async function configurarPagamentoEvento(api) {
       dataToUse = estadoData
     }
 
-    // dataToUse may come from get_pagamento_publico or get_estado_inscricao
     const titulo = dataToUse.evento_titulo || dataToUse.evento?.titulo || dataToUse.titulo || '-'
     const nome = dataToUse.nome || dataToUse.inscrito_nome || '-'
     const pagamentoEstado = dataToUse.pagamento_estado || dataToUse.estado || dataToUse.estado || '-'
     const estadoInscricao = dataToUse.estado || '-'
     let valor = dataToUse.valor || dataToUse.pagamento_valor || dataToUse.valor_pagamento || null
 
-    // If valor is missing, try fetching the related inscription to read the event price
     if (!valor) {
       const inscricaoId = dataToUse.inscricao_id || dataToUse.inscricao || sessionStorage.getItem('usga_inscricao_evento_id')
       if (inscricaoId) {
@@ -884,7 +866,6 @@ async function configurarPagamentoEvento(api) {
           }
         }
 
-        // If still no valor, try fetching pagamento by inscricao as last resort
         if (!valor) {
           const { data: pagamentoByInscricao, error: pbiErr } = await api.getPagamentoByInscricao(inscricaoId)
           if (!pbiErr && pagamentoByInscricao) {
@@ -901,7 +882,6 @@ async function configurarPagamentoEvento(api) {
     if (eventoEl) eventoEl.textContent = titulo
     if (inscritoEl) inscritoEl.textContent = nome
 
-    // Debug info when ?debug=1 is present in URL
     if (new URLSearchParams(window.location.search).get('debug') === '1') {
       let debugDiv = document.getElementById('debugPagamento')
       if (!debugDiv) {
@@ -917,7 +897,6 @@ async function configurarPagamentoEvento(api) {
       debugDiv.textContent = `token: ${token}\npagamentoPublico: ${JSON.stringify(pagamentoDataFetched, null, 2)}\nestadoData: ${JSON.stringify(dataToUse, null, 2)}`
     }
 
-    // Show human-friendly payment/inscription state
     if (estadoEl) {
       if (pagamentoEstado === 'validado') estadoEl.textContent = 'Validado'
       else if (pagamentoEstado === 'em_validacao' || pagamentoEstado === 'em_validacao') estadoEl.textContent = 'Em validação'
@@ -928,7 +907,6 @@ async function configurarPagamentoEvento(api) {
 
     if (referenciaEl) referenciaEl.textContent = `${nome} + ${titulo}`
 
-    // Alterna a exibição do campo de telemóvel consoante o método escolhido
     const metodoSelect = document.getElementById('metodoPagamento')
     const grupoTelefoneMbway = document.getElementById('grupoTelefoneMbway')
     if (metodoSelect && grupoTelefoneMbway) {
@@ -937,7 +915,6 @@ async function configurarPagamentoEvento(api) {
       })
     }
 
-    // Wire comprovativo form: upload the file to storage, then link it to the existing payment via its public token
     if (comprovativoForm) {
       comprovativoForm.addEventListener('submit', async function (e) {
         e.preventDefault()
@@ -959,7 +936,6 @@ async function configurarPagamentoEvento(api) {
 
         const file = fileInput.files[0]
 
-        // basic size guard so nobody accidentally uploads a huge file (not a type restriction)
         const LIMITE_MB = 15
         if (file.size > LIMITE_MB * 1024 * 1024) {
           mostrarMensagem(comprovativoForm, `O ficheiro é demasiado grande (máx. ${LIMITE_MB}MB).`, 'erro')
@@ -969,7 +945,6 @@ async function configurarPagamentoEvento(api) {
         bloquearBotao(btnEnviar, true, 'A enviar comprovativo...')
 
         try {
-          // 1) upload the file itself to the private "comprovativos" bucket
           const { data: uploadData, error: uploadErr } = await api.uploadComprovativo(token, file)
           if (uploadErr || !uploadData) {
             console.error('Erro ao enviar ficheiro:', uploadErr)
@@ -979,7 +954,6 @@ async function configurarPagamentoEvento(api) {
             return
           }
 
-          // 2) link the uploaded file to the existing payment record and move it to "em_validacao"
           const referencia = referenciaInput ? referenciaInput.value.trim() : null
           const telefoneMbway = metodo === 'mbway' && telefoneMbwayInput ? telefoneMbwayInput.value.trim() : null
           const { error: submitErr } = await api.submeterComprovativoPagamento(token, uploadData.path, referencia, metodo, telefoneMbway)
