@@ -568,6 +568,30 @@ async function carregarQuotasPerfil(api, utilizadorId) {
     badgeEstado.className = temQuotaPendente ? 'badge badge-pendente' : 'badge badge-socio'
   }
 
+  const temQuotaAtiva = quotas.some(quota => {
+    if (quota.estado === 'isento') return true
+    if (quota.estado !== 'pago') return false
+    const validade = api.calcularValidadeQuota(quota)
+    return validade && validade.diasRestantes >= 0
+  })
+
+  const btnRenovar = document.getElementById('btnRenovarQuota')
+  if (btnRenovar) {
+    btnRenovar.style.display = temQuotaAtiva ? 'none' : 'inline-block'
+    btnRenovar.addEventListener('click', async function () {
+      btnRenovar.disabled = true
+      btnRenovar.textContent = 'A preparar...'
+      const { data: quotaData, error: quotaErr } = await api.garantirQuotaAtual()
+      if (quotaErr || !quotaData?.quota_id) {
+        alert('Não foi possível preparar a renovação. Tente novamente.')
+        btnRenovar.disabled = false
+        btnRenovar.textContent = 'Renovar Quota'
+        return
+      }
+      window.location.href = `pagamento-quota.html?quota=${encodeURIComponent(quotaData.quota_id)}`
+    })
+  }
+
   tbody.innerHTML = quotas.map(quota => {
     const pago = quota.estado === 'pago' || quota.estado === 'isento'
     const estadoLabel = estadoQuotaLabel(quota.estado)
