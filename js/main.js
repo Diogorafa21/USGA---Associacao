@@ -860,7 +860,7 @@ async function configurarPagamentoEvento(api) {
       }
     }
 
-    if (valorEl) valorEl.textContent = valor ? api.formatarMoeda(valor) : 'A aguardar valor'
+    if (valorEl) valorEl.innerHTML = valor ? api.formatarContribuicao(valor) : 'A aguardar valor'
     if (eventoEl) eventoEl.textContent = titulo
     if (inscritoEl) inscritoEl.textContent = nome
 
@@ -1176,7 +1176,7 @@ async function configurarDetalheEvento(api) {
   if (dataEl) dataEl.textContent = api.formatarData(evento.data_evento)
   if (fimInscricoesEl) fimInscricoesEl.textContent = evento.data_fim_inscricoes ? api.formatarData(evento.data_fim_inscricoes) : '-'
   if (localEl) localEl.textContent = evento.local || '-'
-  if (precoEl) precoEl.textContent = typeof api.formatarMoeda === 'function' ? api.formatarMoeda(evento.preco || 0) : (evento.preco || '-')
+  if (precoEl) precoEl.innerHTML = typeof api.formatarContribuicao === 'function' ? api.formatarContribuicao(evento.preco || 0) : (evento.preco || '-')
 
   if (btnReg) {
     if (evento.regulamento_url) {
