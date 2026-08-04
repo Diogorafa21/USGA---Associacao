@@ -722,7 +722,8 @@ async function configurarInscricaoEvento(api) {
       bi: form.bi.value.trim(),
       nif: form.nif.value.trim(),
       tamanho_tshirt: form.tamanho_tshirt.value || null,
-      pedido_fatura: form.pedido_fatura.checked
+      pedido_fatura: form.pedido_fatura.checked,
+      seguro: form.seguro.checked
     }
 
     const { data, error } = await api.criarInscricaoEvento(dados)
@@ -787,7 +788,7 @@ async function configurarEventoPublico(api) {
       <tr>
         <td style="font-weight:bold; color: #666;">${abreviarPais(inscrito.pais)}</td>
         <td>${escapeHtml(inscrito.nome)}</td>
-        <td>${inscrito.equipa || '-'}</td>
+        <td>${escapeHtml(inscrito.equipa) || '-'}</td>
         <td><strong>${dorsal}</strong></td>
         <td>${badge}</td>
       </tr>

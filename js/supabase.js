@@ -172,7 +172,8 @@ export async function criarInscricaoEvento(dados) {
     p_equipa:          dados.equipa          ?? null,
     p_tamanho_tshirt:  dados.tamanho_tshirt  ?? null,
     p_localidade:      dados.localidade      ?? null,
-    p_pedido_fatura:   dados.pedido_fatura   ?? false
+    p_pedido_fatura:   dados.pedido_fatura   ?? false,
+    p_seguro:          dados.seguro          ?? false
   })
   return { data, error }
 }

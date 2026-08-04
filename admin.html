@@ -187,8 +187,8 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Localidade</th><th>Equipa</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-inscricoes"><tr><td colspan="9" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>NIF</th><th>Localidade</th><th>Equipa</th><th>Seguro</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-inscricoes"><tr><td colspan="11" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -535,7 +535,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260813"></script>
+    <script src="js/main.js?v=20260814"></script>
     <script type="module">
         import {
             requireAdmin, supabase,
@@ -1165,8 +1165,10 @@
                     <td>${i.eventos?.titulo || '-'}</td>
                     <td>${escapeHtml(i.nome)}</td>
                     <td style="font-size:12px;">${escapeHtml(i.email)}</td>
-                    <td>${i.localidade || '-'}</td>
-                    <td>${i.equipa || '-'}</td>
+                    <td>${escapeHtml(i.nif) || '-'}</td>
+                    <td>${escapeHtml(i.localidade) || '-'}</td>
+                    <td>${escapeHtml(i.equipa) || '-'}</td>
+                    <td>${i.seguro ? 'Sim' : 'Não'}</td>
                     <td>${estadoInscricao}<br>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
                     <td>
                         <div style="display:flex;gap:4px;align-items:center;">
@@ -1230,8 +1232,8 @@
         window.exportarInscricoes = function() {
             const data = window._inscricoes || []
             if (!data.length) return alert('Sem dados para exportar.')
-            const header = 'Evento,Nome,Email,País,Localidade,Equipa,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
-            const rows = data.map(i => `"${csvSeguro(i.eventos?.titulo || '')}","${csvSeguro(i.nome)}","${csvSeguro(i.email)}","${csvSeguro(i.pais || '')}","${csvSeguro(i.localidade || '')}","${csvSeguro(i.equipa || '')}","${csvSeguro(i.pagamento_estado)}","${csvSeguro(i.dorsal || '')}","${csvSeguro(i.tamanho_tshirt || '')}","${csvSeguro(i.data_inscricao)}"`)
+            const header = 'Evento,Nome,Email,NIF,País,Localidade,Equipa,Seguro,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
+            const rows = data.map(i => `"${csvSeguro(i.eventos?.titulo || '')}","${csvSeguro(i.nome)}","${csvSeguro(i.email)}","${csvSeguro(i.nif || '')}","${csvSeguro(i.pais || '')}","${csvSeguro(i.localidade || '')}","${csvSeguro(i.equipa || '')}","${i.seguro ? 'Sim' : 'Não'}","${csvSeguro(i.pagamento_estado)}","${csvSeguro(i.dorsal || '')}","${csvSeguro(i.tamanho_tshirt || '')}","${csvSeguro(i.data_inscricao)}"`)
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
@@ -1262,7 +1264,7 @@
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
                     <td>${s.numero_socio || '-'}</td>
-                    <td>${s.nome || ''} ${s.apelido || ''}</td>
+                    <td>${escapeHtml(s.nome)} ${escapeHtml(s.apelido)}</td>
                     <td style="font-size:12px;">${escapeHtml(s.email)}</td>
                     <td>${estadoBadgeSocio[s.estado] || s.estado}</td>
                     <td></td>`
@@ -1338,7 +1340,7 @@
             }
 
             div.innerHTML = proximos.map(({ socio, diasRestantes, idade }) => {
-                const nome = `${socio.nome || ''} ${socio.apelido || ''}`.trim()
+                const nome = `${escapeHtml(socio.nome)} ${escapeHtml(socio.apelido)}`.trim()
                 const dataFmt = new Date(socio.data_nascimento).toLocaleDateString('pt-PT', { day: '2-digit', month: 'short' })
                 const rotulo = diasRestantes === 0 ? 'Hoje!' : diasRestantes === 1 ? 'Amanhã' : `em ${diasRestantes} dias`
                 return `
@@ -1428,7 +1430,7 @@
             data.forEach(u => {
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
-                    <td>${u.nome || ''} ${u.apelido || ''}</td>
+                    <td>${escapeHtml(u.nome)} ${escapeHtml(u.apelido)}</td>
                     <td style="font-size:12px;">${escapeHtml(u.email)}</td>
                     <td>${u.numero_socio || '-'}</td>
                     <td>${estadoBadgeSocio[u.estado] || u.estado}</td>
@@ -1590,7 +1592,7 @@
             tbody.innerHTML = ''
             filtrado.forEach(q => {
                 const socio = q.utilizadores
-                const nome = socio ? `${socio.nome || ''} ${socio.apelido || ''}`.trim() : '-'
+                const nome = socio ? `${escapeHtml(socio.nome)} ${escapeHtml(socio.apelido)}`.trim() : '-'
                 const validade = calcularValidadeQuota(q)
                 let validadeCelula = '-'
                 if (validade) {
@@ -1604,7 +1606,7 @@
                 }
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
-                    <td>${nome}<br><small style="color:#999;">${socio?.email || ''}</small></td>
+                    <td>${nome}<br><small style="color:#999;">${escapeHtml(socio?.email) || ''}</small></td>
                     <td>${socio?.numero_socio || '-'}</td>
                     <td>${q.ano}</td>
                     <td style="font-size:12px;">${q.data_limite ? formatarData(q.data_limite) : '-'}</td>
@@ -1682,7 +1684,7 @@
             const header = 'Nome,Email,Nº Sócio,Ano,Data Limite,Valor,Estado,Data Pagamento'
             const rows = data.map(q => {
                 const s = q.utilizadores
-                return `"${s?.nome || ''} ${s?.apelido || ''}","${s?.email || ''}","${s?.numero_socio || ''}","${q.ano}","${q.data_limite || ''}","${q.valor}","${q.estado}","${q.data_pagamento || ''}"`
+                return `"${csvSeguro(s?.nome || '')} ${csvSeguro(s?.apelido || '')}","${csvSeguro(s?.email || '')}","${csvSeguro(s?.numero_socio || '')}","${q.ano}","${csvSeguro(q.data_limite || '')}","${q.valor}","${q.estado}","${csvSeguro(q.data_pagamento || '')}"`
             })
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
@@ -1708,14 +1710,14 @@
             data.forEach(p => {
                 const u = p.utilizadores
                 const inscricao = p.inscricoes_evento
-                const nome = u ? `${u.nome || ''} ${u.apelido || ''}`.trim() : (inscricao?.nome || '-')
-                const email = u?.email || inscricao?.email || ''
+                const nome = u ? `${escapeHtml(u.nome)} ${escapeHtml(u.apelido)}`.trim() : (escapeHtml(inscricao?.nome) || '-')
+                const email = escapeHtml(u?.email || inscricao?.email) || ''
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
                     <td><span class="badge" style="background:#f0f0f0;color:#444;">${p.tipo}</span>${p.pedido_fatura ? ' <span class="badge" style="background:#ede9fe;color:#5b21b6;" title="Fatura pedida">🧾 Fatura</span>' : ''}</td>
                     <td>${nome}<br><small style="color:#999;">${email}</small></td>
                     <td>${formatarMoeda(p.valor)}</td>
-                    <td>${p.metodo === 'mbway' ? `MB WAY${p.telefone_mbway ? '<br><small style="color:#999;">' + p.telefone_mbway + '</small>' : ''}` : (p.metodo || '-')}</td>
+                    <td>${p.metodo === 'mbway' ? `MB WAY${p.telefone_mbway ? '<br><small style="color:#999;">' + escapeHtml(p.telefone_mbway) + '</small>' : ''}` : (p.metodo || '-')}</td>
                     <td>${pagBadge[p.estado] || p.estado}</td>
                     <td style="font-size:12px;">${formatarData(p.created_at)}</td>
                     <td></td>`
