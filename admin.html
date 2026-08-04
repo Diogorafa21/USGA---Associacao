@@ -161,6 +161,18 @@
                             <h2>Eventos</h2>
                             <button class="btn btn-primary btn-small" onclick="abrirModalEvento()">+ Novo Evento</button>
                         </div>
+                        <div class="form-inline">
+                            <input type="text" id="searchEventos" placeholder="Pesquisar por título..." oninput="filtrarEventos()" style="flex:1;min-width:200px;">
+                            <select id="filtroEstadoEvento" onchange="filtrarEventos()">
+                                <option value="">Todos os estados</option>
+                                <option value="rascunho">Rascunho</option>
+                                <option value="brevemente">Brevemente</option>
+                                <option value="aberto">Aberto</option>
+                                <option value="fechado">Fechado</option>
+                                <option value="concluido">Concluído</option>
+                                <option value="cancelado">Cancelado</option>
+                            </select>
+                        </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
                                 <thead><tr><th>Título</th><th>Data</th><th>Estado</th><th>Vagas</th><th>Ações</th></tr></thead>
@@ -173,10 +185,11 @@
                     <div class="admin-section" id="sec-inscricoes">
                         <h2 style="margin-bottom:20px;">Inscrições em Eventos</h2>
                         <div class="form-inline">
-                            <select id="filtroEvento" onchange="carregarInscricoes()">
+                            <input type="text" id="searchInscricoes" placeholder="Pesquisar por nome, email ou NIF..." oninput="filtrarInscricoes()" style="flex:1;min-width:200px;">
+                            <select id="filtroEvento" onchange="filtrarInscricoes()">
                                 <option value="">Todos os eventos</option>
                             </select>
-                            <select id="filtroPagamento" onchange="carregarInscricoes()">
+                            <select id="filtroPagamento" onchange="filtrarInscricoes()">
                                 <option value="">Todos os estados</option>
                                 <option value="pendente">Pendente</option>
                                 <option value="em_validacao">Em validação</option>
@@ -244,6 +257,15 @@
                     <!-- PEDIDOS DE SÓCIO -->
                     <div class="admin-section" id="sec-pedidos">
                         <h2 style="margin-bottom:20px;">Pedidos de Sócio</h2>
+                        <div class="form-inline">
+                            <input type="text" id="searchPedidos" placeholder="Pesquisar por nome ou email..." oninput="filtrarPedidos()" style="flex:1;min-width:200px;">
+                            <select id="filtroEstadoPedido" onchange="filtrarPedidos()">
+                                <option value="">Todos os estados</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="aprovado">Aprovado</option>
+                                <option value="rejeitado">Rejeitado</option>
+                            </select>
+                        </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
                                 <thead><tr><th>Nome</th><th>Email</th><th>NIF</th><th>Sexo</th><th>Localidade</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead>
@@ -260,7 +282,8 @@
                             <div class="stat-card"><div class="num" id="kpi-quotas-pendentes">-</div><div class="lbl">Por Pagar</div></div>
                         </div>
                         <div class="form-inline">
-                            <select id="filtroEstadoQuota" onchange="carregarQuotas()">
+                            <input type="text" id="searchQuotas" placeholder="Pesquisar por nome ou email..." oninput="filtrarQuotas()" style="flex:1;min-width:200px;">
+                            <select id="filtroEstadoQuota" onchange="filtrarQuotas()">
                                 <option value="">Todos os estados</option>
                                 <option value="por_pagar">Por pagar</option>
                                 <option value="pendente_validacao">Em validação</option>
@@ -280,6 +303,16 @@
                     <!-- PAGAMENTOS -->
                     <div class="admin-section" id="sec-pagamentos">
                         <h2 style="margin-bottom:20px;">Pagamentos</h2>
+                        <div class="form-inline">
+                            <input type="text" id="searchPagamentos" placeholder="Pesquisar por nome ou email..." oninput="filtrarPagamentos()" style="flex:1;min-width:200px;">
+                            <select id="filtroEstadoPagamento" onchange="filtrarPagamentos()">
+                                <option value="">Todos os estados</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="em_validacao">Em validação</option>
+                                <option value="validado">Validado</option>
+                                <option value="rejeitado">Rejeitado</option>
+                            </select>
+                        </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
                                 <thead><tr><th>Tipo</th><th>Sócio</th><th>Valor</th><th>Método</th><th>Estado</th><th>Data</th><th>Ações</th></tr></thead>
@@ -307,6 +340,14 @@
                     <!-- SUPORTE -->
                     <div class="admin-section" id="sec-suporte">
                         <h2 style="margin-bottom:20px;">Mensagens de Suporte</h2>
+                        <div class="form-inline">
+                            <input type="text" id="searchSuporte" placeholder="Pesquisar por nome, email ou assunto..." oninput="filtrarSuporte()" style="flex:1;min-width:200px;">
+                            <select id="filtroEstadoSuporte" onchange="filtrarSuporte()">
+                                <option value="">Todos</option>
+                                <option value="pendente">Pendente</option>
+                                <option value="resolvido">Resolvido</option>
+                            </select>
+                        </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
                                 <thead><tr><th>Nome</th><th>Email</th><th>Assunto</th><th>Data</th><th>Estado</th><th>Ações</th></tr></thead>
@@ -908,6 +949,24 @@
         async function carregarEventos() {
             const { data } = await supabase.from('eventos').select('*').order('data_evento', { ascending: false })
             todosEventos = data || []
+
+            const sel = document.getElementById('filtroEvento')
+            sel.innerHTML = '<option value="">Todos os eventos</option>'
+            todosEventos.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.titulo; sel.appendChild(o) })
+
+            filtrarEventos()
+        }
+
+        window.filtrarEventos = function() {
+            const termo = document.getElementById('searchEventos').value.toLowerCase()
+            const filtro = document.getElementById('filtroEstadoEvento').value
+            const filtrado = todosEventos.filter(ev => {
+                return (ev.titulo || '').toLowerCase().includes(termo) && (!filtro || ev.estado === filtro)
+            })
+            renderEventos(filtrado)
+        }
+
+        function renderEventos(data) {
             const tbody = document.getElementById('tbl-eventos')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem eventos.</td></tr>'; return }
 
@@ -917,7 +976,7 @@
             data.forEach(ev => {
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
-                    <td><strong>${ev.titulo}</strong><br><small style="color:#999;">${ev.slug}</small></td>
+                    <td><strong>${escapeHtml(ev.titulo)}</strong><br><small style="color:#999;">${escapeHtml(ev.slug)}</small></td>
                     <td>${formatarData(ev.data_evento)}</td>
                     <td><span class="badge ${tagClass[ev.estado] || ''}" style="padding:3px 10px;border-radius:99px;font-size:12px;">${ev.estado}</span></td>
                     <td>${ev.vagas ?? 'Ilimitado'}</td>
@@ -933,11 +992,6 @@
                 }))
                 tbody.appendChild(tr)
             })
-
-            // Popular filtro de eventos nas inscrições
-            const sel = document.getElementById('filtroEvento')
-            sel.innerHTML = '<option value="">Todos os eventos</option>'
-            data.forEach(ev => { const o = document.createElement('option'); o.value = ev.id; o.textContent = ev.titulo; sel.appendChild(o) })
         }
 
         // Muda para a secção de Inscrições já filtrada por um evento especifico
@@ -1168,17 +1222,29 @@
         }
 
         window.carregarInscricoes = async function() {
-            const eventoFiltro   = document.getElementById('filtroEvento').value
-            const pagFiltro      = document.getElementById('filtroPagamento').value
-            let query = supabase.from('inscricoes_evento').select('*, eventos(titulo)').order('data_inscricao', { ascending: false })
-            if (eventoFiltro)  query = query.eq('evento_id', eventoFiltro)
-            if (pagFiltro)     query = query.eq('pagamento_estado', pagFiltro)
-            const { data, error } = await query
+            const { data, error } = await supabase.from('inscricoes_evento').select('*, eventos(titulo)').order('data_inscricao', { ascending: false })
             if (error) {
                 alert('Erro ao carregar inscrições: ' + error.message)
                 return
             }
             window._inscricoes = data || []
+            filtrarInscricoes()
+        }
+
+        window.filtrarInscricoes = function() {
+            const termo = document.getElementById('searchInscricoes').value.toLowerCase()
+            const eventoFiltro = document.getElementById('filtroEvento').value
+            const pagFiltro = document.getElementById('filtroPagamento').value
+            const filtrado = (window._inscricoes || []).filter(i => {
+                const alvo = `${i.nome || ''} ${i.email || ''} ${i.nif || ''}`.toLowerCase()
+                return alvo.includes(termo)
+                    && (!eventoFiltro || i.evento_id === eventoFiltro)
+                    && (!pagFiltro || i.pagamento_estado === pagFiltro)
+            })
+            renderInscricoes(filtrado)
+        }
+
+        function renderInscricoes(data) {
             const tbody = document.getElementById('tbl-inscricoes')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
 
@@ -1566,10 +1632,27 @@
         }
 
         // ── PEDIDOS DE SÓCIO ─────────────────────────────────────────────
+        let todosPedidos = []
+
         async function carregarPedidos() {
             const { data } = await getAdminPedidosSocio()
+            todosPedidos = data || []
+            document.getElementById('sb-pedidos').textContent = todosPedidos.filter(p => p.estado === 'pendente').length || 0
+            filtrarPedidos()
+        }
+
+        window.filtrarPedidos = function() {
+            const termo = document.getElementById('searchPedidos').value.toLowerCase()
+            const filtro = document.getElementById('filtroEstadoPedido').value
+            const filtrado = todosPedidos.filter(p => {
+                const alvo = `${p.nome || ''} ${p.apelido || ''} ${p.email || ''}`.toLowerCase()
+                return alvo.includes(termo) && (!filtro || p.estado === filtro)
+            })
+            renderPedidos(filtrado)
+        }
+
+        function renderPedidos(data) {
             const tbody = document.getElementById('tbl-pedidos')
-            document.getElementById('sb-pedidos').textContent = data?.filter(p => p.estado === 'pendente').length || 0
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">Sem pedidos.</td></tr>'; return }
             const sexoLabel = { F: 'Feminino', M: 'Masculino', Outro: 'Outro' }
             tbody.innerHTML = ''
@@ -1610,16 +1693,26 @@
         const DIAS_AVISO_EXPIRACAO = 30
 
         window.carregarQuotas = async function() {
-            const filtro = document.getElementById('filtroEstadoQuota').value
             const { data } = await getAdminQuotas()
             todasQuotas = data || []
-            const filtrado = filtro ? data?.filter(q => q.estado === filtro) : data
             document.getElementById('sb-quotas').textContent = data?.filter(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao').length || 0
-
-            // KPI: quantos sócios estão em dia (pago/isento) vs quantos ainda têm de pagar
             document.getElementById('kpi-quotas-pagas').textContent = data?.filter(q => q.estado === 'pago' || q.estado === 'isento').length || 0
             document.getElementById('kpi-quotas-pendentes').textContent = data?.filter(q => q.estado === 'por_pagar' || q.estado === 'pendente_validacao').length || 0
+            filtrarQuotas()
+        }
 
+        window.filtrarQuotas = function() {
+            const termo = document.getElementById('searchQuotas').value.toLowerCase()
+            const filtro = document.getElementById('filtroEstadoQuota').value
+            const filtrado = todasQuotas.filter(q => {
+                const socio = q.utilizadores
+                const alvo = `${socio?.nome || ''} ${socio?.apelido || ''} ${socio?.email || ''}`.toLowerCase()
+                return alvo.includes(termo) && (!filtro || q.estado === filtro)
+            })
+            renderQuotas(filtrado)
+        }
+
+        function renderQuotas(filtrado) {
             const tbody = document.getElementById('tbl-quotas')
             if (!filtrado?.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Sem quotas.</td></tr>'; return }
             tbody.innerHTML = ''
@@ -1727,18 +1820,38 @@
         }
 
         // ── PAGAMENTOS ───────────────────────────────────────────────────
+        let todosPagamentos = []
+
         async function carregarPagamentos() {
             const { data, error } = await supabase
-        .from('pagamentos')
-        .select('*, utilizadores!utilizador_id(nome, apelido, email), inscricoes_evento(nome, email)')
-        .order('created_at', { ascending: false })
-    const tbody = document.getElementById('tbl-pagamentos')
-    if (error) {
-        console.error('Erro ao carregar pagamentos:', error)
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c00;">Erro ao carregar pagamentos: ' + error.message + '</td></tr>'
-        return
-    }
-    if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem pagamentos.</td></tr>'; return }
+                .from('pagamentos')
+                .select('*, utilizadores!utilizador_id(nome, apelido, email), inscricoes_evento(nome, email)')
+                .order('created_at', { ascending: false })
+            const tbody = document.getElementById('tbl-pagamentos')
+            if (error) {
+                console.error('Erro ao carregar pagamentos:', error)
+                tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#c00;">Erro ao carregar pagamentos: ' + error.message + '</td></tr>'
+                return
+            }
+            todosPagamentos = data || []
+            filtrarPagamentos()
+        }
+
+        window.filtrarPagamentos = function() {
+            const termo = document.getElementById('searchPagamentos').value.toLowerCase()
+            const filtro = document.getElementById('filtroEstadoPagamento').value
+            const filtrado = todosPagamentos.filter(p => {
+                const u = p.utilizadores
+                const inscricao = p.inscricoes_evento
+                const alvo = `${u?.nome || ''} ${u?.apelido || ''} ${u?.email || ''} ${inscricao?.nome || ''} ${inscricao?.email || ''}`.toLowerCase()
+                return alvo.includes(termo) && (!filtro || p.estado === filtro)
+            })
+            renderPagamentos(filtrado)
+        }
+
+        function renderPagamentos(data) {
+            const tbody = document.getElementById('tbl-pagamentos')
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:#999;">Sem pagamentos.</td></tr>'; return }
             tbody.innerHTML = ''
             data.forEach(p => {
                 const u = p.utilizadores
@@ -1787,9 +1900,27 @@
         }
 
         // ── SUPORTE ──────────────────────────────────────────────────────
+        let todasMensagensSuporte = []
+
         async function carregarSuporte() {
             const { data } = await supabase.from('mensagens_suporte').select('*').order('created_at', { ascending: false })
-            document.getElementById('sb-suporte').textContent = data?.filter(m => !m.resolvido).length || 0
+            todasMensagensSuporte = data || []
+            document.getElementById('sb-suporte').textContent = todasMensagensSuporte.filter(m => !m.resolvido).length || 0
+            filtrarSuporte()
+        }
+
+        window.filtrarSuporte = function() {
+            const termo = document.getElementById('searchSuporte').value.toLowerCase()
+            const filtro = document.getElementById('filtroEstadoSuporte').value
+            const filtrado = todasMensagensSuporte.filter(m => {
+                const alvo = `${m.nome || ''} ${m.email || ''} ${m.assunto || ''}`.toLowerCase()
+                const estadoOk = !filtro || (filtro === 'resolvido' ? !!m.resolvido : !m.resolvido)
+                return alvo.includes(termo) && estadoOk
+            })
+            renderSuporte(filtrado)
+        }
+
+        function renderSuporte(data) {
             const tbody = document.getElementById('tbl-suporte')
             if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem mensagens.</td></tr>'; return }
             tbody.innerHTML = ''
