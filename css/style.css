@@ -577,6 +577,8 @@ body.home-page .nav-link.active {
 
 .participants-table-wrapper {
     overflow-x: auto;
+    max-width: 100%;
+    min-width: 0;
     border: 1px solid var(--border-color);
     border-radius: 8px;
 }
