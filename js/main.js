@@ -440,6 +440,7 @@ async function configurarPerfil(api, sessao) {
   configurarEdicaoPerfil(api, sessao, perfil)
 
   await carregarQuotasPerfil(api, sessao.user.id)
+  await carregarEventosPerfil(api, sessao.user.id)
 }
 
 function configurarEdicaoPerfil(api, sessao, perfil) {
@@ -587,6 +588,44 @@ async function carregarQuotasPerfil(api, utilizadorId) {
         <td>${fatura}</td>
         <td>${acao}</td>
       </tr>
+    `
+  }).join('')
+}
+
+async function carregarEventosPerfil(api, utilizadorId) {
+  const container = document.getElementById('listaEventos')
+  if (!container) return
+
+  const { data: inscricoes, error } = await api.getMinhasInscricoes(utilizadorId)
+
+  if (error) {
+    container.innerHTML = '<p style="color:#c00; text-align:center;">Nao foi possivel carregar os seus eventos.</p>'
+    return
+  }
+
+  if (!inscricoes || inscricoes.length === 0) {
+    container.innerHTML = '<p style="color:#999; text-align:center;">Ainda nao se inscreveu em nenhum evento.</p>'
+    return
+  }
+
+  const estadoBadge = {
+    confirmada: '<span class="badge badge-pago">Confirmada</span>',
+    pendente: '<span class="badge badge-pendente">Pendente</span>',
+    rejeitada: '<span class="badge badge-nao-socio">Rejeitada</span>',
+    cancelada: '<span class="badge badge-nao-socio">Cancelada</span>'
+  }
+
+  container.innerHTML = inscricoes.map(inscricao => {
+    const evento = inscricao.eventos
+    const badge = estadoBadge[inscricao.estado] || inscricao.estado
+    return `
+      <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; padding:16px; border:1px solid var(--border-color); border-radius:8px; flex-wrap:wrap;">
+        <div style="min-width:0;">
+          <strong>${evento?.titulo || 'Evento'}</strong><br>
+          <span style="color:#999; font-size:13px;">${evento?.data_evento ? api.formatarData(evento.data_evento) : '-'}</span>
+        </div>
+        <div>${badge}</div>
+      </div>
     `
   }).join('')
 }

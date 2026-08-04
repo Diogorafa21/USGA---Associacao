@@ -850,6 +850,7 @@ body.home-page .nav-link.active {
     border-radius: 8px;
     border: 1px solid var(--border-color);
     text-align: center;
+    min-width: 0;
     height: fit-content;
 }
 
@@ -907,6 +908,7 @@ body.home-page .nav-link.active {
     display: flex;
     flex-direction: column;
     gap: 40px;
+    min-width: 0;
 }
 
 .content-box {
