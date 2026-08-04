@@ -992,6 +992,13 @@ async function configurarPagamentoEvento(api) {
           const { error: submitErr } = await api.submeterComprovativoPagamento(token, uploadData.path, referencia, metodo, telefoneMbway)
           if (submitErr) {
             console.error('Erro ao submeter comprovativo:', submitErr)
+            if (/j[aá] validado/i.test(submitErr.message || '')) {
+              mostrarMensagem(comprovativoForm, 'O seu pagamento já foi validado pela nossa equipa. Não é necessário submeter novamente.', 'sucesso')
+              mostrarPopup('O seu pagamento já foi validado pela nossa equipa. Não é necessário submeter novamente.', 'sucesso')
+              if (estadoEl) estadoEl.textContent = 'Validado'
+              bloquearBotao(btnEnviar, true, 'Já Validado')
+              return
+            }
             mostrarMensagem(comprovativoForm, 'Erro ao registar o comprovativo. Tente novamente.', 'erro')
             mostrarPopup('Não foi possível registar o comprovativo. Tente novamente.', 'erro')
             bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')

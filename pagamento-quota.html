@@ -112,7 +112,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260809"></script>
+    <script src="js/main.js?v=20260815"></script>
     <script type="module">
         import {
             getSessao, getPerfil, getMinhasQuotas, formatarMoeda,
@@ -210,6 +210,13 @@
                     const telefoneMbway = metodo === 'mbway' ? telefoneInput.value.trim() : null
                     const { error: submitErr } = await submeterComprovativoPagamento(pagamento.pagamento_token, uploadData.path, referencia, metodo, telefoneMbway)
                     if (submitErr) {
+                        if (/j[aá] validado/i.test(submitErr.message || '')) {
+                            mostrarMsg('O seu pagamento já foi validado pela nossa equipa. Não é necessário submeter novamente.', 'sucesso')
+                            if (window.mostrarPopup) window.mostrarPopup('O seu pagamento já foi validado pela nossa equipa. Não é necessário submeter novamente.', 'sucesso')
+                            btnEnviar.disabled = true
+                            btnEnviar.textContent = 'Já Validado'
+                            return
+                        }
                         mostrarMsg('Erro ao registar o comprovativo. Tente novamente.', 'erro')
                         if (window.mostrarPopup) window.mostrarPopup('Não foi possível registar o comprovativo. Tente novamente.', 'erro')
                         btnEnviar.disabled = false
