@@ -1255,6 +1255,8 @@ async function configurarDetalheEvento(api) {
   if (isPagina('evento-futuro.html') && areaInscricao) {
     if (evento.estado === 'aberto') {
       areaInscricao.innerHTML = `<a href="inscricao-evento.html?evento=${encodeURIComponent(evento.slug)}" class="btn btn-primary">Inscrever-me</a>`
+    } else if (evento.estado === 'brevemente') {
+      areaInscricao.innerHTML = `<div style="padding:10px;background:#fff;border-radius:6px;color:#666;">Inscrições brevemente disponíveis</div>`
     } else {
       areaInscricao.innerHTML = `<div style="padding:10px;background:#fff;border-radius:6px;color:#666;">Inscrições fechadas</div>`
     }

@@ -131,7 +131,7 @@ export async function getEventosFuturos() {
   const { data, error } = await supabase
     .from('eventos')
     .select('*')
-    .in('estado', ['aberto', 'fechado', 'cancelado'])
+    .in('estado', ['brevemente', 'aberto', 'fechado', 'cancelado'])
     .order('data_evento', { ascending: true })
   return { data, error }
 }
