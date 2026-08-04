@@ -422,7 +422,13 @@ async function configurarPerfil(api, sessao) {
   const heroTitle = document.querySelector('.hero-content h1')
   const profileName = document.querySelector('.profile-name')
   const profileType = document.querySelector('.profile-type')
-  const formInputs = document.querySelectorAll('.content-box form input')
+  const inputNome = document.getElementById('inputNome')
+  const inputEmail = document.getElementById('inputEmail')
+  const inputTelefone = document.getElementById('inputTelefone')
+  const inputNif = document.getElementById('inputNif')
+  const inputDataNascimento = document.getElementById('inputDataNascimento')
+  const inputCidade = document.getElementById('inputCidade')
+  const inputCc = document.getElementById('inputCc')
 
   if (heroTitle) heroTitle.textContent = `Ola, ${primeiroNome}`
   if (profileName) profileName.textContent = nomeCompleto || perfil.email
@@ -432,12 +438,13 @@ async function configurarPerfil(api, sessao) {
       : 'Conta registada'
   }
 
-  if (formInputs.length >= 4) {
-    formInputs[0].value = nomeCompleto
-    formInputs[1].value = perfil.email || ''
-    formInputs[2].value = perfil.telefone || ''
-    formInputs[3].value = perfil.nif || ''
-  }
+  if (inputNome) inputNome.value = nomeCompleto
+  if (inputEmail) inputEmail.value = perfil.email || ''
+  if (inputTelefone) inputTelefone.value = perfil.telefone || ''
+  if (inputNif) inputNif.value = perfil.nif || ''
+  if (inputDataNascimento) inputDataNascimento.value = perfil.data_nascimento || ''
+  if (inputCidade) inputCidade.value = perfil.cidade || ''
+  if (inputCc) inputCc.value = perfil.cc || ''
 
   if (perfil.role === 'admin') adicionarLinkAdminPerfil()
 
@@ -455,12 +462,16 @@ function configurarEdicaoPerfil(api, sessao, perfil) {
   const inputNome = document.getElementById('inputNome')
   const inputTelefone = document.getElementById('inputTelefone')
   const inputNif = document.getElementById('inputNif')
+  const inputDataNascimento = document.getElementById('inputDataNascimento')
+  const inputCidade = document.getElementById('inputCidade')
 
   if (!form || !btnEditar || !botoesEdicao) return
 
-  // O email nao e editavel por este formulario (a alteracao de email exige
-  // um fluxo proprio de verificacao no Supabase Auth), por isso fica sempre desativado.
-  const editaveis = [inputNome, inputTelefone, inputNif].filter(Boolean)
+  // O email e o Cartao de Cidadao nao sao editaveis por este formulario: o
+  // email exige um fluxo proprio de verificacao no Supabase Auth, e o CC e
+  // um documento de identificacao que nao deve ser alterado livremente pelo
+  // proprio utilizador, por isso ficam sempre desativados.
+  const editaveis = [inputNome, inputTelefone, inputNif, inputDataNascimento, inputCidade].filter(Boolean)
 
   function entrarModoEdicao() {
     editaveis.forEach(input => { input.disabled = false })
@@ -480,6 +491,8 @@ function configurarEdicaoPerfil(api, sessao, perfil) {
     if (inputNome) inputNome.value = nomeCompleto
     if (inputTelefone) inputTelefone.value = perfil.telefone || ''
     if (inputNif) inputNif.value = perfil.nif || ''
+    if (inputDataNascimento) inputDataNascimento.value = perfil.data_nascimento || ''
+    if (inputCidade) inputCidade.value = perfil.cidade || ''
   }
 
   btnEditar.addEventListener('click', entrarModoEdicao)
@@ -502,7 +515,9 @@ function configurarEdicaoPerfil(api, sessao, perfil) {
       nome: partesNome[0] || perfil.nome,
       apelido: partesNome.slice(1).join(' ') || null,
       telefone: inputTelefone?.value.trim() || null,
-      nif: inputNif?.value.trim() || null
+      nif: inputNif?.value.trim() || null,
+      data_nascimento: inputDataNascimento?.value || null,
+      cidade: inputCidade?.value.trim() || null
     }
 
     const { error } = await api.atualizarPerfil(sessao.user.id, dados)
