@@ -428,7 +428,6 @@ async function configurarPerfil(api, sessao) {
   const inputNif = document.getElementById('inputNif')
   const inputDataNascimento = document.getElementById('inputDataNascimento')
   const inputCidade = document.getElementById('inputCidade')
-  const inputCc = document.getElementById('inputCc')
 
   if (heroTitle) heroTitle.textContent = `Ola, ${primeiroNome}`
   if (profileName) profileName.textContent = nomeCompleto || perfil.email
@@ -444,7 +443,6 @@ async function configurarPerfil(api, sessao) {
   if (inputNif) inputNif.value = perfil.nif || ''
   if (inputDataNascimento) inputDataNascimento.value = perfil.data_nascimento || ''
   if (inputCidade) inputCidade.value = perfil.cidade || ''
-  if (inputCc) inputCc.value = perfil.cc || ''
 
   if (perfil.role === 'admin') adicionarLinkAdminPerfil()
 
