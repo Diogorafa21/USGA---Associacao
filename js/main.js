@@ -688,12 +688,12 @@ async function configurarEventoPublico(api) {
   if (!tbody) return
 
   if (error) {
-    tbody.innerHTML = '<tr><td colspan="4">Nao foi possivel carregar a lista de inscritos.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="5">Nao foi possivel carregar a lista de inscritos.</td></tr>'
     return
   }
 
   if (!inscritos || inscritos.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="4">Ainda nao existem inscricoes para este evento.</td></tr>'
+    tbody.innerHTML = '<tr><td colspan="5">Ainda nao existem inscricoes para este evento.</td></tr>'
   } else {
     tbody.innerHTML = inscritos.map((inscrito, index) => {
       const confirmado = inscrito.estado_publico === 'confirmada'
@@ -705,6 +705,7 @@ async function configurarEventoPublico(api) {
       <tr>
         <td style="font-weight:bold; color: #666;">${abreviarPais(inscrito.pais)}</td>
         <td>${inscrito.nome}</td>
+        <td>${inscrito.equipa || '-'}</td>
         <td><strong>${dorsal}</strong></td>
         <td>${badge}</td>
       </tr>

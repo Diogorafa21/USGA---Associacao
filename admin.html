@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.75">
     <title>Back-office - USGA</title>
-    <link rel="stylesheet" href="css/style.css?v=20260804">
+    <link rel="stylesheet" href="css/style.css?v=20260805">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -186,8 +186,8 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Localidade</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
-                                <tbody id="tbl-inscricoes"><tr><td colspan="8" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                <thead><tr><th>Evento</th><th>Participante</th><th>Email</th><th>Localidade</th><th>Equipa</th><th>Estado</th><th>Dorsal</th><th>T-shirt</th><th>Ações</th></tr></thead>
+                                <tbody id="tbl-inscricoes"><tr><td colspan="9" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
                     </div>
@@ -524,7 +524,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260805"></script>
+    <script src="js/main.js?v=20260806"></script>
     <script type="module">
         import {
             requireAdmin, supabase,
@@ -1127,7 +1127,7 @@
             }
             window._inscricoes = data || []
             const tbody = document.getElementById('tbl-inscricoes')
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Sem inscrições.</td></tr>'; return }
 
             tbody.innerHTML = ''
             data.forEach(i => {
@@ -1140,6 +1140,7 @@
                     <td>${i.nome}</td>
                     <td style="font-size:12px;">${i.email}</td>
                     <td>${i.localidade || '-'}</td>
+                    <td>${i.equipa || '-'}</td>
                     <td>${estadoInscricao}<br>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
                     <td>
                         <div style="display:flex;gap:4px;align-items:center;">
@@ -1203,8 +1204,8 @@
         window.exportarInscricoes = function() {
             const data = window._inscricoes || []
             if (!data.length) return alert('Sem dados para exportar.')
-            const header = 'Evento,Nome,Email,País,Localidade,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
-            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pais || ''}","${i.localidade || ''}","${i.pagamento_estado}","${i.dorsal || ''}","${i.tamanho_tshirt || ''}","${i.data_inscricao}"`)
+            const header = 'Evento,Nome,Email,País,Localidade,Equipa,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
+            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pais || ''}","${i.localidade || ''}","${i.equipa || ''}","${i.pagamento_estado}","${i.dorsal || ''}","${i.tamanho_tshirt || ''}","${i.data_inscricao}"`)
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
