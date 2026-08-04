@@ -99,7 +99,7 @@ async function processarInscricao(supabase: ReturnType<typeof createClient>, bod
 
   const { data: inscricao, error: inscricaoErr } = await supabase
     .from('inscricoes_evento')
-    .select('nome, email, dorsal, eventos(titulo, data_evento, local, preco)')
+    .select('nome, email, dorsal, public_token, eventos(titulo, data_evento, local, preco)')
     .eq('id', inscricaoId)
     .single()
 
@@ -117,7 +117,8 @@ async function processarInscricao(supabase: ReturnType<typeof createClient>, bod
     data_evento: formatarData(evento?.data_evento ?? null),
     local: evento?.local || '-',
     valor: formatarMoeda(evento?.preco ?? null),
-    dorsal: inscricao.dorsal || '-'
+    dorsal: inscricao.dorsal || '-',
+    link_estado: inscricao.public_token ? `https://usga-associacao.github.io/estado-inscricao.html?token=${inscricao.public_token}` : 'https://usga-associacao.github.io/estado-inscricao.html'
   }
 
   const chaveAssunto = tipo === 'confirmada' ? 'template_confirmada_assunto' : 'template_pendente_assunto'
@@ -130,7 +131,7 @@ async function processarInscricao(supabase: ReturnType<typeof createClient>, bod
 
   const mapaConfig = Object.fromEntries((configTemplates || []).map((c: { chave: string; valor: string }) => [c.chave, c.valor]))
   const assuntoTemplate = mapaConfig[chaveAssunto] || `Atualização da sua inscrição - ${dadosTemplate.evento}`
-  const corpoTemplate = mapaConfig[chaveCorpo] || 'Olá {{nome}}, a sua inscrição em {{evento}} foi atualizada.'
+  const corpoTemplate = mapaConfig[chaveCorpo] || 'Olá {{nome}}, a sua inscrição em {{evento}} foi atualizada. Pode consultar o estado da sua inscrição aqui: {{link_estado}}'
 
   const assunto = preencherTemplate(assuntoTemplate, dadosTemplate)
   const corpo = preencherTemplate(corpoTemplate, dadosTemplate)

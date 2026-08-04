@@ -897,6 +897,7 @@ async function configurarPagamentoEvento(api) {
           if (uploadErr || !uploadData) {
             console.error('Erro ao enviar ficheiro:', uploadErr)
             mostrarMensagem(comprovativoForm, 'Erro ao enviar o ficheiro. Tente novamente.', 'erro')
+            mostrarPopup('Não foi possível enviar o ficheiro. Tente novamente.', 'erro')
             bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
             return
           }
@@ -908,16 +909,19 @@ async function configurarPagamentoEvento(api) {
           if (submitErr) {
             console.error('Erro ao submeter comprovativo:', submitErr)
             mostrarMensagem(comprovativoForm, 'Erro ao registar o comprovativo. Tente novamente.', 'erro')
+            mostrarPopup('Não foi possível registar o comprovativo. Tente novamente.', 'erro')
             bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
             return
           }
 
           mostrarMensagem(comprovativoForm, 'Comprovativo enviado com sucesso. Aguarde validação da equipa.', 'sucesso')
+          mostrarPopup('Comprovativo enviado com sucesso. Aguarde a validação da nossa equipa.', 'sucesso')
           if (estadoEl) estadoEl.textContent = 'Em validação'
           bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
         } catch (err) {
           console.error(err)
           mostrarMensagem(comprovativoForm, 'Ocorreu um erro. Tente novamente mais tarde.', 'erro')
+          mostrarPopup('Ocorreu um erro inesperado. Tente novamente mais tarde.', 'erro')
           bloquearBotao(btnEnviar, false, 'Enviar Comprovativo')
         }
       })
@@ -1239,6 +1243,36 @@ function configurarPreviewFoto() {
     }
     reader.readAsDataURL(file)
   })
+}
+
+function mostrarPopup(texto, tipo) {
+  const overlay = document.createElement('div')
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;'
+
+  const card = document.createElement('div')
+  card.style.cssText = 'background:#fff;border-radius:12px;padding:36px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.25);'
+
+  const icone = document.createElement('div')
+  icone.style.cssText = 'font-size:48px;margin-bottom:16px;'
+  icone.textContent = tipo === 'erro' ? '❌' : '✅'
+
+  const msg = document.createElement('p')
+  msg.style.cssText = 'font-size:15px;color:#333;margin-bottom:24px;line-height:1.5;'
+  msg.textContent = texto
+
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.className = 'btn btn-primary'
+  btn.style.width = '100%'
+  btn.textContent = 'OK'
+  btn.addEventListener('click', () => overlay.remove())
+
+  card.appendChild(icone)
+  card.appendChild(msg)
+  card.appendChild(btn)
+  overlay.appendChild(card)
+  overlay.addEventListener('click', function (event) { if (event.target === overlay) overlay.remove() })
+  document.body.appendChild(overlay)
 }
 
 function mostrarMensagemQuery(form) {

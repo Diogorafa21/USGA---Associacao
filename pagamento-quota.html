@@ -112,7 +112,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260804"></script>
+    <script src="js/main.js?v=20260805"></script>
     <script type="module">
         import {
             getSessao, getPerfil, getMinhasQuotas, formatarMoeda,
@@ -200,6 +200,7 @@
                     const { data: uploadData, error: uploadErr } = await uploadComprovativo(pagamento.pagamento_token, file)
                     if (uploadErr || !uploadData) {
                         mostrarMsg('Erro ao enviar o ficheiro. Tente novamente.', 'erro')
+                        if (window.mostrarPopup) window.mostrarPopup('Não foi possível enviar o ficheiro. Tente novamente.', 'erro')
                         btnEnviar.disabled = false
                         btnEnviar.textContent = 'Enviar Comprovativo'
                         return
@@ -210,12 +211,14 @@
                     const { error: submitErr } = await submeterComprovativoPagamento(pagamento.pagamento_token, uploadData.path, referencia, metodo, telefoneMbway)
                     if (submitErr) {
                         mostrarMsg('Erro ao registar o comprovativo. Tente novamente.', 'erro')
+                        if (window.mostrarPopup) window.mostrarPopup('Não foi possível registar o comprovativo. Tente novamente.', 'erro')
                         btnEnviar.disabled = false
                         btnEnviar.textContent = 'Enviar Comprovativo'
                         return
                     }
 
                     mostrarMsg('Comprovativo enviado com sucesso. Aguarde validação da equipa.', 'sucesso')
+                    if (window.mostrarPopup) window.mostrarPopup('Comprovativo enviado com sucesso. Aguarde a validação da nossa equipa.', 'sucesso')
                     btnEnviar.textContent = 'Enviado ✓'
                 })
             }
