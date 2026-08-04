@@ -326,6 +326,8 @@ function configurarPedidoSocio(api) {
   form.addEventListener('submit', async function (event) {
     event.preventDefault()
 
+    if (form.website && form.website.value.trim()) return
+
     const submitBtn = form.querySelector('button[type="submit"]')
     bloquearBotao(submitBtn, true, 'A guardar pedido...')
 
@@ -381,6 +383,8 @@ function configurarSuporte(api) {
 
   form.addEventListener('submit', async function (event) {
     event.preventDefault()
+
+    if (form.website && form.website.value.trim()) return
 
     const submitBtn = form.querySelector('button[type="submit"]')
     bloquearBotao(submitBtn, true, 'A enviar...')
@@ -658,6 +662,8 @@ async function configurarInscricaoEvento(api) {
   form.addEventListener('submit', async function (event) {
     event.preventDefault()
 
+    if (form.website && form.website.value.trim()) return
+
     if (!evento) {
       mostrarMensagem(form, 'Este evento ainda nao esta disponivel para inscricoes online.', 'erro')
       return
@@ -743,7 +749,7 @@ async function configurarEventoPublico(api) {
       return `
       <tr>
         <td style="font-weight:bold; color: #666;">${abreviarPais(inscrito.pais)}</td>
-        <td>${inscrito.nome}</td>
+        <td>${escapeHtml(inscrito.nome)}</td>
         <td>${inscrito.equipa || '-'}</td>
         <td><strong>${dorsal}</strong></td>
         <td>${badge}</td>
@@ -1004,7 +1010,7 @@ async function configurarEstadoInscricao(api) {
       <table class="participants-table">
         <tbody>
           <tr><th>Evento</th><td>${data.evento_titulo}</td></tr>
-          <tr><th>Nome</th><td>${data.nome}</td></tr>
+          <tr><th>Nome</th><td>${escapeHtml(data.nome)}</td></tr>
           <tr><th>Inscricao</th><td><span class="badge ${data.estado === 'confirmada' ? 'badge-pago' : 'badge-pendente'}">${estadoInscricaoLabel(data.estado)}</span></td></tr>
           <tr><th>Pagamento</th><td><span class="badge ${data.pagamento_estado === 'validado' ? 'badge-pago' : 'badge-pendente'}">${estadoPagamentoLabel(data.pagamento_estado)}</span></td></tr>
           <tr><th>Dorsal</th><td>${data.dorsal || '-'}</td></tr>
@@ -1356,6 +1362,16 @@ function traduzirErroAuth(message) {
   if (erro.includes('password')) return 'A password nao cumpre os requisitos minimos.'
 
   return 'Nao foi possivel concluir a operacao. Tente novamente.'
+}
+
+function escapeHtml(valor) {
+  if (valor === null || valor === undefined) return ''
+  return String(valor)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
 }
 
 function isPagina(nomeFicheiro) {

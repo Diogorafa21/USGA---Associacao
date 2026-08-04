@@ -524,7 +524,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260806"></script>
+    <script src="js/main.js?v=20260809"></script>
     <script type="module">
         import {
             requireAdmin, supabase,
@@ -540,6 +540,21 @@
 
         const auth = await requireAdmin()
         if (!auth) throw new Error('sem permissao')
+
+        function escapeHtml(valor) {
+            if (valor === null || valor === undefined) return ''
+            return String(valor)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;')
+        }
+
+        function csvSeguro(valor) {
+            const texto = String(valor ?? '')
+            return /^[=+\-@]/.test(texto) ? `'${texto}` : texto
+        }
 
         // ── Navegação sidebar ────────────────────────────────────────────
         window.navegarPara = function(sec) {
@@ -713,7 +728,7 @@
             if (!recente?.length) { div.textContent = 'Sem atividade recente.'; return }
             div.innerHTML = recente.map(r => `
                 <div style="padding:8px 0; border-bottom:1px solid #f0f0f0; font-size:14px;">
-                    <strong>${r.nome}</strong> inscrito em <em>${r.eventos?.titulo || '-'}</em>
+                    <strong>${escapeHtml(r.nome)}</strong> inscrito em <em>${escapeHtml(r.eventos?.titulo) || '-'}</em>
                     <span style="float:right;color:#999;font-size:12px;">${formatarData(r.data_inscricao)}</span>
                 </div>`).join('')
         }
@@ -1137,8 +1152,8 @@
                     : '<span class="badge badge-pendente">Pendente</span>'
                 tr.innerHTML = `
                     <td>${i.eventos?.titulo || '-'}</td>
-                    <td>${i.nome}</td>
-                    <td style="font-size:12px;">${i.email}</td>
+                    <td>${escapeHtml(i.nome)}</td>
+                    <td style="font-size:12px;">${escapeHtml(i.email)}</td>
                     <td>${i.localidade || '-'}</td>
                     <td>${i.equipa || '-'}</td>
                     <td>${estadoInscricao}<br>${pagBadge[i.pagamento_estado] || i.pagamento_estado}</td>
@@ -1205,7 +1220,7 @@
             const data = window._inscricoes || []
             if (!data.length) return alert('Sem dados para exportar.')
             const header = 'Evento,Nome,Email,País,Localidade,Equipa,Estado Pagamento,Dorsal,Tamanho T-shirt,Data Inscrição'
-            const rows = data.map(i => `"${i.eventos?.titulo || ''}","${i.nome}","${i.email}","${i.pais || ''}","${i.localidade || ''}","${i.equipa || ''}","${i.pagamento_estado}","${i.dorsal || ''}","${i.tamanho_tshirt || ''}","${i.data_inscricao}"`)
+            const rows = data.map(i => `"${csvSeguro(i.eventos?.titulo || '')}","${csvSeguro(i.nome)}","${csvSeguro(i.email)}","${csvSeguro(i.pais || '')}","${csvSeguro(i.localidade || '')}","${csvSeguro(i.equipa || '')}","${csvSeguro(i.pagamento_estado)}","${csvSeguro(i.dorsal || '')}","${csvSeguro(i.tamanho_tshirt || '')}","${csvSeguro(i.data_inscricao)}"`)
             const csv = [header, ...rows].join('\n')
             const a = document.createElement('a')
             a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv)
@@ -1237,7 +1252,7 @@
                 tr.innerHTML = `
                     <td>${s.numero_socio || '-'}</td>
                     <td>${s.nome || ''} ${s.apelido || ''}</td>
-                    <td style="font-size:12px;">${s.email}</td>
+                    <td style="font-size:12px;">${escapeHtml(s.email)}</td>
                     <td>${estadoBadgeSocio[s.estado] || s.estado}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
@@ -1403,7 +1418,7 @@
                 const tr = document.createElement('tr')
                 tr.innerHTML = `
                     <td>${u.nome || ''} ${u.apelido || ''}</td>
-                    <td style="font-size:12px;">${u.email}</td>
+                    <td style="font-size:12px;">${escapeHtml(u.email)}</td>
                     <td>${u.numero_socio || '-'}</td>
                     <td>${estadoBadgeSocio[u.estado] || u.estado}</td>
                     <td></td>`
@@ -1522,7 +1537,7 @@
                     : p.estado === 'aprovado' ? '<span class="badge badge-pago">Aprovado</span>'
                     : '<span class="badge badge-nao-socio">Rejeitado</span>'
                 const tr = document.createElement('tr')
-                tr.innerHTML = `<td>${p.nome} ${p.apelido}</td><td style="font-size:12px;">${p.email}</td><td>${p.nif || '-'}</td><td>${sexoLabel[p.sexo] || '-'}</td><td>${p.localidade || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
+                tr.innerHTML = `<td>${escapeHtml(p.nome)} ${escapeHtml(p.apelido)}</td><td style="font-size:12px;">${escapeHtml(p.email)}</td><td>${escapeHtml(p.nif) || '-'}</td><td>${sexoLabel[p.sexo] || '-'}</td><td>${escapeHtml(p.localidade) || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
                 const td = tr.querySelector('td:last-child')
                 if (p.estado === 'pendente') {
                     td.appendChild(btnAprovar('Aprovar', async () => {
@@ -1727,7 +1742,7 @@
                 const badgeEstado = m.resolvido
                     ? '<span class="badge badge-pago">Resolvido</span>'
                     : '<span class="badge badge-pendente">Pendente</span>'
-                tr.innerHTML = `<td>${m.nome}</td><td style="font-size:12px;">${m.email}</td><td>${m.assunto}</td><td style="font-size:12px;">${formatarData(m.created_at)}</td><td>${badgeEstado}</td><td></td>`
+                tr.innerHTML = `<td>${escapeHtml(m.nome)}</td><td style="font-size:12px;">${escapeHtml(m.email)}</td><td>${escapeHtml(m.assunto)}</td><td style="font-size:12px;">${formatarData(m.created_at)}</td><td>${badgeEstado}</td><td></td>`
                 const td = tr.querySelector('td:last-child')
 
                 async function alternarResolvido(novoValor) {
@@ -1749,10 +1764,10 @@
                 td.appendChild(btnAprovar('Ver', () => {
                     document.getElementById('modalSuporteTitulo').textContent = m.assunto
                     document.getElementById('modalSuporteConteudo').innerHTML = `
-                        <p><strong>De:</strong> ${m.nome} &lt;${m.email}&gt;</p>
+                        <p><strong>De:</strong> ${escapeHtml(m.nome)} &lt;${escapeHtml(m.email)}&gt;</p>
                         <p><strong>Data:</strong> ${formatarData(m.created_at)}</p>
                         <hr style="margin:12px 0;border:0;border-top:1px solid #eee;">
-                        <p style="white-space:pre-wrap;">${m.mensagem}</p>`
+                        <p style="white-space:pre-wrap;">${escapeHtml(m.mensagem)}</p>`
                     const btnModal = document.getElementById('btnResponderSuporte')
                     btnModal.textContent = m.resolvido ? 'Reabrir' : 'Marcar como Resolvido'
                     btnModal.onclick = async () => {

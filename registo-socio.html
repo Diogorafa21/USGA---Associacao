@@ -52,6 +52,7 @@
                     <p style="font-size: 13px; color: #777; margin-bottom: 15px;">* Campos de preenchimento obrigatório</p>
 
                     <form id="registoSocioForm">
+                        <input type="text" name="website" id="website" autocomplete="off" tabindex="-1" style="position:absolute;left:-9999px;opacity:0;height:0;" aria-hidden="true">
                         <div class="form-grid">
                             <div class="form-group">
                                 <label for="nome">Nome Próprio *</label>
@@ -148,7 +149,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260804"></script>
+    <script src="js/main.js?v=20260809"></script>
     <script>
         if (new URLSearchParams(window.location.search).get('motivo') === 'estatutos') {
             const msg = document.getElementById('mensagem')
