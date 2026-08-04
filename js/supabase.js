@@ -131,8 +131,7 @@ export async function getEventosFuturos() {
   const { data, error } = await supabase
     .from('eventos')
     .select('*')
-    .gte('data_evento', new Date().toISOString())
-    .in('estado', ['aberto', 'fechado'])
+    .in('estado', ['aberto', 'fechado', 'cancelado'])
     .order('data_evento', { ascending: true })
   return { data, error }
 }
@@ -141,7 +140,6 @@ export async function getEventosPassados() {
   const { data, error } = await supabase
     .from('eventos')
     .select('*')
-    .lt('data_evento', new Date().toISOString())
     .eq('estado', 'concluido')
     .order('data_evento', { ascending: false })
   return { data, error }
