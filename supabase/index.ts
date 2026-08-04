@@ -255,6 +255,79 @@ async function processarAniversario(req: Request, supabase: ReturnType<typeof cr
   }
 }
 
+async function processarLembreteQuota(req: Request, supabase: ReturnType<typeof createClient>, body: Record<string, string>): Promise<Response> {
+  const authHeader = req.headers.get('Authorization') || ''
+  const jwt = authHeader.replace('Bearer ', '')
+
+  const supabaseAuth = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } }
+  })
+  const { data: userData, error: userErr } = await supabaseAuth.auth.getUser(jwt)
+  if (userErr || !userData?.user) {
+    return jsonResponse({ ok: false, error: 'Não autenticado' }, 401)
+  }
+
+  const { data: chamador } = await supabase
+    .from('utilizadores')
+    .select('role')
+    .eq('id', userData.user.id)
+    .single()
+
+  if (chamador?.role !== 'admin') {
+    return jsonResponse({ ok: false, error: 'Sem permissão' }, 403)
+  }
+
+  const quotaId = body.quota_id
+
+  const { data: quota, error: quotaErr } = await supabase
+    .from('quotas')
+    .select('ano, data_expiracao, utilizadores(nome, apelido, email)')
+    .eq('id', quotaId)
+    .single()
+
+  const membro = quota?.utilizadores as { nome?: string; apelido?: string; email?: string } | null
+
+  if (quotaErr || !quota || !membro?.email) {
+    await registarLog(supabase, 'lembrete_quota', 'desconhecido', '', 'erro', 'Quota não encontrada ou sócio sem email: ' + (quotaErr?.message || ''))
+    return jsonResponse({ ok: false, error: 'Quota não encontrada ou sócio sem email associado' })
+  }
+
+  const dadosTemplate: Record<string, string> = {
+    nome: [membro.nome, membro.apelido].filter(Boolean).join(' ') || 'Sócio',
+    email: membro.email,
+    clube: NOME_CLUBE,
+    ano: String(quota.ano || ''),
+    data_expiracao: formatarData(quota.data_expiracao ?? null)
+  }
+
+  const { data: configTemplates } = await supabase
+    .from('configuracoes')
+    .select('chave, valor')
+    .in('chave', ['template_lembrete_quota_assunto', 'template_lembrete_quota_corpo'])
+
+  const mapaConfig = Object.fromEntries((configTemplates || []).map((c: { chave: string; valor: string }) => [c.chave, c.valor]))
+  const assuntoTemplate = mapaConfig.template_lembrete_quota_assunto || 'A sua quota {{clube}} está prestes a expirar'
+  const corpoTemplate = mapaConfig.template_lembrete_quota_corpo || 'Olá {{nome}}, a sua quota está ativa mas vai expirar em {{data_expiracao}}. Por favor renove o pagamento.'
+
+  const assunto = preencherTemplate(assuntoTemplate, dadosTemplate)
+  const corpo = preencherTemplate(corpoTemplate, dadosTemplate)
+
+  const smtp = await obterConfigSmtp(supabase)
+  if (!smtpConfigurado(smtp)) {
+    await registarLog(supabase, 'lembrete_quota', membro.email, assunto, 'erro', 'SMTP não configurado (falta host/utilizador/password/remetente em Definições → Email).')
+    return jsonResponse({ ok: false, error: 'SMTP não configurado. Vai a Definições → Email para o configurar.' })
+  }
+
+  try {
+    await enviarSmtp(smtp, { to: membro.email, subject: assunto, content: corpo })
+    await registarLog(supabase, 'lembrete_quota', membro.email, assunto, 'enviado', null)
+    return jsonResponse({ ok: true })
+  } catch (err) {
+    await registarLog(supabase, 'lembrete_quota', membro.email, assunto, 'erro', String(err))
+    return jsonResponse({ ok: false, error: String(err) })
+  }
+}
+
 async function processarFatura(req: Request, supabase: ReturnType<typeof createClient>, body: Record<string, string>): Promise<Response> {
   const authHeader = req.headers.get('Authorization') || ''
   const jwt = authHeader.replace('Bearer ', '')
@@ -326,6 +399,7 @@ Deno.serve(async (req) => {
   if (categoria === 'suporte') return processarSuporte(supabase, body)
   if (categoria === 'aniversario') return processarAniversario(req, supabase, body)
   if (categoria === 'fatura') return processarFatura(req, supabase, body)
+  if (categoria === 'lembrete_quota') return processarLembreteQuota(req, supabase, body)
 
   return jsonResponse({ ok: false, error: 'Categoria desconhecida' }, 400)
 })
