@@ -674,7 +674,6 @@ async function carregarEventosPerfil(api, utilizadorId) {
 async function configurarInscricaoEvento(api) {
   if (!isPagina('inscricao-evento.html') || !api) return
 
-  // Prefer selecting the form by its action attribute, but fall back to the known id.
   let form = document.querySelector('form[action="pagamento-evento.html"]')
   if (!form) form = document.getElementById('inscricaoForm')
   if (!form) return
@@ -686,7 +685,6 @@ async function configurarInscricaoEvento(api) {
     if (tituloEvento) tituloEvento.textContent = evento.titulo || 'Evento'
   } else {
     if (tituloEvento) tituloEvento.textContent = 'Evento não encontrado'
-    // disable form submit to avoid creating registrations for missing event
     const submitBtn = form.querySelector('button[type="submit"]')
     if (submitBtn) {
       submitBtn.disabled = true
@@ -695,7 +693,6 @@ async function configurarInscricaoEvento(api) {
     }
   }
 
-  // attach submit handler to the resolved form element
   form.addEventListener('submit', async function (event) {
     event.preventDefault()
 
@@ -722,8 +719,7 @@ async function configurarInscricaoEvento(api) {
       bi: form.bi.value.trim(),
       nif: form.nif.value.trim(),
       tamanho_tshirt: form.tamanho_tshirt.value || null,
-      pedido_fatura: form.pedido_fatura.checked,
-      seguro: form.seguro.value === 'sim'
+      pedido_fatura: form.pedido_fatura.checked
     }
 
     const { data, error } = await api.criarInscricaoEvento(dados)
@@ -739,11 +735,8 @@ async function configurarInscricaoEvento(api) {
 
     const pagamentoToken = data.pagamento_token || data.public_token
 
-    // A RPC devolve o id da inscrição em "inscricao_id" (não em "id").
     sessionStorage.setItem('usga_inscricao_evento_id', data.inscricao_id)
-    // keep the legacy key but store the pagamento token so pagamento-evento.html can read it
     sessionStorage.setItem('usga_inscricao_evento_token', pagamentoToken)
-    // also store explicit pagamento keys for clarity
     if (data.pagamento_id) sessionStorage.setItem('usga_pagamento_id', data.pagamento_id)
     sessionStorage.setItem('usga_pagamento_token', pagamentoToken)
 
