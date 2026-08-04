@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=0.75">
     <title>Back-office - USGA</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=20260804">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap" rel="stylesheet">
@@ -524,7 +524,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js"></script>
+    <script src="js/main.js?v=20260804"></script>
     <script type="module">
         import {
             requireAdmin, supabase,
@@ -1517,7 +1517,17 @@
                 tr.innerHTML = `<td>${p.nome} ${p.apelido}</td><td style="font-size:12px;">${p.email}</td><td>${p.nif || '-'}</td><td>${sexoLabel[p.sexo] || '-'}</td><td>${p.localidade || '-'}</td><td style="font-size:12px;">${formatarData(p.created_at)}</td><td>${badge}</td><td></td>`
                 const td = tr.querySelector('td:last-child')
                 if (p.estado === 'pendente') {
-                    td.appendChild(btnAprovar('Aprovar', async () => { await atualizarPedidoSocio(p.id, { estado:'aprovado' }); carregarPedidos() }))
+                    td.appendChild(btnAprovar('Aprovar', async () => {
+                        const { error: errAprovar } = await atualizarPedidoSocio(p.id, { estado: 'aprovado' })
+                        if (errAprovar) { alert('Erro ao aprovar: ' + errAprovar.message); return }
+                        if (p.utilizador_id) {
+                            const { error: errNumero } = await supabase.rpc('assign_next_numero_socio', { p_user_id: p.utilizador_id })
+                            if (errNumero) { alert('Pedido aprovado, mas não foi possível atribuir o número de sócio automaticamente: ' + errNumero.message) }
+                        } else {
+                            alert('Pedido aprovado. Este pedido não está associado a uma conta, por isso não é possível atribuir automaticamente um número de sócio. Peça à pessoa para criar uma conta e depois atribua o número manualmente em Utilizadores.')
+                        }
+                        carregarPedidos()
+                    }))
                     td.appendChild(btnAcao('Rejeitar', 'danger', async () => { await atualizarPedidoSocio(p.id, { estado:'rejeitado' }); carregarPedidos() }))
                 }
                 tbody.appendChild(tr)
