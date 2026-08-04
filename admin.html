@@ -1335,6 +1335,8 @@
             setInterval(() => renderAniversarios(todosSocios), 60 * 60 * 1000)
         }
 
+        let todosUtilizadores = []
+
         async function carregarUtilizadores() {
             const tbody = document.getElementById('tbl-utilizadores')
             if (tbody) tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;"><span class="spinner"></span>A carregar...</td></tr>'
@@ -1383,8 +1385,13 @@
                 mostrarErro('Erro ao carregar utilizadores: ' + error.message)
                 return
             }
-            todosUtilizadores = data || []
-            renderUtilizadores(todosUtilizadores)
+            try {
+                todosUtilizadores = data || []
+                renderUtilizadores(todosUtilizadores)
+            } catch (err) {
+                console.error('Erro inesperado ao processar utilizadores:', err)
+                mostrarErro('Erro inesperado ao processar os dados: ' + (err?.message || err))
+            }
         }
 
         function renderUtilizadores(data) {
