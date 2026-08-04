@@ -723,7 +723,7 @@ async function configurarInscricaoEvento(api) {
       nif: form.nif.value.trim(),
       tamanho_tshirt: form.tamanho_tshirt.value || null,
       pedido_fatura: form.pedido_fatura.checked,
-      seguro: form.seguro.checked
+      seguro: form.seguro.value === 'sim'
     }
 
     const { data, error } = await api.criarInscricaoEvento(dados)
@@ -1423,4 +1423,4 @@ function escapeHtml(valor) {
 
 function isPagina(nomeFicheiro) {
   return window.location.pathname.toLowerCase().endsWith(nomeFicheiro.toLowerCase())
-}
+} 
