@@ -91,7 +91,7 @@
                         </div>
                     </div>
                     <div class="form-group" id="grupoTelefoneMbwayQuota" style="display:none;">
-                        <label for="telefoneMbwayQuota">Telemóvel usado no MB WAY</label>
+                        <label for="telefoneMbwayQuota">Nº de Telemóvel que utilizou para efetuar o pagamento</label>
                         <input type="tel" id="telefoneMbwayQuota" name="telefoneMbwayQuota" placeholder="9XX XXX XXX">
                     </div>
                     <div class="form-group">
@@ -191,7 +191,7 @@
                         return
                     }
                     if (metodo === 'mbway' && !telefoneInput.value.trim()) {
-                        mostrarMsg('Indique o telemóvel usado no MB WAY.', 'erro')
+                        mostrarMsg('Indique o Nº de Telemóvel que utilizou para efetuar o pagamento.', 'erro')
                         return
                     }
                     const file = fileInput.files[0]
