@@ -410,7 +410,7 @@
                             <div class="box-header"><h3>Modelo: Inscrição Pendente de Pagamento</h3></div>
                             <div class="form-group"><label>Assunto</label><input type="text" id="tpl-pendente-assunto"></div>
                             <div class="form-group"><label>Corpo</label><textarea id="tpl-pendente-corpo" rows="10"></textarea></div>
-                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}} {{link_estado}}</p>
+                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}} {{link_estado}} {{link_pagamento}}</p>
                             <button class="btn btn-primary btn-small" onclick="guardarTemplate('pendente')">Guardar Modelo</button>
                             <p id="tpl-pendente-msg" style="margin-top:10px;font-size:13px;"></p>
                         </div>
@@ -419,7 +419,7 @@
                             <div class="box-header"><h3>Modelo: Inscrição Confirmada</h3></div>
                             <div class="form-group"><label>Assunto</label><input type="text" id="tpl-confirmada-assunto"></div>
                             <div class="form-group"><label>Corpo</label><textarea id="tpl-confirmada-corpo" rows="10"></textarea></div>
-                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}} {{dorsal}} {{link_estado}}</p>
+                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}} {{dorsal}} {{link_estado}} {{link_pagamento}}</p>
                             <button class="btn btn-primary btn-small" onclick="guardarTemplate('confirmada')">Guardar Modelo</button>
                             <p id="tpl-confirmada-msg" style="margin-top:10px;font-size:13px;"></p>
                         </div>
@@ -428,7 +428,7 @@
                             <div class="box-header"><h3>Modelo: Inscrição Rejeitada</h3></div>
                             <div class="form-group"><label>Assunto</label><input type="text" id="tpl-rejeitada-assunto"></div>
                             <div class="form-group"><label>Corpo</label><textarea id="tpl-rejeitada-corpo" rows="10"></textarea></div>
-                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}}</p>
+                            <p style="font-size:12px;color:#999;margin-bottom:10px;">Placeholders disponíveis: {{nome}} {{email}} {{evento}} {{data_evento}} {{local}} {{valor}} {{link_estado}} {{link_pagamento}}</p>
                             <button class="btn btn-primary btn-small" onclick="guardarTemplate('rejeitada')">Guardar Modelo</button>
                             <p id="tpl-rejeitada-msg" style="margin-top:10px;font-size:13px;"></p>
                         </div>
@@ -603,7 +603,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260814"></script>
+    <script src="js/main.js?v=20260816"></script>
     <script type="module">
         import {
             requireAdmin, supabase,
