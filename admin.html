@@ -1300,6 +1300,20 @@
                         supabase.functions.invoke('enviar-email', { body: { categoria: 'inscricao', tipo: 'confirmada', inscricao_id: i.id } }).catch(() => {})
                         carregarInscricoes()
                     }))
+                    td.appendChild(btnAcao('Reenviar Email', 'normal', async (ev) => {
+                        const btn = ev.currentTarget
+                        const textoOriginal = btn.textContent
+                        btn.disabled = true
+                        btn.textContent = 'A enviar...'
+                        const { data, error } = await supabase.functions.invoke('enviar-email', { body: { categoria: 'inscricao', tipo: 'pendente', inscricao_id: i.id } })
+                        btn.disabled = false
+                        btn.textContent = textoOriginal
+                        if (error || !data?.ok) {
+                            alert('Erro ao reenviar o email: ' + (data?.error || error?.message || 'erro desconhecido'))
+                            return
+                        }
+                        alert('Email reenviado com sucesso para ' + i.email + '.')
+                    }))
                 }
                 if (i.estado !== 'rejeitada' && i.estado !== 'cancelada') {
                     td.appendChild(btnAcao('Rejeitar', 'danger', async () => {
