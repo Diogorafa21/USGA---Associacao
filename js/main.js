@@ -907,11 +907,13 @@ async function configurarPagamentoEvento(api) {
 
     if (referenciaEl) referenciaEl.textContent = `${nome} + ${titulo}`
 
-    const metodoSelect = document.getElementById('metodoPagamento')
+    const radiosMetodoPagamento = document.querySelectorAll('input[name="metodoPagamento"]')
     const grupoTelefoneMbway = document.getElementById('grupoTelefoneMbway')
-    if (metodoSelect && grupoTelefoneMbway) {
-      metodoSelect.addEventListener('change', () => {
-        grupoTelefoneMbway.style.display = metodoSelect.value === 'mbway' ? 'block' : 'none'
+    if (radiosMetodoPagamento.length && grupoTelefoneMbway && comprovativoForm) {
+      radiosMetodoPagamento.forEach(radio => {
+        radio.addEventListener('change', () => {
+          grupoTelefoneMbway.style.display = comprovativoForm.metodoPagamento.value === 'mbway' ? 'block' : 'none'
+        })
       })
     }
 
@@ -921,7 +923,7 @@ async function configurarPagamentoEvento(api) {
         const fileInput = document.getElementById('ficheiroComprovativo')
         const referenciaInput = document.getElementById('referenciaPagamento')
         const btnEnviar = document.getElementById('btnEnviarComprovativo')
-        const metodo = metodoSelect ? metodoSelect.value : 'transferencia'
+        const metodo = comprovativoForm.metodoPagamento.value
         const telefoneMbwayInput = document.getElementById('telefoneMbway')
 
         if (!fileInput || !fileInput.files || fileInput.files.length === 0) {
@@ -1390,4 +1392,4 @@ function escapeHtml(valor) {
 
 function isPagina(nomeFicheiro) {
   return window.location.pathname.toLowerCase().endsWith(nomeFicheiro.toLowerCase())
-} 
+}

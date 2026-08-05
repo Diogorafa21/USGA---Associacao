@@ -80,11 +80,15 @@
                 <form id="comprovativoQuotaForm" class="contact-form" style="margin-top: 20px; text-align: left; display:none;">
                     <div id="mensagemComprovativoQuota" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
                     <div class="form-group">
-                        <label for="metodoPagamentoQuota">Método de pagamento utilizado</label>
-                        <select id="metodoPagamentoQuota" name="metodoPagamentoQuota" required>
-                            <option value="transferencia">Transferência Bancária</option>
-                            <option value="mbway">MB WAY</option>
-                        </select>
+                        <label>Método de pagamento utilizado *</label>
+                        <div style="display:flex; gap:24px; margin-top:8px;">
+                            <label style="display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px;">
+                                <input type="radio" name="metodoPagamentoQuota" value="transferencia" required style="width:auto;"> Transferência Bancária
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px;">
+                                <input type="radio" name="metodoPagamentoQuota" value="mbway" style="width:auto;"> MB WAY
+                            </label>
+                        </div>
                     </div>
                     <div class="form-group" id="grupoTelefoneMbwayQuota" style="display:none;">
                         <label for="telefoneMbwayQuota">Telemóvel usado no MB WAY</label>
@@ -112,7 +116,7 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260815"></script>
+    <script src="js/main.js?v=20260817"></script>
     <script type="module">
         import {
             getSessao, getPerfil, getMinhasQuotas, formatarMoeda,
@@ -158,10 +162,12 @@
             if (!pagErr && pagamento?.pagamento_token) {
                 form.style.display = 'block'
 
-                const metodoSelect = document.getElementById('metodoPagamentoQuota')
+                const radiosMetodoPagamento = document.querySelectorAll('input[name="metodoPagamentoQuota"]')
                 const grupoTelefone = document.getElementById('grupoTelefoneMbwayQuota')
-                metodoSelect.addEventListener('change', () => {
-                    grupoTelefone.style.display = metodoSelect.value === 'mbway' ? 'block' : 'none'
+                radiosMetodoPagamento.forEach(radio => {
+                    radio.addEventListener('change', () => {
+                        grupoTelefone.style.display = form.metodoPagamentoQuota.value === 'mbway' ? 'block' : 'none'
+                    })
                 })
 
                 form.addEventListener('submit', async function (e) {
@@ -171,7 +177,7 @@
                     const telefoneInput = document.getElementById('telefoneMbwayQuota')
                     const btnEnviar = document.getElementById('btnEnviarComprovativoQuota')
                     const mensagemBox = document.getElementById('mensagemComprovativoQuota')
-                    const metodo = metodoSelect.value
+                    const metodo = form.metodoPagamentoQuota.value
 
                     function mostrarMsg(texto, tipo) {
                         mensagemBox.style.display = 'block'

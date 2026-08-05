@@ -85,11 +85,15 @@
                 <form id="comprovativoForm" class="contact-form" style="margin-top: 20px; text-align: left;">
                     <div id="mensagemComprovativo" style="display:none; padding: 12px 16px; border-radius: 8px; margin-bottom: 20px; font-size: 14px;"></div>
                     <div class="form-group">
-                        <label for="metodoPagamento">Método de pagamento utilizado</label>
-                        <select id="metodoPagamento" name="metodoPagamento" required>
-                            <option value="transferencia">Transferência Bancária</option>
-                            <option value="mbway">MB WAY</option>
-                        </select>
+                        <label>Método de pagamento utilizado *</label>
+                        <div style="display:flex; gap:24px; margin-top:8px;">
+                            <label style="display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px;">
+                                <input type="radio" name="metodoPagamento" value="transferencia" required style="width:auto;"> Transferência Bancária
+                            </label>
+                            <label style="display:flex; align-items:center; gap:8px; font-weight:400; font-size:14px;">
+                                <input type="radio" name="metodoPagamento" value="mbway" style="width:auto;"> MB WAY
+                            </label>
+                        </div>
                     </div>
                     <div class="form-group" id="grupoTelefoneMbway" style="display:none;">
                         <label for="telefoneMbway">Telemóvel usado no MB WAY</label>
@@ -123,6 +127,6 @@
         </div>
     </footer>
 
-    <script src="js/main.js?v=20260834"></script>
+    <script src="js/main.js?v=20260817"></script>
 </body>
 </html>
