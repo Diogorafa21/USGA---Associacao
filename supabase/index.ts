@@ -108,6 +108,12 @@ async function processarInscricao(supabase: ReturnType<typeof createClient>, bod
     return jsonResponse({ ok: false, error: 'Inscrição não encontrada' })
   }
 
+  const { data: pagamento } = await supabase
+    .from('pagamentos')
+    .select('public_token')
+    .eq('inscricao_evento_id', inscricaoId)
+    .maybeSingle()
+
   const evento = inscricao.eventos as { titulo?: string; data_evento?: string; local?: string; preco?: number } | null
 
   const dadosTemplate: Record<string, string> = {
@@ -118,11 +124,12 @@ async function processarInscricao(supabase: ReturnType<typeof createClient>, bod
     local: evento?.local || '-',
     valor: formatarMoeda(evento?.preco ?? null),
     dorsal: inscricao.dorsal || '-',
-    link_estado: inscricao.public_token ? `https://usga-associacao.github.io/estado-inscricao.html?token=${inscricao.public_token}` : 'https://usga-associacao.github.io/estado-inscricao.html'
+    link_estado: inscricao.public_token ? `https://usga-associacao.github.io/estado-inscricao.html?token=${inscricao.public_token}` : 'https://usga-associacao.github.io/estado-inscricao.html',
+    link_pagamento: pagamento?.public_token ? `https://usga-associacao.github.io/pagamento-evento.html?token=${pagamento.public_token}` : 'https://usga-associacao.github.io/estado-inscricao.html'
   }
 
-  const chaveAssunto = tipo === 'confirmada' ? 'template_confirmada_assunto' : 'template_pendente_assunto'
-  const chaveCorpo = tipo === 'confirmada' ? 'template_confirmada_corpo' : 'template_pendente_corpo'
+  const chaveAssunto = tipo === 'confirmada' ? 'template_confirmada_assunto' : tipo === 'rejeitada' ? 'template_rejeitada_assunto' : 'template_pendente_assunto'
+  const chaveCorpo = tipo === 'confirmada' ? 'template_confirmada_corpo' : tipo === 'rejeitada' ? 'template_rejeitada_corpo' : 'template_pendente_corpo'
 
   const { data: configTemplates } = await supabase
     .from('configuracoes')
@@ -130,8 +137,8 @@ async function processarInscricao(supabase: ReturnType<typeof createClient>, bod
     .in('chave', [chaveAssunto, chaveCorpo])
 
   const mapaConfig = Object.fromEntries((configTemplates || []).map((c: { chave: string; valor: string }) => [c.chave, c.valor]))
-  const assuntoTemplate = mapaConfig[chaveAssunto] || `Atualização da sua inscrição - ${dadosTemplate.evento}`
-  const corpoTemplate = mapaConfig[chaveCorpo] || 'Olá {{nome}}, a sua inscrição em {{evento}} foi atualizada. Pode consultar o estado da sua inscrição aqui: {{link_estado}}'
+  const assuntoTemplate = mapaConfig[chaveAssunto] || (tipo === 'rejeitada' ? `A sua inscrição em ${dadosTemplate.evento} não foi aceite` : `Atualização da sua inscrição - ${dadosTemplate.evento}`)
+  const corpoTemplate = mapaConfig[chaveCorpo] || (tipo === 'rejeitada' ? 'Olá {{nome}}, lamentamos informar que a sua inscrição em {{evento}} não foi aceite. Se tiver dúvidas, contacte-nos através da página de suporte.' : 'Olá {{nome}}, a sua inscrição em {{evento}} foi atualizada. Pode consultar o estado da sua inscrição aqui: {{link_estado}}')
 
   const assunto = preencherTemplate(assuntoTemplate, dadosTemplate)
   const corpo = preencherTemplate(corpoTemplate, dadosTemplate)
@@ -328,6 +335,81 @@ async function processarLembreteQuota(req: Request, supabase: ReturnType<typeof 
   }
 }
 
+async function processarPedidoSocio(req: Request, supabase: ReturnType<typeof createClient>, body: Record<string, string>): Promise<Response> {
+  const authHeader = req.headers.get('Authorization') || ''
+  const jwt = authHeader.replace('Bearer ', '')
+
+  const supabaseAuth = createClient(SUPABASE_URL, ANON_KEY, {
+    global: { headers: { Authorization: authHeader } }
+  })
+  const { data: userData, error: userErr } = await supabaseAuth.auth.getUser(jwt)
+  if (userErr || !userData?.user) {
+    return jsonResponse({ ok: false, error: 'Não autenticado' }, 401)
+  }
+
+  const { data: chamador } = await supabase
+    .from('utilizadores')
+    .select('role')
+    .eq('id', userData.user.id)
+    .single()
+
+  if (chamador?.role !== 'admin') {
+    return jsonResponse({ ok: false, error: 'Sem permissão' }, 403)
+  }
+
+  const tipo = body.tipo
+  const pedidoId = body.pedido_id
+
+  const { data: pedido, error: pedidoErr } = await supabase
+    .from('pedidos_socio')
+    .select('nome, apelido, email')
+    .eq('id', pedidoId)
+    .single()
+
+  if (pedidoErr || !pedido?.email) {
+    await registarLog(supabase, 'socio_' + tipo, 'desconhecido', '', 'erro', 'Pedido não encontrado ou sem email: ' + (pedidoErr?.message || ''))
+    return jsonResponse({ ok: false, error: 'Pedido não encontrado ou sem email associado' })
+  }
+
+  const dadosTemplate: Record<string, string> = {
+    nome: [pedido.nome, pedido.apelido].filter(Boolean).join(' ') || 'Sócio',
+    email: pedido.email,
+    clube: NOME_CLUBE
+  }
+
+  const chaveAssunto = tipo === 'aprovado' ? 'template_socio_aprovado_assunto' : 'template_socio_rejeitado_assunto'
+  const chaveCorpo = tipo === 'aprovado' ? 'template_socio_aprovado_corpo' : 'template_socio_rejeitado_corpo'
+
+  const { data: configTemplates } = await supabase
+    .from('configuracoes')
+    .select('chave, valor')
+    .in('chave', [chaveAssunto, chaveCorpo])
+
+  const mapaConfig = Object.fromEntries((configTemplates || []).map((c: { chave: string; valor: string }) => [c.chave, c.valor]))
+  const assuntoTemplate = mapaConfig[chaveAssunto] || (tipo === 'aprovado' ? 'Bem-vindo à {{clube}}!' : 'O seu pedido de inscrição na {{clube}}')
+  const corpoTemplate = mapaConfig[chaveCorpo] || (tipo === 'aprovado'
+    ? 'Olá {{nome}}, o seu pedido para se tornar sócio da {{clube}} foi aprovado! Já pode aceder à sua área pessoal para consultar e pagar a sua quota.'
+    : 'Olá {{nome}}, lamentamos informar que o seu pedido para se tornar sócio da {{clube}} não foi aceite. Se tiver dúvidas, contacte-nos através da página de suporte.')
+
+  const assunto = preencherTemplate(assuntoTemplate, dadosTemplate)
+  const corpo = preencherTemplate(corpoTemplate, dadosTemplate)
+
+  const smtp = await obterConfigSmtp(supabase)
+  if (!smtpConfigurado(smtp)) {
+    await registarLog(supabase, 'socio_' + tipo, pedido.email, assunto, 'erro', 'SMTP não configurado (falta host/utilizador/password/remetente em Definições → Email).')
+    return jsonResponse({ ok: false, error: 'SMTP não configurado. Vai a Definições → Email para o configurar.' })
+  }
+
+  try {
+    await enviarSmtp(smtp, { to: pedido.email, subject: assunto, content: corpo })
+    await registarLog(supabase, 'socio_' + tipo, pedido.email, assunto, 'enviado', null)
+    return jsonResponse({ ok: true })
+  } catch (err) {
+    await registarLog(supabase, 'socio_' + tipo, pedido.email, assunto, 'erro', String(err))
+    return jsonResponse({ ok: false, error: String(err) })
+  }
+}
+
 async function processarFatura(req: Request, supabase: ReturnType<typeof createClient>, body: Record<string, string>): Promise<Response> {
   const authHeader = req.headers.get('Authorization') || ''
   const jwt = authHeader.replace('Bearer ', '')
@@ -400,6 +482,7 @@ Deno.serve(async (req) => {
   if (categoria === 'aniversario') return processarAniversario(req, supabase, body)
   if (categoria === 'fatura') return processarFatura(req, supabase, body)
   if (categoria === 'lembrete_quota') return processarLembreteQuota(req, supabase, body)
+  if (categoria === 'pedido_socio') return processarPedidoSocio(req, supabase, body)
 
   return jsonResponse({ ok: false, error: 'Categoria desconhecida' }, 400)
 })
