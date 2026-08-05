@@ -1,4 +1,26 @@
 document.addEventListener('DOMContentLoaded', async function () {
+  document.querySelectorAll('input[type="password"]').forEach(function (input) {
+    const wrapper = document.createElement('div')
+    wrapper.style.position = 'relative'
+    input.parentNode.insertBefore(wrapper, input)
+    wrapper.appendChild(input)
+    input.style.paddingRight = '42px'
+
+    const toggle = document.createElement('button')
+    toggle.type = 'button'
+    toggle.textContent = 'Ver'
+    toggle.setAttribute('aria-label', 'Mostrar password')
+    toggle.style.cssText = 'position:absolute;right:6px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;font-size:12px;font-weight:600;color:#666;padding:6px 8px;'
+    wrapper.appendChild(toggle)
+
+    toggle.addEventListener('click', function () {
+      const isPassword = input.type === 'password'
+      input.type = isPassword ? 'text' : 'password'
+      toggle.textContent = isPassword ? 'Ocultar' : 'Ver'
+      toggle.setAttribute('aria-label', isPassword ? 'Ocultar password' : 'Mostrar password')
+    })
+  })
+
   // ── Navbar Mobile (Hamburguer) — reconstruído de raiz ───────────
   // O <nav> original (usado no desktop) deixa de ser reaproveitado em
   // mobile. Em vez disso, é criado um painel novo e totalmente
@@ -1332,6 +1354,43 @@ function mostrarPopup(texto, tipo) {
   card.appendChild(icone)
   card.appendChild(msg)
   card.appendChild(btn)
+  overlay.appendChild(card)
+  overlay.addEventListener('click', function (event) { if (event.target === overlay) overlay.remove() })
+  document.body.appendChild(overlay)
+}
+
+function mostrarPromptTemConta() {
+  const overlay = document.createElement('div')
+  overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:20px;'
+
+  const card = document.createElement('div')
+  card.style.cssText = 'background:#fff;border-radius:12px;padding:36px 32px;max-width:380px;width:100%;text-align:center;box-shadow:0 10px 30px rgba(0,0,0,0.25);'
+
+  const titulo = document.createElement('p')
+  titulo.style.cssText = 'font-size:17px;font-weight:600;color:#333;margin-bottom:24px;'
+  titulo.textContent = 'Já tem conta na plataforma?'
+
+  const linhaBotoes = document.createElement('div')
+  linhaBotoes.style.cssText = 'display:flex;gap:12px;'
+
+  const btnSim = document.createElement('button')
+  btnSim.type = 'button'
+  btnSim.className = 'btn btn-primary'
+  btnSim.style.flex = '1'
+  btnSim.textContent = 'Sim'
+  btnSim.addEventListener('click', () => { window.location.href = 'registo-socio.html' })
+
+  const btnNao = document.createElement('button')
+  btnNao.type = 'button'
+  btnNao.className = 'btn'
+  btnNao.style.cssText = 'flex:1;background:#eee;color:#333;'
+  btnNao.textContent = 'Não'
+  btnNao.addEventListener('click', () => { window.location.href = 'registar.html' })
+
+  linhaBotoes.appendChild(btnSim)
+  linhaBotoes.appendChild(btnNao)
+  card.appendChild(titulo)
+  card.appendChild(linhaBotoes)
   overlay.appendChild(card)
   overlay.addEventListener('click', function (event) { if (event.target === overlay) overlay.remove() })
   document.body.appendChild(overlay)
