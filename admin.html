@@ -1403,7 +1403,7 @@
             sortSocios.direcao = sortSocios.campo === campo && sortSocios.direcao === 'asc' ? 'desc' : 'asc'
             sortSocios.campo = campo
             const extratores = {
-                numero_socio: s => s.numero_socio,
+                numero_socio: s => (s.numero_socio === null || s.numero_socio === undefined || s.numero_socio === '' || s.numero_socio === '-') ? s.numero_socio : Number(s.numero_socio),
                 nome: s => `${s.nome || ''} ${s.apelido || ''}`.trim().toLowerCase(),
                 validade: s => s.quotaAtual?.data_expiracao || null
             }
@@ -1633,7 +1633,7 @@
             sortUtilizadores.direcao = sortUtilizadores.campo === campo && sortUtilizadores.direcao === 'asc' ? 'desc' : 'asc'
             sortUtilizadores.campo = campo
             const extratores = {
-                numero_socio: u => u.numero_socio,
+                numero_socio: u => (u.numero_socio === null || u.numero_socio === undefined || u.numero_socio === '' || u.numero_socio === '-') ? u.numero_socio : Number(u.numero_socio),
                 nome: u => `${u.nome || ''} ${u.apelido || ''}`.trim().toLowerCase()
             }
             const termo  = document.getElementById('searchUtilizadores').value.toLowerCase()
@@ -1801,7 +1801,7 @@
             sortQuotas.direcao = sortQuotas.campo === campo && sortQuotas.direcao === 'asc' ? 'desc' : 'asc'
             sortQuotas.campo = campo
             const extratores = {
-                numero_socio: q => q.utilizadores?.numero_socio,
+                numero_socio: q => { const v = q.utilizadores?.numero_socio; return (v === null || v === undefined || v === '' || v === '-') ? v : Number(v) },
                 nome: q => `${q.utilizadores?.nome || ''} ${q.utilizadores?.apelido || ''}`.trim().toLowerCase(),
                 validade: q => q.data_expiracao || null
             }
