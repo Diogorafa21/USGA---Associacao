@@ -222,8 +222,8 @@
                                 </div>
                                 <div class="participants-table-wrapper">
                                     <table class="participants-table">
-                                        <thead><tr><th>Nº Sócio</th><th>Nome</th><th>Email</th><th>Estado</th><th>Ações</th></tr></thead>
-                                        <tbody id="tbl-socios"><tr><td colspan="5" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
+                                        <thead id="thead-socios"><tr><th data-campo="numero_socio" data-label="Nº Sócio" style="cursor:pointer;" onclick="ordenarSocios('numero_socio')">Nº Sócio</th><th data-campo="nome" data-label="Nome" style="cursor:pointer;" onclick="ordenarSocios('nome')">Nome</th><th>Email</th><th data-campo="validade" data-label="Validade" style="cursor:pointer;" onclick="ordenarSocios('validade')">Validade</th><th>Estado</th><th>Ações</th></tr></thead>
+                                        <tbody id="tbl-socios"><tr><td colspan="6" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                                     </table>
                                 </div>
                             </div>
@@ -248,7 +248,7 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Nome</th><th>Email</th><th>Nº Sócio</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <thead id="thead-utilizadores"><tr><th data-campo="nome" data-label="Nome" style="cursor:pointer;" onclick="ordenarUtilizadores('nome')">Nome</th><th>Email</th><th data-campo="numero_socio" data-label="Nº Sócio" style="cursor:pointer;" onclick="ordenarUtilizadores('numero_socio')">Nº Sócio</th><th>Estado</th><th>Ações</th></tr></thead>
                                 <tbody id="tbl-utilizadores"><tr><td colspan="5" style="text-align:center;color:#999;"><span class="spinner"></span>A carregar...</td></tr></tbody>
                             </table>
                         </div>
@@ -294,7 +294,7 @@
                         </div>
                         <div class="participants-table-wrapper">
                             <table class="participants-table">
-                                <thead><tr><th>Sócio</th><th>Nº Sócio</th><th>Ano</th><th>Data Limite</th><th>Valor</th><th>Validade</th><th>Data Pag.</th><th>Estado</th><th>Ações</th></tr></thead>
+                                <thead id="thead-quotas"><tr><th data-campo="nome" data-label="Sócio" style="cursor:pointer;" onclick="ordenarQuotas('nome')">Sócio</th><th data-campo="numero_socio" data-label="Nº Sócio" style="cursor:pointer;" onclick="ordenarQuotas('numero_socio')">Nº Sócio</th><th>Ano</th><th>Data Limite</th><th>Valor</th><th data-campo="validade" data-label="Validade" style="cursor:pointer;" onclick="ordenarQuotas('validade')">Validade</th><th>Data Pag.</th><th>Estado</th><th>Ações</th></tr></thead>
                                 <tbody id="tbl-quotas"><tr><td colspan="9" style="text-align:center;color:#999;">A carregar...</td></tr></tbody>
                             </table>
                         </div>
@@ -311,6 +311,11 @@
                                 <option value="em_validacao">Em validação</option>
                                 <option value="validado">Validado</option>
                                 <option value="rejeitado">Rejeitado</option>
+                            </select>
+                            <select id="filtroTipoPagamento" onchange="filtrarPagamentos()">
+                                <option value="">Todos os tipos</option>
+                                <option value="quota">Quota</option>
+                                <option value="evento">Evento</option>
                             </select>
                         </div>
                         <div class="participants-table-wrapper">
@@ -633,6 +638,32 @@
         function csvSeguro(valor) {
             const texto = String(valor ?? '')
             return /^[=+\-@]/.test(texto) ? `'${texto}` : texto
+        }
+
+        function ordenarLista(lista, extrator, direcao) {
+            const copia = [...lista]
+            copia.sort((a, b) => {
+                const va = extrator(a)
+                const vb = extrator(b)
+                const vaVazio = va === null || va === undefined || va === '' || va === '-'
+                const vbVazio = vb === null || vb === undefined || vb === '' || vb === '-'
+                if (vaVazio && vbVazio) return 0
+                if (vaVazio) return direcao === 'asc' ? 1 : -1
+                if (vbVazio) return direcao === 'asc' ? -1 : 1
+                if (va < vb) return direcao === 'asc' ? -1 : 1
+                if (va > vb) return direcao === 'asc' ? 1 : -1
+                return 0
+            })
+            return copia
+        }
+
+        function marcarOrdenacaoAtiva(theadId, campoAtivo, direcao) {
+            const thead = document.getElementById(theadId)
+            if (!thead) return
+            thead.querySelectorAll('th[data-campo]').forEach(th => {
+                const base = th.getAttribute('data-label')
+                th.textContent = base + (th.getAttribute('data-campo') === campoAtivo ? (direcao === 'asc' ? ' ▲' : ' ▼') : '')
+            })
         }
 
         // ── Navegação sidebar ────────────────────────────────────────────
@@ -1352,21 +1383,38 @@
         // ── SÓCIOS ───────────────────────────────────────────────────────
         let todosSocios = []
 
+        let sortSocios = { campo: null, direcao: 'asc' }
+
         async function carregarSocios() {
-            // Only fetch users that have a numero_socio (actual members)
             const { data } = await supabase.from('utilizadores')
-                .select('*')
+                .select('*, quotas(ano, data_expiracao, estado)')
                 .not('numero_socio','is', null)
                 .neq('numero_socio','')
                 .order('created_at', { ascending: false })
-            todosSocios = data || []
+            todosSocios = (data || []).map(s => {
+                const quotasOrdenadas = [...(s.quotas || [])].sort((a, b) => (b.ano || 0) - (a.ano || 0))
+                return { ...s, quotaAtual: quotasOrdenadas[0] || null }
+            })
             renderSocios(todosSocios)
             renderAniversarios(todosSocios)
         }
 
+        window.ordenarSocios = function(campo) {
+            sortSocios.direcao = sortSocios.campo === campo && sortSocios.direcao === 'asc' ? 'desc' : 'asc'
+            sortSocios.campo = campo
+            const extratores = {
+                numero_socio: s => s.numero_socio,
+                nome: s => `${s.nome || ''} ${s.apelido || ''}`.trim().toLowerCase(),
+                validade: s => s.quotaAtual?.data_expiracao || null
+            }
+            const ordenado = ordenarLista(todosSocios, extratores[campo], sortSocios.direcao)
+            marcarOrdenacaoAtiva('thead-socios', campo, sortSocios.direcao)
+            renderSocios(ordenado)
+        }
+
         function renderSocios(data) {
             const tbody = document.getElementById('tbl-socios')
-            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:#999;">Sem sócios.</td></tr>'; return }
+            if (!data?.length) { tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:#999;">Sem sócios.</td></tr>'; return }
             tbody.innerHTML = ''
             data.forEach(s => {
                 const tr = document.createElement('tr')
@@ -1374,6 +1422,7 @@
                     <td>${s.numero_socio || '-'}</td>
                     <td>${escapeHtml(s.nome)} ${escapeHtml(s.apelido)}</td>
                     <td style="font-size:12px;">${escapeHtml(s.email)}</td>
+                    <td style="font-size:12px;">${s.quotaAtual?.data_expiracao ? formatarData(s.quotaAtual.data_expiracao) : '-'}</td>
                     <td>${estadoBadgeSocio[s.estado] || s.estado}</td>
                     <td></td>`
                 const td = tr.querySelector('td:last-child')
@@ -1578,6 +1627,26 @@
             renderUtilizadores(filtrado)
         }
 
+        let sortUtilizadores = { campo: null, direcao: 'asc' }
+
+        window.ordenarUtilizadores = function(campo) {
+            sortUtilizadores.direcao = sortUtilizadores.campo === campo && sortUtilizadores.direcao === 'asc' ? 'desc' : 'asc'
+            sortUtilizadores.campo = campo
+            const extratores = {
+                numero_socio: u => u.numero_socio,
+                nome: u => `${u.nome || ''} ${u.apelido || ''}`.trim().toLowerCase()
+            }
+            const termo  = document.getElementById('searchUtilizadores').value.toLowerCase()
+            const estado = document.getElementById('filtroEstadoUtilizador').value
+            const filtrado = todosUtilizadores.filter(u => {
+                const nome = `${u.nome || ''} ${u.apelido || ''} ${u.email || ''}`.toLowerCase()
+                return nome.includes(termo) && (!estado || u.estado === estado)
+            })
+            const ordenado = ordenarLista(filtrado, extratores[campo], sortUtilizadores.direcao)
+            marcarOrdenacaoAtiva('thead-utilizadores', campo, sortUtilizadores.direcao)
+            renderUtilizadores(ordenado)
+        }
+
         // obterProximoNumeroSocio is no longer used; server-side RPC provides the next available number atomically.
         // Keeping this function commented in case a client-only fallback is desired in the future.
         /*
@@ -1726,6 +1795,28 @@
             renderQuotas(filtrado)
         }
 
+        let sortQuotas = { campo: null, direcao: 'asc' }
+
+        window.ordenarQuotas = function(campo) {
+            sortQuotas.direcao = sortQuotas.campo === campo && sortQuotas.direcao === 'asc' ? 'desc' : 'asc'
+            sortQuotas.campo = campo
+            const extratores = {
+                numero_socio: q => q.utilizadores?.numero_socio,
+                nome: q => `${q.utilizadores?.nome || ''} ${q.utilizadores?.apelido || ''}`.trim().toLowerCase(),
+                validade: q => q.data_expiracao || null
+            }
+            const termo = document.getElementById('searchQuotas').value.toLowerCase()
+            const filtro = document.getElementById('filtroEstadoQuota').value
+            const filtrado = todasQuotas.filter(q => {
+                const socio = q.utilizadores
+                const alvo = `${socio?.nome || ''} ${socio?.apelido || ''} ${socio?.email || ''}`.toLowerCase()
+                return alvo.includes(termo) && (!filtro || q.estado === filtro)
+            })
+            const ordenado = ordenarLista(filtrado, extratores[campo], sortQuotas.direcao)
+            marcarOrdenacaoAtiva('thead-quotas', campo, sortQuotas.direcao)
+            renderQuotas(ordenado)
+        }
+
         function renderQuotas(filtrado) {
             const tbody = document.getElementById('tbl-quotas')
             if (!filtrado?.length) { tbody.innerHTML = '<tr><td colspan="9" style="text-align:center;color:#999;">Sem quotas.</td></tr>'; return }
@@ -1854,11 +1945,12 @@
         window.filtrarPagamentos = function() {
             const termo = document.getElementById('searchPagamentos').value.toLowerCase()
             const filtro = document.getElementById('filtroEstadoPagamento').value
+            const filtroTipo = document.getElementById('filtroTipoPagamento').value
             const filtrado = todosPagamentos.filter(p => {
                 const u = p.utilizadores
                 const inscricao = p.inscricoes_evento
                 const alvo = `${u?.nome || ''} ${u?.apelido || ''} ${u?.email || ''} ${inscricao?.nome || ''} ${inscricao?.email || ''}`.toLowerCase()
-                return alvo.includes(termo) && (!filtro || p.estado === filtro)
+                return alvo.includes(termo) && (!filtro || p.estado === filtro) && (!filtroTipo || p.tipo === filtroTipo)
             })
             renderPagamentos(filtrado)
         }
